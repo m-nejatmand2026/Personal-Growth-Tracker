@@ -23,6 +23,7 @@ import {
 } from './routes/goals.js';
 import { historyRoute } from './routes/history.js';
 import { momenteRoute } from './routes/momente.js';
+import { getPlanRoute, planHistoryRoute, savePlanRoute } from './routes/plans.js';
 import { createRoadmapRoute, updateRoadmapRoute } from './routes/roadmap.js';
 import { createSessionRoute, deleteSessionRoute } from './routes/sessions.js';
 import { targetsRoute } from './routes/targets.js';
@@ -45,6 +46,10 @@ export async function routeApi(request, env) {
   if (method === 'POST' && path === '/api/v1/goals') return createGoalRoute(context);
   if (method === 'PUT' && /^\/api\/v1\/goals\/\d+$/.test(path)) return updateGoalRoute(context);
   if (method === 'DELETE' && /^\/api\/v1\/goals\/\d+$/.test(path)) return archiveGoalRoute(context);
+
+  if (method === 'GET' && path === '/api/v1/plan') return getPlanRoute(context);
+  if (method === 'GET' && path === '/api/v1/plan/history') return planHistoryRoute(context);
+  if (method === 'POST' && path === '/api/v1/plan/versions') return savePlanRoute(context);
 
   if (method === 'GET' && path === '/api/v1/capacity') return capacitySummaryRoute(context);
   if (method === 'GET' && path === '/api/v1/capacity/commitments') return listCapacityCommitmentsRoute(context);
