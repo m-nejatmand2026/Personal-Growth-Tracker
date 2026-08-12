@@ -1,4 +1,4 @@
-import { addCivilDays, todayInTimeZone as unusedTodayInTimeZone } from '../domain/capacity.js';
+import { addCivilDays } from '../domain/capacity.js';
 import { todayInTimeZone } from '../core/dates.js';
 import { bad, json, readJsonBody } from '../core/http.js';
 import { resolveProfileId } from '../core/profile.js';
