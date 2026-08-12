@@ -8,6 +8,15 @@ export async function listAreaTemplates(DB) {
   return results;
 }
 
+export async function getAreaTemplate(DB, key) {
+  if (!key) return null;
+  return DB.prepare(`
+    SELECT key,name,icon,default_color,sort_order
+    FROM area_templates
+    WHERE key=? AND active=1
+  `).bind(key).first();
+}
+
 export async function listAreas(DB, profileId, includeArchived = false) {
   const query = includeArchived
     ? `SELECT a.*,
