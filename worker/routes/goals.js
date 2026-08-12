@@ -1,6 +1,6 @@
 import { bad, json, readJsonBody } from '../core/http.js';
 import { resolveProfileId } from '../core/profile.js';
-import { optionalText, requiredText } from '../core/validation.js';
+import { isDateKey, optionalText, requiredText } from '../core/validation.js';
 import { getArea } from '../data/areas.js';
 import { createGoal, getGoal, listGoals, updateGoal } from '../data/goals.js';
 
@@ -52,6 +52,12 @@ async function normalizeGoalInput(DB, profileId, body, existing = null) {
   if (targetValueRaw != null && targetValueRaw !== '' && targetValue == null) return { error: 'Target value must be numeric.' };
   if (minimumValueRaw != null && minimumValueRaw !== '' && minimumValue == null) return { error: 'Minimum value must be numeric.' };
 
+  const startDate = body.start_date ?? existing?.start_date ?? null;
+  const targetDate = body.target_date ?? existing?.target_date ?? null;
+  if (startDate && !isDateKey(startDate)) return { error: 'Invalid start date.' };
+  if (targetDate && !isDateKey(targetDate)) return { error: 'Invalid target date.' };
+  if (startDate && targetDate && targetDate < startDate) return { error: 'Target date cannot be before start date.' };
+
   return {
     value: {
       area_id: areaId,
@@ -63,8 +69,8 @@ async function normalizeGoalInput(DB, profileId, body, existing = null) {
       minimum_value: minimumValue,
       unit,
       target_period: targetPeriod,
-      start_date: body.start_date ?? existing?.start_date ?? null,
-      target_date: body.target_date ?? existing?.target_date ?? null,
+      start_date: startDate,
+      target_date: targetDate,
       priority,
       status,
       sort_order: Number.isFinite(Number(body.sort_order ?? existing?.sort_order))
