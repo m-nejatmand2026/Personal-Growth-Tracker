@@ -1,0 +1,15 @@
+{
+  "name": "personal-growth-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create personal-growth-tracker",
+    "db:migrate:local": "wrangler d1 migrations apply personal-growth-tracker --local",
+    "db:migrate:remote": "wrangler d1 migrations apply personal-growth-tracker --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
