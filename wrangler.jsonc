@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "personal-growth-tracker",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "a182d8c8-c009-461e-ac7e-04694c1047ab",
       "migrations_dir": "migrations"
     }
   ]
