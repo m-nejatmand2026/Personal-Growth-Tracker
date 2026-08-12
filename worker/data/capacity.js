@@ -14,52 +14,91 @@ function daysInYear(year) {
   return Math.round((next - start) / 86400000);
 }
 
-function plannedMinutesForDates(minutes, period, dates) {
+function dailyShare(minutes, period, dateText) {
   const value = Math.max(0, Number(minutes) || 0);
   if (!value || period === 'none' || period === 'custom') return 0;
-  let total = 0;
-  for (const dateText of dates) {
-    const date = new Date(`${dateText}T12:00:00Z`);
-    if (period === 'daily') total += value;
-    else if (period === 'weekly') total += value / 7;
-    else if (period === 'monthly') {
-      const y = date.getUTCFullYear();
-      const m = date.getUTCMonth();
-      const days = new Date(Date.UTC(y, m + 1, 0, 12)).getUTCDate();
-      total += value / days;
-    } else if (period === 'yearly') {
-      total += value / daysInYear(date.getUTCFullYear());
-    }
+  if (period === 'daily') return value;
+  if (period === 'weekly') return value / 7;
+
+  const date = new Date(`${dateText}T12:00:00Z`);
+  if (period === 'monthly') {
+    const y = date.getUTCFullYear();
+    const m = date.getUTCMonth();
+    const days = new Date(Date.UTC(y, m + 1, 0, 12)).getUTCDate();
+    return value / days;
   }
-  return Math.round(total);
+  if (period === 'yearly') return value / daysInYear(date.getUTCFullYear());
+  return 0;
 }
 
 export async function getPlannedGoalMinutes(DB, profileId, dateText, period) {
   const bounds = periodBounds(dateText, period);
   const dates = enumerateCivilDates(bounds.start, bounds.end);
-  const plan = await DB.prepare(`
-    SELECT id FROM plan_versions
-    WHERE profile_id=? AND effective_from<=?
-      AND (effective_to IS NULL OR effective_to>=?)
-    ORDER BY effective_from DESC LIMIT 1
-  `).bind(profileId, dateText, dateText).first();
-  if (!plan) return { plan_version_id: null, planned_minutes: 0, goals: [] };
 
   const { results } = await DB.prepare(`
-    SELECT gpv.goal_id,g.name,gpv.time_target_minutes,gpv.time_minimum_minutes,gpv.period
-    FROM goal_plan_values gpv
+    SELECT pv.id AS plan_version_id,pv.effective_from,pv.effective_to,
+           gpv.goal_id,g.name,g.sort_order,
+           gpv.time_target_minutes,gpv.time_minimum_minutes,gpv.period
+    FROM plan_versions pv
+    JOIN goal_plan_values gpv ON gpv.plan_version_id=pv.id
     JOIN goals g ON g.id=gpv.goal_id
-    WHERE gpv.plan_version_id=? AND g.profile_id=? AND g.status='active'
-    ORDER BY g.sort_order,g.name
-  `).bind(plan.id, profileId).all();
+    WHERE pv.profile_id=?
+      AND pv.effective_from<=?
+      AND (pv.effective_to IS NULL OR pv.effective_to>=?)
+      AND g.profile_id=? AND g.status='active'
+    ORDER BY pv.effective_from,g.sort_order,g.name
+  `).bind(profileId, bounds.end, bounds.start, profileId).all();
 
-  const goals = results.map(row => ({
-    ...row,
-    period_target_minutes: plannedMinutesForDates(row.time_target_minutes, row.period, dates),
-    period_minimum_minutes: plannedMinutesForDates(row.time_minimum_minutes, row.period, dates)
-  }));
+  const versions = new Map();
+  for (const row of results) {
+    if (!versions.has(row.plan_version_id)) {
+      versions.set(row.plan_version_id, {
+        id: row.plan_version_id,
+        effective_from: row.effective_from,
+        effective_to: row.effective_to,
+        rows: []
+      });
+    }
+    versions.get(row.plan_version_id).rows.push(row);
+  }
+
+  const orderedVersions = [...versions.values()].sort((a, b) => a.effective_from.localeCompare(b.effective_from));
+  const goalTotals = new Map();
+  const usedPlanVersions = new Set();
+
+  for (const date of dates) {
+    let activeVersion = null;
+    for (const version of orderedVersions) {
+      if (version.effective_from <= date && (!version.effective_to || version.effective_to >= date)) {
+        activeVersion = version;
+      }
+    }
+    if (!activeVersion) continue;
+    usedPlanVersions.add(activeVersion.id);
+
+    for (const row of activeVersion.rows) {
+      const current = goalTotals.get(row.goal_id) || {
+        goal_id: row.goal_id,
+        name: row.name,
+        period_target_minutes: 0,
+        period_minimum_minutes: 0
+      };
+      current.period_target_minutes += dailyShare(row.time_target_minutes, row.period, date);
+      current.period_minimum_minutes += dailyShare(row.time_minimum_minutes, row.period, date);
+      goalTotals.set(row.goal_id, current);
+    }
+  }
+
+  const goals = [...goalTotals.values()]
+    .map(goal => ({
+      ...goal,
+      period_target_minutes: Math.round(goal.period_target_minutes),
+      period_minimum_minutes: Math.round(goal.period_minimum_minutes)
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   return {
-    plan_version_id: plan.id,
+    plan_version_ids: [...usedPlanVersions],
     planned_minutes: goals.reduce((sum, goal) => sum + goal.period_target_minutes, 0),
     minimum_minutes: goals.reduce((sum, goal) => sum + goal.period_minimum_minutes, 0),
     goals
@@ -77,7 +116,7 @@ export async function getCapacitySummary(DB, profileId, dateText, period) {
     minimum_goal_minutes: plan.minimum_minutes,
     plan_load: Number.isFinite(planLoad) ? planLoad : null,
     impossible_by_minutes: planLoad === Infinity || plan.planned_minutes > capacity.flexible_minutes,
-    plan_version_id: plan.plan_version_id,
+    plan_version_ids: plan.plan_version_ids,
     goals: plan.goals,
     commitments
   };
