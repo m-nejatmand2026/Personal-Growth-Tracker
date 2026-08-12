@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   calculateCapacity,
   calculatePlanLoad,
+  commitmentMinutesForDate,
   monthBounds,
   periodBounds,
   scaleWeeklyMinutes
@@ -44,6 +45,41 @@ test('weekday commitments are counted only on selected weekdays', () => {
   assert.equal(monday.flexible_minutes, 150);
   assert.equal(saturday.committed_minutes, 690);
   assert.equal(saturday.flexible_minutes, 750);
+});
+
+test('one commitment can use different durations for different weekdays', () => {
+  const sleep = {
+    kind: 'sleep',
+    minutes: 480,
+    weekday_mask: 127,
+    daily_minutes: [480, 480, 480, 480, 480, 600, 480],
+    active: 1
+  };
+  assert.equal(commitmentMinutesForDate(sleep, '2026-08-10'), 480);
+  assert.equal(commitmentMinutesForDate(sleep, '2026-08-15'), 600);
+  assert.equal(calculateCapacity([sleep], '2026-08-10', 'week').committed_minutes, 3480);
+});
+
+test('effective-dated commitment versions preserve earlier capacity history', () => {
+  const versions = [
+    {
+      kind: 'sleep',
+      minutes: 480,
+      weekday_mask: 127,
+      active: 1,
+      effective_to: '2026-08-31'
+    },
+    {
+      kind: 'sleep',
+      minutes: 480,
+      weekday_mask: 127,
+      daily_minutes: [480, 480, 480, 480, 480, 600, 480],
+      active: 1,
+      effective_from: '2026-09-01'
+    }
+  ];
+  assert.equal(calculateCapacity(versions, '2026-08-15', 'day').committed_minutes, 480);
+  assert.equal(calculateCapacity(versions, '2026-09-05', 'day').committed_minutes, 600);
 });
 
 test('weekly target scaling respects exact period length rather than four-week months', () => {
