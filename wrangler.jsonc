@@ -16,5 +16,17 @@
       "database_id": "a182d8c8-c009-461e-ac7e-04694c1047ab",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  "env": {
+    "preview": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "personal-growth-tracker-preview",
+          "database_id": "1937971c-f2f2-4dad-bc65-3d22952584bb",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
 }
