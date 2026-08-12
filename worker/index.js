@@ -19,6 +19,13 @@ function addDays(dateText, n) {
   return d.toISOString().slice(0, 10);
 }
 
+function monthBounds(dateText) {
+  const d = new Date(`${dateText}T12:00:00Z`);
+  const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 12));
+  const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0, 12));
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
 async function getTargets(DB) {
   const { results } = await DB.prepare(`
     SELECT a.key, a.name, t.target_minutes, t.minimum_minutes
@@ -56,6 +63,25 @@ async function getBootstrap(DB, date) {
   return { date, week_start: ws, targets, week, energy, sessions: sessions.results, roadmap: roadmap.results, lessons: lessons.results };
 }
 
+async function getMonth(DB, date) {
+  const { start, end } = monthBounds(date);
+  const [targets, totals, byDay, energy] = await Promise.all([
+    getTargets(DB),
+    DB.prepare(`SELECT activity_key, SUM(minutes) AS actual_minutes FROM sessions WHERE occurred_on BETWEEN ? AND ? GROUP BY activity_key`).bind(start,end).all(),
+    DB.prepare(`SELECT occurred_on, activity_key, SUM(minutes) AS minutes FROM sessions WHERE occurred_on BETWEEN ? AND ? GROUP BY occurred_on, activity_key ORDER BY occurred_on`).bind(start,end).all(),
+    DB.prepare(`SELECT occurred_on,label,energy_score,valence_score FROM energy_logs WHERE occurred_on BETWEEN ? AND ? ORDER BY occurred_on`).bind(start,end).all()
+  ]);
+  const days = Number(end.slice(-2));
+  const weeksEquivalent = days / 7;
+  const actual = Object.fromEntries(totals.results.map(r => [r.activity_key, Number(r.actual_minutes)]));
+  return {
+    start, end,
+    items: targets.map(t => ({...t, actual_minutes: actual[t.key] || 0, month_target_minutes: Math.round(Number(t.target_minutes) * weeksEquivalent)})),
+    by_day: byDay.results,
+    energy: energy.results
+  };
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -74,12 +100,17 @@ export default {
         return json({ start, end: addDays(start,6), items: await getWeek(env.DB,start) });
       }
 
+      if (request.method === 'GET' && path === '/api/month') {
+        const date = url.searchParams.get('date') || new Date().toISOString().slice(0,10);
+        return json(await getMonth(env.DB, date));
+      }
+
       if (request.method === 'GET' && path === '/api/history') {
         const from = url.searchParams.get('from') || '2026-08-10';
         const to = url.searchParams.get('to') || new Date().toISOString().slice(0,10);
         const [energy, sessions] = await Promise.all([
           env.DB.prepare('SELECT * FROM energy_logs WHERE occurred_on BETWEEN ? AND ? ORDER BY occurred_on DESC').bind(from,to).all(),
-          env.DB.prepare(`SELECT s.*, a.name AS activity_name FROM sessions s JOIN activities a ON a.key=s.activity_key WHERE occurred_on BETWEEN ? AND ? ORDER BY occurred_on DESC, id DESC LIMIT 300`).bind(from,to).all()
+          env.DB.prepare(`SELECT s.*, a.name AS activity_name FROM sessions s JOIN activities a ON a.key=s.activity_key WHERE occurred_on BETWEEN ? AND ? ORDER BY occurred_on DESC, id DESC LIMIT 500`).bind(from,to).all()
         ]);
         return json({ energy: energy.results, sessions: sessions.results });
       }
@@ -99,10 +130,20 @@ export default {
       if (request.method === 'POST' && path === '/api/session') {
         const b = await request.json();
         const minutes = Number(b.minutes);
-        if (!b.occurred_on || !b.activity_key || !Number.isFinite(minutes) || minutes < 0) return bad('invalid session');
+        if (!b.occurred_on || !b.activity_key || !Number.isFinite(minutes) || minutes <= 0) return bad('invalid session');
         const result = await env.DB.prepare(`INSERT INTO sessions(occurred_on,activity_key,minutes,subtype,note) VALUES(?,?,?,?,?)`)
           .bind(b.occurred_on,b.activity_key,Math.round(minutes),b.subtype || null,b.note || null).run();
         return json({ ok: true, id: result.meta.last_row_id });
+      }
+
+      if (request.method === 'PUT' && path === '/api/session') {
+        const b = await request.json();
+        const id = Number(b.id);
+        const minutes = Number(b.minutes);
+        if (!id || !b.occurred_on || !b.activity_key || !Number.isFinite(minutes) || minutes <= 0) return bad('invalid session');
+        await env.DB.prepare(`UPDATE sessions SET occurred_on=?,activity_key=?,minutes=?,subtype=?,note=? WHERE id=?`)
+          .bind(b.occurred_on,b.activity_key,Math.round(minutes),b.subtype || null,b.note || null,id).run();
+        return json({ ok:true });
       }
 
       if (request.method === 'DELETE' && path === '/api/session') {
