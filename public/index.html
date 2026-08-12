@@ -18,23 +18,25 @@
         <p class="eyebrow">Growth Compass</p>
         <h1 id="pageTitle">Today</h1>
       </div>
-      <button id="refreshBtn" class="icon-btn" aria-label="Refresh">↻</button>
+      <button id="settingsBtn" class="icon-btn" aria-label="Open settings" title="Settings">⚙</button>
     </header>
 
     <section id="todayView" class="view active"></section>
-    <section id="weekView" class="view"></section>
     <section id="planView" class="view"></section>
-    <section id="historyView" class="view"></section>
+    <section id="progressView" class="view"></section>
+    <section id="insightsView" class="view"></section>
     <section id="settingsView" class="view"></section>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
       <button data-view="today" class="nav-btn active"><span>●</span>Today</button>
-      <button data-view="week" class="nav-btn"><span>▤</span>Week</button>
       <button data-view="plan" class="nav-btn"><span>⌁</span>Plan</button>
-      <button data-view="history" class="nav-btn"><span>◷</span>History</button>
-      <button data-view="settings" class="nav-btn"><span>⚙</span>Settings</button>
+      <button id="quickAddBtn" class="nav-btn nav-add" aria-label="Add or log"><span>＋</span><b>Add</b></button>
+      <button data-view="progress" class="nav-btn"><span>◷</span>Progress</button>
+      <button data-view="insights" class="nav-btn"><span>✦</span>Insights</button>
     </nav>
   </main>
+
+  <div id="quickAddHost"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="/js/app.js"></script>
 </body>
