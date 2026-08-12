@@ -1,29 +1,38 @@
-import { api } from '../core/api.js';
-import { $, $$, escapeHtml } from '../core/dom.js';
+import { $ } from '../core/dom.js';
 import { state } from '../core/state.js';
-import { toast } from '../core/toast.js';
+import { areasPanelHtml, bindAreasPanel, loadAreasModel } from './plan/areas.js';
+import { bindCapacityPanel, capacityPanelHtml, loadCapacityModel } from './plan/capacity.js';
+import { bindGoalsPanel, goalsPanelHtml, loadGoalsModel } from './plan/goals.js';
+import { bindLegacyPlan, legacyPlanHtml } from './plan/legacy.js';
 
-export function renderPlan({ reload }) {
-  const lessons = state.data.lessons || [];
-  const completed = lessons.filter((lesson) => lesson.completed_at).length;
-  const sixMonth = (state.data.roadmap || []).filter((item) => item.horizon === 'six_month');
-  const compass = (state.data.roadmap || []).filter((item) => item.horizon === 'compass');
+export async function renderPlan({ reload }) {
+  const root = $('#planView');
+  if (!root) return;
+  root.innerHTML = `<div class="card"><div class="section-head"><div><h2>Loading Version 1 plan…</h2><p>Areas, goals and life capacity are loaded as independent modules.</p></div></div></div>${legacyPlanHtml(state.data)}`;
+  bindLegacyPlan(state.data, { reload });
 
-  $('#planView').innerHTML = `<div class="card"><div class="section-head"><div><h2>Next six months</h2><p>This is the committed horizon. Everything remains editable.</p></div><span class="badge">Aug 2026 → Feb 2027</span></div>${sixMonth.map((item)=>`<div class="roadmap-item"><h4>${escapeHtml(item.title)}</h4><p>${escapeHtml(item.detail||'')}</p></div>`).join('')}</div>
-  <div class="card"><div class="section-head"><div><h2>Momente B1</h2><p>${completed}/24 lessons complete · target: 31 Dec 2026</p></div><span class="badge">${Math.round(completed/24*100)}%</span></div><div class="lesson-grid">${lessons.map((lesson)=>`<button class="lesson ${lesson.completed_at?'done':''}" data-lesson="${lesson.lesson}">${lesson.lesson}</button>`).join('')}</div><p class="small muted">Tap a lesson to mark/unmark it complete. ±1 lesson around a monthly milestone is still on track.</p></div>
-  <div class="card"><div class="section-head"><div><h2>Compass</h2><p>Long-term direction, not a contract.</p></div></div>${compass.map((item)=>`<div class="roadmap-item"><h4>${escapeHtml(item.title)}</h4><p>${escapeHtml(item.detail||'')}</p></div>`).join('')}</div>`;
+  try {
+    const [areasModel, goalsModel, capacityModel] = await Promise.all([
+      loadAreasModel(),
+      loadGoalsModel(),
+      loadCapacityModel(state.date)
+    ]);
 
-  $$('[data-lesson]').forEach((button) => button.addEventListener('click', async () => {
-    const lesson = lessons.find((item) => item.lesson === Number(button.dataset.lesson));
-    try {
-      await api('/api/momente', {
-        method: 'PUT',
-        body: JSON.stringify({ lesson: lesson.lesson, completed: !lesson.completed_at })
-      });
-      await reload();
-      toast(lesson.completed_at ? 'Lesson reopened' : 'Lesson completed');
-    } catch {
-      toast('Preview mode: database not connected');
-    }
-  }));
+    root.innerHTML = `
+      <div class="plan-intro card"><div><p class="eyebrow">Version 1 · beta</p><h2>Your plan should fit your life</h2><p class="muted">Manage broad areas and goals, then use real time capacity to check whether the plan is physically possible.</p></div></div>
+      ${capacityPanelHtml(capacityModel)}
+      ${areasPanelHtml(areasModel)}
+      ${goalsPanelHtml(goalsModel, areasModel.areas)}
+      ${legacyPlanHtml(state.data)}
+    `;
+
+    const reloadPlatform = async () => renderPlan({ reload });
+    bindCapacityPanel(capacityModel, { reloadPlatform });
+    bindAreasPanel(areasModel, { reloadPlatform });
+    bindGoalsPanel(goalsModel, { reloadPlatform });
+    bindLegacyPlan(state.data, { reload });
+  } catch (error) {
+    root.innerHTML = `<div class="card"><div class="section-head"><div><h2>Version 1 planning foundation is not initialized</h2><p>${error?.message || 'Could not load the new planning data.'}</p></div></div><p class="small muted">Apply the latest preview database migration, then reload. The legacy beta plan remains available below.</p></div>${legacyPlanHtml(state.data)}`;
+    bindLegacyPlan(state.data, { reload });
+  }
 }
