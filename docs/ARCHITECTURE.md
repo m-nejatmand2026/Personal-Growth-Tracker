@@ -10,7 +10,7 @@ Growth Compass must be easy to change without editing one large frontend file or
 2. Shared `core/` code is generic only; business rules never drift into core utilities.
 3. Database changes are sequential migrations; production schema is never changed manually during normal feature work.
 4. Historical data is preserved; future plans/targets become effective-dated rather than rewriting the past.
-5. Feature branch → preview database/URL → acceptance tests → PR → `main`.
+5. Feature branch → isolated preview Worker + preview database → acceptance tests → PR → `main`.
 6. No request-scoped mutable global state in the Worker; every Promise is awaited/returned.
 7. Cloudflare services are accessed through bindings such as `env.DB`, not Cloudflare REST calls from the Worker.
 8. Frontend talks to stable `/api/*` contracts; persistence logic remains server-side.
@@ -70,10 +70,10 @@ Dependency direction: `index -> router -> routes -> data/core`.
 ## Future Version 1 platform modules
 As the canonical Version 1 specification is implemented, add feature modules for Areas, Goals, Activities, Capacity, Commitments, Sleep, Context, Plan Versions, Progress, Insights, Universal Logger and AI Planner. When a feature grows beyond one small screen/form, turn `features/foo.js` into `features/foo/` with meaningful submodules such as `view.js`, `model.js`, and `events.js`.
 
-## Database boundary
+## Database and environment boundary
 D1 remains the source of truth. Version 1 introduces generic Areas → Goals → Activities → Progress Records plus effective-dated plans/capacity through additive migrations. Existing beta data is migrated/preserved rather than discarded.
 
-A separate preview D1 database should be used before destructive/edit testing. Cloudflare D1 supports `preview_database_id` on the D1 binding for this purpose.
+For deployed testing, use a named Wrangler `preview` environment with a separate Worker name and a separate D1 `DB` binding. Production and preview must never share writeable personal data once destructive/edit testing begins. `preview_database_id` is reserved for Wrangler development behavior (not as the production-vs-preview deployment isolation mechanism).
 
 ## Change examples
 - “Add a goal measurement type” should touch the goal schema/domain, goal UI, calculation strategy, and tests—not Energy or Sleep.
