@@ -16,18 +16,86 @@ function taskActual(key) {
     .reduce((total, session) => total + Number(session.minutes), 0);
 }
 
+function dailyStateHtml(selected) {
+  return `<section class="daily-state-strip">
+    <button class="daily-state-item" type="button" id="openEnergyCheckin">
+      <span class="daily-state-label">Energy</span>
+      <strong>${selected ? escapeHtml(selected.label) : 'Check in'}</strong>
+      <small>${selected ? 'Tap to update' : 'How do you feel?'}</small>
+    </button>
+    <div class="daily-state-item passive">
+      <span class="daily-state-label">Sleep</span>
+      <strong>—</strong>
+      <small>Actual sleep coming next</small>
+    </div>
+    <div class="daily-state-item passive">
+      <span class="daily-state-label">Context</span>
+      <strong>Normal</strong>
+      <small>Day context coming next</small>
+    </div>
+  </section>`;
+}
+
+function taskRows(tasks) {
+  if (!tasks.length) return '<div class="empty">Nothing is scheduled for today. You can still log anything you actually do.</div>';
+  return tasks.map(([key,min,desc])=>{
+    const title = key === 'sport' ? 'Sport / Calisthenics' : key[0].toUpperCase()+key.slice(1);
+    const actual = taskActual(key);
+    return `<div class="focus-row">
+      <div class="focus-main">
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(desc)}</span>
+        <small>Suggested ${formatMinutes(min)} · logged this week ${formatMinutes(actual)}</small>
+      </div>
+      <button class="quick-log-btn" data-log="${key}" data-min="${min}" type="button">Quick log ${formatMinutes(min)}</button>
+    </div>`;
+  }).join('');
+}
+
+export function openEnergyEditor() {
+  const details = $('#energyDetails');
+  if (details) details.open = true;
+  $('#energyDetails')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+export function focusTodayActivities() {
+  $('#todayActivitiesCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 export function renderToday({ reload }) {
   const day = new Date(`${state.date}T12:00:00`).getDay();
   const tasks = TASKS[day] || [];
   const selected = state.selectedEnergy;
 
   $('#todayView').innerHTML = `
-    <div class="card"><div class="section-head"><div><h2>${formatDateLabel(state.date)}</h2><p>Start with how you actually feel. One check-in per day.</p></div>${selected?`<span class="badge">${escapeHtml(selected.label)}</span>`:''}</div>
-    ${energyMap()}
-    <div class="energy-result">${selected?`<div><span class="small muted">Selected</span><br><strong>${escapeHtml(selected.label)}</strong></div>`:`<span class="muted">Choose one state from the map.</span>`}</div>
-    <div class="actions"><input id="energyNote" class="note-input" placeholder="Optional note" value="${escapeHtml(selected?.note||'')}"/><button id="saveEnergy" class="btn primary" ${selected?'':'disabled'}>Save check-in</button></div></div>
-    <div class="card"><div class="section-head"><div><h2>Today</h2><p>${day===5?'Friday evening stays free. ':''}Log what you actually do; no catch-up debt.</p></div></div>
-    <div>${tasks.map(([key,min,desc])=>`<div class="today-task"><div><div class="task-title">${key==='sport'?'Sport / Calisthenics':key[0].toUpperCase()+key.slice(1)}</div><div class="task-meta">${desc} · suggested ${formatMinutes(min)} · today ${formatMinutes(taskActual(key))}</div></div><div class="quick"><button data-log="${key}" data-min="${min}">+ ${formatMinutes(min)}</button></div></div>`).join('')}</div></div>`;
+    <div class="page-lead today-lead">
+      <p class="eyebrow">${formatDateLabel(state.date)}</p>
+      <h2>What matters today?</h2>
+      <p>Use the app lightly. Record what actually happens; there is no catch-up debt.</p>
+    </div>
+
+    ${dailyStateHtml(selected)}
+
+    <section class="card section-card" id="todayActivitiesCard">
+      <div class="section-head"><div><h2>Your focus</h2><p>${day===5?'Friday evening stays free. ':''}A short view of what is planned today.</p></div></div>
+      <div class="focus-list">${taskRows(tasks)}</div>
+    </section>
+
+    <details class="card quiet-details energy-details" id="energyDetails">
+      <summary>
+        <span><strong>Energy check-in</strong><small>${selected ? `Current: ${escapeHtml(selected.label)}` : 'Optional daily observation'}</small></span>
+        <span class="details-action">Open</span>
+      </summary>
+      <div class="quiet-details-body">
+        <p class="muted energy-help">Choose the state that best matches how you feel. Energy and valence are observations, not scores of how well you are doing.</p>
+        ${energyMap()}
+        <div class="energy-result">${selected?`<div><span class="small muted">Selected</span><br><strong>${escapeHtml(selected.label)}</strong></div>`:`<span class="muted">Choose one state from the map.</span>`}</div>
+        <div class="actions"><input id="energyNote" class="note-input" maxlength="500" placeholder="Optional note" value="${escapeHtml(selected?.note||'')}"/><button id="saveEnergy" class="btn primary" ${selected?'':'disabled'}>Save check-in</button></div>
+      </div>
+    </details>
+  `;
+
+  $('#openEnergyCheckin')?.addEventListener('click', openEnergyEditor);
 
   $$('[data-energy-r]').forEach((button) => button.addEventListener('click', () => {
     const row = Number(button.dataset.energyR);
@@ -42,6 +110,7 @@ export function renderToday({ reload }) {
       note: state.selectedEnergy?.note || ''
     };
     renderToday({ reload });
+    openEnergyEditor();
   }));
 
   $('#saveEnergy')?.addEventListener('click', async () => {
@@ -65,7 +134,7 @@ export function renderToday({ reload }) {
           minutes: Number(button.dataset.min)
         })
       });
-      toast('Session logged');
+      toast('Progress logged');
       await reload();
     } catch {
       toast('Preview mode: database not connected');
