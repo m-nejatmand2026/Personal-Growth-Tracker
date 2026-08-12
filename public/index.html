@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#f8fafc" />
+  <meta name="theme-color" content="#0f6f6d" />
   <meta name="description" content="Growth Compass — a modular personal development planning and progress platform." />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -13,31 +13,56 @@
   <title>Growth Compass</title>
 </head>
 <body>
-  <main id="app" class="shell">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Growth Compass</p>
-        <h1 id="pageTitle">Today</h1>
+  <main id="app" class="shell os-shell">
+    <aside class="app-rail" aria-label="Growth Compass navigation">
+      <div class="rail-brand">
+        <span class="brand-mark" aria-hidden="true">GC</span>
+        <div><strong>Growth Compass</strong><small>Personal development OS</small></div>
       </div>
-      <button id="settingsBtn" class="icon-btn" aria-label="Open settings" title="Settings">⚙</button>
-    </header>
 
-    <section id="todayView" class="view active"></section>
-    <section id="planView" class="view"></section>
-    <section id="progressView" class="view"></section>
-    <section id="insightsView" class="view"></section>
-    <section id="settingsView" class="view"></section>
+      <nav class="rail-nav" aria-label="Primary navigation">
+        <button data-view="today" class="rail-nav-btn active"><span aria-hidden="true">⌂</span><b>Today</b></button>
+        <button data-view="plan" class="rail-nav-btn"><span aria-hidden="true">◎</span><b>Plan</b></button>
+        <button data-view="progress" class="rail-nav-btn"><span aria-hidden="true">↗</span><b>Progress</b></button>
+        <button data-view="insights" class="rail-nav-btn"><span aria-hidden="true">✦</span><b>Insights</b></button>
+      </nav>
+
+      <button class="rail-log-btn" type="button" data-open-logger><span>＋</span> Log progress</button>
+      <button id="settingsRailBtn" class="rail-settings" type="button"><span aria-hidden="true">⚙</span> Settings</button>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="mobile-brand-mark" aria-hidden="true">GC</span>
+          <div>
+            <p class="eyebrow">Growth Compass</p>
+            <h1 id="pageTitle">Today</h1>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="top-log-btn" type="button" data-open-logger aria-label="Log progress">＋ <span>Log</span></button>
+          <button id="settingsBtn" class="icon-btn" aria-label="Open settings" title="Settings">⚙</button>
+        </div>
+      </header>
+
+      <section id="todayView" class="view active"></section>
+      <section id="planView" class="view"></section>
+      <section id="progressView" class="view"></section>
+      <section id="insightsView" class="view"></section>
+      <section id="settingsView" class="view"></section>
+    </div>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button data-view="today" class="nav-btn active"><span>●</span>Today</button>
-      <button data-view="plan" class="nav-btn"><span>⌁</span>Plan</button>
-      <button id="quickAddBtn" class="nav-btn nav-add" aria-label="Add or log"><span>＋</span><b>Add</b></button>
-      <button data-view="progress" class="nav-btn"><span>◷</span>Progress</button>
+      <button data-view="today" class="nav-btn active"><span>⌂</span>Today</button>
+      <button data-view="plan" class="nav-btn"><span>◎</span>Plan</button>
+      <button id="quickAddBtn" class="nav-btn nav-add" type="button" data-open-logger aria-label="Log progress"><span>＋</span><b>Log</b></button>
+      <button data-view="progress" class="nav-btn"><span>↗</span>Progress</button>
       <button data-view="insights" class="nav-btn"><span>✦</span>Insights</button>
     </nav>
   </main>
 
-  <div id="quickAddHost"></div>
+  <div id="loggerHost"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="/js/app.js"></script>
 </body>

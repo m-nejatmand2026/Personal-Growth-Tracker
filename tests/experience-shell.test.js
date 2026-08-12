@@ -3,32 +3,70 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-const quickAddJs = await readFile(new URL('../public/js/features/quick-add.js', import.meta.url), 'utf8');
+const loggerJs = await readFile(new URL('../public/js/features/logger.js', import.meta.url), 'utf8');
 const planJs = await readFile(new URL('../public/js/features/plan.js', import.meta.url), 'utf8');
+const progressJs = await readFile(new URL('../public/js/features/progress.js', import.meta.url), 'utf8');
+const insightsJs = await readFile(new URL('../public/js/features/insights.js', import.meta.url), 'utf8');
 const todayJs = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
+const experienceDoc = await readFile(new URL('../docs/EXPERIENCE_ARCHITECTURE.md', import.meta.url), 'utf8');
 
-test('primary navigation matches the Version 1 experience contract', () => {
-  for (const label of ['Today','Plan','Progress','Insights']) assert.match(indexHtml, new RegExp(`>${label}<`));
+test('primary navigation matches the Version 1 experience contract on mobile and desktop', () => {
+  for (const label of ['Today','Plan','Progress','Insights']) assert.match(indexHtml, new RegExp(`>${label}<|<b>${label}</b>`));
   assert.match(indexHtml, /id="quickAddBtn"/);
+  assert.match(indexHtml, /class="app-rail"/);
+  assert.match(indexHtml, /data-open-logger/);
   assert.doesNotMatch(indexHtml, /data-view="settings"/);
   assert.doesNotMatch(indexHtml, /data-view="week"/);
   assert.doesNotMatch(indexHtml, /data-view="history"/);
 });
 
-test('Quick Add stays isolated from business feature implementations', () => {
-  assert.match(quickAddJs, /from '\.\.\/core\/dom\.js'/);
-  assert.doesNotMatch(quickAddJs, /features\//);
-  assert.doesNotMatch(quickAddJs, /api\(/);
+test('center add opens a dedicated logger with exact duration and explicit save', () => {
+  assert.match(loggerJs, /export function createLogger/);
+  assert.match(loggerJs, /id="loggerDuration"[^>]*min="1"[^>]*max="1440"/);
+  assert.match(loggerJs, /Save progress/);
+  assert.match(loggerJs, /Recent repeats/);
+  assert.match(loggerJs, /data-repeat-index/);
+  assert.match(loggerJs, /method: 'POST'/);
+  assert.doesNotMatch(loggerJs, /from '\.\/today\.js'/);
+  assert.doesNotMatch(loggerJs, /from '\.\/plan\.js'/);
 });
 
-test('normal Plan UI does not expose architecture implementation language', () => {
+test('Today is a command center with capacity, goals, activity feed and progressive Energy detail', () => {
+  assert.match(todayJs, /Your daily command center/);
+  assert.match(todayJs, /\/api\/v1\/capacity\?date=/);
+  assert.match(todayJs, /Actual · Minimum · Target/);
+  assert.match(todayJs, /Activity feed/);
+  assert.match(todayJs, /id="energyDetails"/);
+  assert.match(todayJs, /id="openEnergyCheckin"/);
+  assert.match(todayJs, /function energyMap\(/);
+});
+
+test('Progress foregrounds Actual Minimum Target and no catch-up debt', () => {
+  assert.match(progressJs, /Actual, minimum, target/i);
+  assert.match(progressJs, /Below minimum — no catch-up required/);
+  assert.match(progressJs, /Minimum marker/);
+  assert.match(progressJs, /data-delete-session/);
+});
+
+test('Insights keeps evidence thresholds and refuses to invent missing associations', () => {
+  for (const threshold of ['0–6','7–20','21–41','42+']) assert.match(insightsJs, new RegExp(threshold.replace('+','\\+')));
+  assert.match(insightsJs, /Waiting for paired wellbeing data/);
+  assert.match(insightsJs, /associated with/);
+  assert.doesNotMatch(insightsJs, /causes higher|causes lower|because of sleep/i);
+});
+
+test('normal Plan UI is human-facing and starts with time reality', () => {
+  assert.match(planJs, /Plan at a glance/);
+  assert.match(planJs, /Flexible this week/);
+  assert.match(planJs, /How full\?/);
   assert.doesNotMatch(planJs, /independently registered module/i);
   assert.doesNotMatch(planJs, /explicit contract/i);
   assert.doesNotMatch(planJs, /failure boundary/i);
 });
 
-test('Today progressively discloses the full Energy Map', () => {
-  assert.match(todayJs, /id="energyDetails"/);
-  assert.match(todayJs, /id="openEnergyCheckin"/);
-  assert.match(todayJs, /function energyMap\(/);
+test('experience documentation records the rejected first prototype and recursive modularity', () => {
+  assert.match(experienceDoc, /Iteration 1 — rejected prototype/);
+  assert.match(experienceDoc, /Universal Logger/);
+  assert.match(experienceDoc, /car-parts rule/);
+  assert.match(experienceDoc, /Growth Compass — Version 1 Beta/);
 });
