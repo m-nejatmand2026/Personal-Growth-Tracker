@@ -23,27 +23,27 @@ async function load() {
     state.data = createFallback(state.date);
   }
   state.selectedEnergy = state.data.energy;
-  renderAll();
+  await renderAll();
 }
 
-function renderAll() {
+async function renderAll() {
   renderToday({ reload: load });
   renderWeek();
-  renderPlan({ reload: load });
-  if (state.view === 'history') renderHistory();
+  await renderPlan({ reload: load });
+  if (state.view === 'history') await renderHistory();
   renderSettings({ reload: load });
 }
 
-function showView(name) {
+async function showView(name) {
   state.view = name;
   $$('.view').forEach((view) => view.classList.remove('active'));
   $(`#${name}View`).classList.add('active');
   $$('.nav-btn').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
   $('#pageTitle').textContent = viewTitles[name];
-  if (name === 'history') renderHistory();
+  if (name === 'history') await renderHistory();
 }
 
-$$('.nav-btn').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
-$('#refreshBtn')?.addEventListener('click', load);
+$$('.nav-btn').forEach((button) => button.addEventListener('click', () => { void showView(button.dataset.view); }));
+$('#refreshBtn')?.addEventListener('click', () => { void load(); });
 
-load();
+void load();
