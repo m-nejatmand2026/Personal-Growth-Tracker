@@ -29,7 +29,7 @@ async function load() {
 async function renderAll() {
   renderToday({ reload: load });
   renderWeek();
-  await renderPlan({ reload: load });
+  if (state.view === 'plan') await renderPlan({ reload: load });
   if (state.view === 'history') await renderHistory();
   renderSettings({ reload: load });
 }
@@ -40,6 +40,7 @@ async function showView(name) {
   $(`#${name}View`).classList.add('active');
   $$('.nav-btn').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
   $('#pageTitle').textContent = viewTitles[name];
+  if (name === 'plan') await renderPlan({ reload: load });
   if (name === 'history') await renderHistory();
 }
 
