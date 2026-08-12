@@ -7,6 +7,8 @@ The mandatory isolation rules are defined in [`docs/MODULARITY_STANDARD.md`](./M
 ## Architecture choice
 Growth Compass is a **modular monolith**: one deployable application with strict internal bounded modules. We deliberately avoid premature microservices while designing every module so it can later be extracted behind the same public contract if scale, security isolation, ownership, or independent deployment requires it.
 
+The isolation rule applies recursively. A business module may itself contain replaceable private components with narrow internal contracts. A module is not allowed to become a monolith inside the modular monolith.
+
 ## Platform layer
 The platform contains only cross-cutting infrastructure:
 
@@ -40,6 +42,16 @@ modules/<module>/
 ```
 
 During beta migration, some module manifests are adapters over existing `routes/`, `data/`, and `features/` files. Those adapters are transitional; the manifest boundary is stable while internals move underneath it.
+
+## Progressive disclosure: easy by default, advanced when requested
+Every normal user-facing capability exposes one underlying domain model with two presentation depths:
+
+- **Easy/default:** minimum required fields, sensible defaults, fast common actions.
+- **Advanced:** deeper configuration revealed only when the user asks for it.
+
+Easy and advanced views must never become separate business implementations. They use the same validation, persistence and calculation contracts so behavior cannot drift.
+
+Capacity is the current concrete example: a recurring commitment can use one duration across selected weekdays in the easy path, while `Customize by day` exposes independent Monday–Sunday durations. Effective-date controls are progressively disclosed so a normal edit can stay simple while historical plan semantics remain correct.
 
 ## Composition roots
 Only composition roots intentionally know the set of installed modules:
@@ -105,6 +117,36 @@ Publishers do not know subscribers. Events describe facts (`goal.updated`, `plan
 D1 remains the source of truth. Shared platform tables are limited to identity/profile/module enablement/settings and stable identifiers. Each business module owns its own tables/migrations as the schema is progressively reorganized.
 
 No module may query another module’s private tables directly in steady-state production architecture. Temporary compatibility adapters must be documented and removed after migration.
+
+### Capacity schedule versioning
+Capacity commitments are plans and must not rewrite historical capacity when a future schedule changes.
+
+- `series_id` groups effective-dated versions of one logical commitment.
+- `daily_minutes_json` optionally stores Monday-to-Sunday duration overrides.
+- editing an existing schedule from a selected date closes the prior version the day before and creates a new version;
+- capacity calculations select the version and weekday duration applicable to each civil date;
+- planned Sleep remains Capacity data, while actual Sleep remains a separate wellbeing observation.
+
+Migration `0003_capacity_schedule_flexibility.sql` adds these fields without deleting or rewriting legacy records.
+
+## Optional Focus Timer module direction
+The Pomodoro-style timer is a separate optional module, not a hidden responsibility of Capacity or Logger.
+
+```text
+focus-timer
+├── countdown state
+├── pause/resume/cancel
+├── optional Goal/Activity context through public contracts
+└── publishes focus-timer.completed
+
+notification adapter
+└── in-app / sound / OS completion alert
+
+logger
+└── explicit user action may save elapsed timer output as Progress
+```
+
+Completion does not silently create Progress. Removing or replacing the timer must leave Logger, Goals, Progress, Capacity and Today functional. Replacing only the alert adapter must not disturb countdown state or any other module.
 
 ## Environment boundary
 Production and preview use separate Workers and separate D1 databases. Feature work follows:
