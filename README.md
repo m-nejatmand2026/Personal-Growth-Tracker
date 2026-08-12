@@ -33,3 +33,4 @@ This is intentionally single-user. Put the deployed hostname behind Cloudflare A
 - `settings`: schedule-level preferences
 
 Changing future targets does not rewrite historical session or energy records.
+
