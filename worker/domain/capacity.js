@@ -46,6 +46,28 @@ export function enumerateCivilDates(start, end) {
   return dates;
 }
 
+function normalizedDailyMinutes(commitment) {
+  const raw = commitment.daily_minutes ?? commitment.daily_minutes_json;
+  if (raw == null || raw === '') return null;
+
+  let values = raw;
+  if (typeof raw === 'string') {
+    try {
+      values = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!Array.isArray(values) || values.length !== 7) return null;
+  const normalized = values.map((value) => {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 0;
+    return Math.min(MINUTES_PER_DAY, Math.max(0, Math.round(number)));
+  });
+  return normalized;
+}
+
 export function commitmentApplies(commitment, dateText) {
   if (Number(commitment.active ?? 1) !== 1) return false;
   if (commitment.effective_from && dateText < commitment.effective_from) return false;
@@ -53,6 +75,13 @@ export function commitmentApplies(commitment, dateText) {
   const mask = Number(commitment.weekday_mask ?? 127);
   const bit = 1 << mondayIndex(dateText);
   return (mask & bit) !== 0;
+}
+
+export function commitmentMinutesForDate(commitment, dateText) {
+  if (!commitmentApplies(commitment, dateText)) return 0;
+  const perDay = normalizedDailyMinutes(commitment);
+  if (perDay) return perDay[mondayIndex(dateText)];
+  return Math.min(MINUTES_PER_DAY, Math.max(0, Math.round(Number(commitment.minutes) || 0)));
 }
 
 export function calculateCapacity(commitments, dateText, period = 'week') {
@@ -63,8 +92,8 @@ export function calculateCapacity(commitments, dateText, period = 'week') {
 
   for (const date of dates) {
     for (const commitment of commitments) {
-      if (!commitmentApplies(commitment, date)) continue;
-      const minutes = Math.max(0, Math.round(Number(commitment.minutes) || 0));
+      const minutes = commitmentMinutesForDate(commitment, date);
+      if (!minutes) continue;
       committedMinutes += minutes;
       const kind = commitment.kind || 'other';
       byKind[kind] = (byKind[kind] || 0) + minutes;
