@@ -19,6 +19,10 @@ A mobile-first, single-user PWA for daily energy check-ins, progress tracking, M
 
 For local development, apply the local migration first with `npm run db:migrate:local`, then run `npm run dev`.
 
+## Development workflow
+
+Changes should normally be made on a feature branch, tested with a Cloudflare non-production preview, and merged into `main` only after review. The `main` branch is the production deployment branch.
+
 ## Privacy
 
 This is intentionally single-user. Put the deployed hostname behind Cloudflare Access before entering personal records.
