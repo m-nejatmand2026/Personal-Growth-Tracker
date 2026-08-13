@@ -7,7 +7,9 @@ import { createLogger } from './features/logger.js';
 import { renderPlan } from './features/plan.js';
 import { renderProgress } from './features/progress.js';
 import { renderSettings } from './features/settings.js';
-import { focusTodayActivities, openEnergyEditor, renderToday } from './features/today.js';
+import { focusTodayActivities, renderToday } from './features/today.js';
+import { frontendModules } from './modules/catalog.js';
+import { createFrontendModuleRegistry } from './platform/module-registry.js';
 
 const PRIMARY_VIEWS = new Set(['today','plan','progress','insights']);
 const viewTitles = {
@@ -18,6 +20,8 @@ const viewTitles = {
   settings: 'Settings'
 };
 
+const moduleRegistry = createFrontendModuleRegistry(frontendModules);
+const todayIntentions = moduleRegistry.get('today-intentions');
 let lastPrimaryView = 'today';
 
 async function load() {
@@ -30,8 +34,32 @@ async function load() {
   await renderCurrentView();
 }
 
+async function renderTodayView() {
+  let intentionModel = { items: [] };
+  let intentionPanel = '';
+
+  if (todayIntentions) {
+    try {
+      intentionModel = await todayIntentions.load({ date: state.date });
+      intentionPanel = todayIntentions.render({ model: intentionModel, date: state.date });
+    } catch (error) {
+      intentionPanel = `<section class="os-section today-plan-section"><div class="today-plan-empty"><strong>Today&apos;s plan is temporarily unavailable.</strong><span>${error?.message || 'Other parts of Today still work.'}</span></div></section>`;
+    }
+  }
+
+  await renderToday({ reload: load, openLogger: logger.open, intentionPanel });
+
+  if (todayIntentions && intentionPanel && typeof todayIntentions.bind === 'function') {
+    todayIntentions.bind({
+      model: intentionModel,
+      openLogger: logger.open,
+      reload: load
+    });
+  }
+}
+
 async function renderCurrentView() {
-  if (state.view === 'today') await renderToday({ reload: load, openLogger: logger.open });
+  if (state.view === 'today') await renderTodayView();
   if (state.view === 'plan') await renderPlan({ reload: load });
   if (state.view === 'progress') await renderProgress({ reload: load });
   if (state.view === 'insights') await renderInsights();
@@ -53,10 +81,20 @@ async function showView(name) {
 }
 
 const logger = createLogger({
-  onSaved: load,
-  onEnergy: async () => {
-    await showView('today');
-    requestAnimationFrame(openEnergyEditor);
+  onIntent: async (input) => {
+    if (!todayIntentions) throw new Error('Today planning is unavailable.');
+    await todayIntentions.create(input);
+    await load();
+  },
+  onSaved: async ({ intentionId } = {}) => {
+    if (intentionId && todayIntentions) {
+      try {
+        await todayIntentions.setStatus(Number(intentionId), 'completed');
+      } catch (error) {
+        console.error('Progress saved, but Today item could not be completed.', error);
+      }
+    }
+    await load();
   }
 });
 
