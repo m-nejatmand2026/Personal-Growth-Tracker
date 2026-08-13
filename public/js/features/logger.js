@@ -36,6 +36,16 @@ function activityOptions(selectedKey = '') {
   return `<option value="">Choose activity</option>${items.map((item) => `<option value="${escapeHtml(item.key)}" ${item.key === selectedKey ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}`;
 }
 
+function subtypePlaceholder(activityKey = '') {
+  const item = activityCatalog().find((entry) => entry.key === activityKey);
+  const text = `${activityKey} ${item?.name || ''}`.toLowerCase();
+  if (/sport|calisthen|workout|fitness|gym|exercise/.test(text)) return 'e.g. Back, Abs, Push-ups';
+  if (/german|language/.test(text)) return 'e.g. Speaking, Grammar, Vocabulary';
+  if (/guitar|music/.test(text)) return 'e.g. Chords, Technique, Song practice';
+  if (/reading|book/.test(text)) return 'e.g. Book, Chapter, Notes';
+  return 'e.g. Focus, variation, subtask';
+}
+
 function repeatKey(item) {
   return [item.activity_key, item.subtype || '', Number(item.minutes) || 0].join('|');
 }
@@ -72,7 +82,22 @@ async function loadRecentRepeats() {
   }
 }
 
-export function createLogger({ onSaved, onEnergy }) {
+function modeCopy(mode) {
+  if (mode === 'planned') return {
+    button: 'Add to Today',
+    hint: 'This is an intention, not completed progress. You can start it or finish it later from Today.'
+  };
+  if (mode === 'in_progress') return {
+    button: 'Start now',
+    hint: 'Marks this item as in progress. It does not record completed minutes yet.'
+  };
+  return {
+    button: 'Save completed progress',
+    hint: 'Records what actually happened. Change the minutes first if the real duration was different.'
+  };
+}
+
+export function createLogger({ onSaved, onIntent }) {
   const host = $('#loggerHost');
   if (!host) return { open() {}, close() {} };
 
@@ -92,6 +117,24 @@ export function createLogger({ onSaved, onEnergy }) {
     if (!exists) select.add(new Option(item.activity_name || item.activity_key, item.activity_key));
   }
 
+  function updateSubtypeHint() {
+    const input = $('#loggerSubtype');
+    const select = $('#loggerActivity');
+    if (input && select) input.placeholder = subtypePlaceholder(select.value);
+  }
+
+  function currentMode() {
+    return host.querySelector('input[name="loggerEntryMode"]:checked')?.value || 'done';
+  }
+
+  function updateModeUi() {
+    const copy = modeCopy(currentMode());
+    const button = $('#loggerSaveButton');
+    const hint = $('#loggerModeHint');
+    if (button) button.textContent = copy.button;
+    if (hint) hint.textContent = copy.hint;
+  }
+
   function fill(item = {}) {
     if (item.activity_key) ensureActivityOption(item);
     if ($('#loggerActivity')) $('#loggerActivity').value = item.activity_key || '';
@@ -99,6 +142,7 @@ export function createLogger({ onSaved, onEnergy }) {
     if ($('#loggerDuration')) $('#loggerDuration').value = Number(item.minutes || item.duration || 25);
     if ($('#loggerDate')) $('#loggerDate').value = item.occurred_on || state.date;
     if ($('#loggerNote')) $('#loggerNote').value = item.note || '';
+    updateSubtypeHint();
   }
 
   function bindRepeatButtons() {
@@ -113,14 +157,15 @@ export function createLogger({ onSaved, onEnergy }) {
   }
 
   function render(prefill = {}) {
+    const selectedMode = ['planned','in_progress','done'].includes(prefill.entryMode) ? prefill.entryMode : 'done';
     host.innerHTML = `
       <div class="logger-backdrop" data-logger-close></div>
       <section class="logger-panel" role="dialog" aria-modal="true" aria-labelledby="loggerTitle">
         <div class="logger-head">
           <div>
             <p class="eyebrow">Universal logger</p>
-            <h2 id="loggerTitle">Log progress</h2>
-            <p>Exact time, explicit save. Nothing is recorded until you choose Save progress.</p>
+            <h2 id="loggerTitle">Plan it, do it, or finish it</h2>
+            <p>Use the same entry for something you intend to do, something you are doing now, or completed progress.</p>
           </div>
           <button class="logger-close" type="button" data-logger-close aria-label="Close logger">×</button>
         </div>
@@ -136,6 +181,25 @@ export function createLogger({ onSaved, onEnergy }) {
         </section>
 
         <form id="loggerForm" class="logger-form">
+          <fieldset class="logger-mode-fieldset">
+            <legend>Use this entry as</legend>
+            <div class="logger-mode-grid">
+              <label class="logger-mode-choice">
+                <input type="radio" name="loggerEntryMode" value="planned" ${selectedMode === 'planned' ? 'checked' : ''}>
+                <span>Plan today</span>
+              </label>
+              <label class="logger-mode-choice">
+                <input type="radio" name="loggerEntryMode" value="in_progress" ${selectedMode === 'in_progress' ? 'checked' : ''}>
+                <span>Doing now</span>
+              </label>
+              <label class="logger-mode-choice">
+                <input type="radio" name="loggerEntryMode" value="done" ${selectedMode === 'done' ? 'checked' : ''}>
+                <span>Done</span>
+              </label>
+            </div>
+            <p id="loggerModeHint" class="logger-mode-hint">${escapeHtml(modeCopy(selectedMode).hint)}</p>
+          </fieldset>
+
           <label class="logger-field">
             <span>Activity</span>
             <select id="loggerActivity" required>${activityOptions(prefill.activityKey || prefill.activity_key || '')}</select>
@@ -143,7 +207,7 @@ export function createLogger({ onSaved, onEnergy }) {
 
           <label class="logger-field">
             <span>Subtype / focus <small>optional for this beta</small></span>
-            <input id="loggerSubtype" maxlength="80" placeholder="e.g. Speaking, Strength, Deep work" />
+            <input id="loggerSubtype" maxlength="80" placeholder="${escapeHtml(subtypePlaceholder(prefill.activityKey || prefill.activity_key || ''))}" />
           </label>
 
           <div class="logger-field duration-field">
@@ -167,8 +231,7 @@ export function createLogger({ onSaved, onEnergy }) {
             <textarea id="loggerNote" maxlength="500" placeholder="Anything worth remembering?"></textarea>
           </label>
 
-          <button class="logger-save" type="submit">Save progress</button>
-          <button class="logger-secondary" id="loggerEnergyShortcut" type="button">Energy check-in instead</button>
+          <button class="logger-save" id="loggerSaveButton" type="submit">${escapeHtml(modeCopy(selectedMode).button)}</button>
         </form>
       </section>
     `;
@@ -189,37 +252,57 @@ export function createLogger({ onSaved, onEnergy }) {
         $('#loggerDuration').focus();
       });
     });
-
-    $('#loggerEnergyShortcut')?.addEventListener('click', async () => {
-      close();
-      await onEnergy?.();
-    });
+    host.querySelectorAll('input[name="loggerEntryMode"]').forEach((input) => input.addEventListener('change', updateModeUi));
+    $('#loggerActivity')?.addEventListener('change', updateSubtypeHint);
 
     $('#loggerForm')?.addEventListener('submit', async (event) => {
       event.preventDefault();
       const activityKey = $('#loggerActivity').value;
       const minutes = Math.round(Number($('#loggerDuration').value || 0));
       const occurredOn = $('#loggerDate').value;
+      const subtype = $('#loggerSubtype').value.trim() || null;
+      const note = $('#loggerNote').value.trim() || null;
+      const mode = currentMode();
       if (!activityKey) return toast('Choose an activity');
       if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) return toast('Duration must be 1–1440 minutes');
       if (!occurredOn) return toast('Choose a date');
 
       try {
-        await api('/api/session', {
+        if (mode === 'planned' || mode === 'in_progress') {
+          await onIntent?.({
+            occurred_on: occurredOn,
+            activity_key: activityKey,
+            subtype,
+            planned_minutes: minutes,
+            note,
+            status: mode
+          });
+          toast(mode === 'in_progress' ? 'Added to Today as in progress' : 'Added to Today');
+          close();
+          return;
+        }
+
+        const response = await api('/api/session', {
           method: 'POST',
           body: JSON.stringify({
             occurred_on: occurredOn,
             activity_key: activityKey,
             minutes,
-            subtype: $('#loggerSubtype').value.trim() || null,
-            note: $('#loggerNote').value.trim() || null
+            subtype,
+            note
           })
         });
         toast('Progress saved');
         close();
-        await onSaved?.();
+        await onSaved?.({
+          intentionId: prefill.intentionId || null,
+          sessionId: response.id || null,
+          activity_key: activityKey,
+          minutes,
+          occurred_on: occurredOn
+        });
       } catch (error) {
-        toast(error.message || 'Could not save progress');
+        toast(error.message || 'Could not save');
       }
     });
   }
