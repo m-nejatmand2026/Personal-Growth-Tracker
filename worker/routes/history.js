@@ -1,6 +1,7 @@
 import { json } from '../core/http.js';
 import { resolveProfileId } from '../core/profile.js';
 import { progressContractV1 } from '../modules/progress/public.js';
+import { wellbeingContractV1 } from '../modules/wellbeing/public.js';
 
 export async function historyRoute({ request, url, env }) {
   const profileId = resolveProfileId(request);
@@ -8,9 +9,11 @@ export async function historyRoute({ request, url, env }) {
   const to = url.searchParams.get('to') || new Date().toISOString().slice(0, 10);
 
   const [energy, progress] = await Promise.all([
-    env.DB.prepare(
-      'SELECT * FROM energy_logs WHERE occurred_on BETWEEN ? AND ? ORDER BY occurred_on DESC'
-    ).bind(from, to).all(),
+    wellbeingContractV1.listEnergy(
+      env.DB,
+      profileId,
+      { from, to, limit: 300 }
+    ),
 
     progressContractV1.listHistory(
       env.DB,
@@ -25,7 +28,7 @@ export async function historyRoute({ request, url, env }) {
   ]);
 
   return json({
-    energy: energy.results,
+    energy,
     sessions: progress
   });
 }
