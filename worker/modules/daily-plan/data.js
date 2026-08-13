@@ -80,3 +80,23 @@ export async function deleteDailyPlanItem(DB, profileId, id) {
   return DB.prepare('DELETE FROM daily_plan_items WHERE profile_id=? AND id=?')
     .bind(profileId, id).run();
 }
+
+export async function exportDailyPlanData(
+  DB,
+  profileId
+) {
+  const { results } =
+    await DB.prepare(`
+      SELECT *
+      FROM daily_plan_items
+      WHERE profile_id=?
+      ORDER BY
+        planned_for,
+        sort_order,
+        id
+    `)
+      .bind(profileId)
+      .all();
+
+  return results;
+}

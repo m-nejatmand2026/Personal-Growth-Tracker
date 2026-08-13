@@ -1,4 +1,8 @@
-import { bindGoalsPanel, goalsPanelHtml, loadGoalsModel } from '../../features/plan/goals.js';
+import {
+  bindGoalsPanel,
+  goalsPanelHtml,
+  loadGoalsModel
+} from './ui.js';
 
 export const goalsModule = Object.freeze({
   id: 'goals',
@@ -12,7 +16,10 @@ export const goalsModule = Object.freeze({
   render({ model, models }) {
     return goalsPanelHtml(model, models.areas?.areas || []);
   },
-  bind({ model, models, reload }) {
-    bindGoalsPanel(model, models.areas?.areas || [], { reloadPlatform: reload });
+  bind({ model, reload }) {
+    bindGoalsPanel(
+      model,
+      { reloadPlatform: reload }
+    );
   }
 });

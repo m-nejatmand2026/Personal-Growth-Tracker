@@ -1,4 +1,8 @@
-import { bindCapacityPanel, capacityPanelHtml, loadCapacityModel } from '../../features/plan/capacity.js';
+import {
+  bindCapacityPanel,
+  capacityPanelHtml,
+  loadCapacityModel
+} from './ui.js';
 
 export const capacityModule = Object.freeze({
   id: 'capacity',

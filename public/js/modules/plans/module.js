@@ -1,4 +1,8 @@
-import { bindBudgetPanel, budgetPanelHtml, loadBudgetModel } from '../../features/plan/budgets.js';
+import {
+  bindBudgetPanel,
+  budgetPanelHtml,
+  loadBudgetModel
+} from './ui.js';
 
 export const plansModule = Object.freeze({
   id: 'plans',

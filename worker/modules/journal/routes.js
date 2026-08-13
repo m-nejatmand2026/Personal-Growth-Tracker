@@ -1,13 +1,13 @@
-import { bad, json, readJsonBody } from '../core/http.js';
-import { resolveProfileId } from '../core/profile.js';
-import { isJournalDate, normalizeJournalInput, normalizeJournalPatch } from '../domain/journal.js';
+import { bad, json, readJsonBody } from '../../core/http.js';
+import { resolveProfileId } from '../../core/profile.js';
+import { isJournalDate, normalizeJournalInput, normalizeJournalPatch } from './domain.js';
 import {
   createJournalEntry,
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
   updateJournalEntry
-} from '../data/journal.js';
+} from './data.js';
 
 function entryId(url) {
   const id = Number(url.pathname.split('/').pop());

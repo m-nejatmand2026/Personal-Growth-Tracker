@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { canTransitionDailyPlanStatus, normalizeDailyPlanInput } from '../worker/domain/daily-plan.js';
+import { canTransitionDailyPlanStatus, normalizeDailyPlanInput } from '../worker/modules/daily-plan/domain.js';
 const migration=await readFile(new URL('../migrations/0004_daily_plan.sql',import.meta.url),'utf8');
-const data=await readFile(new URL('../worker/data/daily-plan.js',import.meta.url),'utf8');
+const data=await readFile(new URL('../worker/modules/daily-plan/data.js',import.meta.url),'utf8');
 const workerModule=await readFile(new URL('../worker/modules/daily-plan/module.js',import.meta.url),'utf8');
 const frontendModule=await readFile(new URL('../public/js/modules/daily-plan/module.js',import.meta.url),'utf8');
 const logger=await readFile(new URL('../public/js/features/logger.js',import.meta.url),'utf8');

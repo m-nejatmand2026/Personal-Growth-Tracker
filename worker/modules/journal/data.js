@@ -47,3 +47,20 @@ export async function updateJournalEntry(DB, profileId, id, input) {
 export async function deleteJournalEntry(DB, profileId, id) {
   return DB.prepare('DELETE FROM journal_entries WHERE profile_id=? AND id=?').bind(profileId, id).run();
 }
+
+export async function exportJournalData(
+  DB,
+  profileId
+) {
+  const { results } =
+    await DB.prepare(`
+      SELECT *
+      FROM journal_entries
+      WHERE profile_id=?
+      ORDER BY occurred_on,id
+    `)
+      .bind(profileId)
+      .all();
+
+  return results;
+}

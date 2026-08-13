@@ -4,13 +4,15 @@ import {
   createAreaRoute,
   listAreasRoute,
   updateAreaRoute
-} from '../../routes/areas.js';
+} from './routes.js';
 
 export const areasModule = Object.freeze({
   id: 'areas',
   contractVersion: 1,
   dependsOn: [],
   defaultEnabled: true,
+  ownsTables: Object.freeze(['area_templates', 'areas']),
+  compatibilityTables: Object.freeze([]),
   routes: Object.freeze([
     { method: 'GET', pattern: '/api/v1/area-templates', handler: areaTemplatesRoute },
     { method: 'GET', pattern: '/api/v1/areas', handler: listAreasRoute },

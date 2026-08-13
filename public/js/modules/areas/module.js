@@ -1,4 +1,8 @@
-import { areasPanelHtml, bindAreasPanel, loadAreasModel } from '../../features/plan/areas.js';
+import {
+  areasPanelHtml,
+  bindAreasPanel,
+  loadAreasModel
+} from './ui.js';
 
 export const areasModule = Object.freeze({
   id: 'areas',

@@ -1,11 +1,11 @@
-import { bad, json, readJsonBody } from '../core/http.js';
-import { resolveProfileId } from '../core/profile.js';
+import { bad, json, readJsonBody } from '../../core/http.js';
+import { resolveProfileId } from '../../core/profile.js';
 import {
   canTransitionDailyPlanStatus,
   isDateKey,
   normalizeDailyPlanInput,
   normalizeDailyPlanPatch
-} from '../domain/daily-plan.js';
+} from './domain.js';
 import {
   createDailyPlanItem,
   deleteDailyPlanItem,
@@ -13,7 +13,7 @@ import {
   listDailyPlanItems,
   updateDailyPlanItem,
   updateDailyPlanStatus
-} from '../data/daily-plan.js';
+} from './data.js';
 
 function itemId(url) {
   const id = Number(url.pathname.split('/').pop());

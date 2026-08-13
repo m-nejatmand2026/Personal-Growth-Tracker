@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { normalizeJournalInput, normalizeJournalTags } from '../worker/domain/journal.js';
+import { normalizeJournalInput, normalizeJournalTags } from '../worker/modules/journal/domain.js';
 const migration=await readFile(new URL('../migrations/0005_journal.sql',import.meta.url),'utf8');
-const route=await readFile(new URL('../worker/routes/journal.js',import.meta.url),'utf8');
+const route=await readFile(new URL('../worker/modules/journal/routes.js',import.meta.url),'utf8');
 const workerModule=await readFile(new URL('../worker/modules/journal/module.js',import.meta.url),'utf8');
 const frontendModule=await readFile(new URL('../public/js/modules/journal/module.js',import.meta.url),'utf8');
 const prompts=await readFile(new URL('../public/js/modules/journal/prompts.js',import.meta.url),'utf8');

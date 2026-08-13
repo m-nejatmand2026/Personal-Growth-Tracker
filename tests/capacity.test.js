@@ -7,7 +7,7 @@ import {
   monthBounds,
   periodBounds,
   scaleWeeklyMinutes
-} from '../worker/domain/capacity.js';
+} from '../worker/modules/capacity/domain.js';
 
 const personalCommitments = [
   { kind: 'sleep', minutes: 480, weekday_mask: 127, active: 1 },

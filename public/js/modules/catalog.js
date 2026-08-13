@@ -1,3 +1,4 @@
+import { activitiesModule } from './activities/module.js';
 import { areasModule } from './areas/module.js';
 import { capacityModule } from './capacity/module.js';
 import { dailyPlanModule } from './daily-plan/module.js';
@@ -9,6 +10,7 @@ import { plansModule } from './plans/module.js';
 export const frontendModules = Object.freeze([
   areasModule,
   goalsModule,
+  activitiesModule,
   plansModule,
   capacityModule,
   dailyPlanModule,
