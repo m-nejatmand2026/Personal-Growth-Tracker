@@ -100,7 +100,24 @@ function modeCopy(mode, date) {
   };
 }
 
-export function createLogger({ onSaved, onIntent }) {
+async function savePlanIntent(input) {
+  const response = await api('/api/v1/daily-plan', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  });
+  return response.item;
+}
+
+async function completeDailyPlanItem(id) {
+  if (!id) return null;
+  const response = await api(`/api/v1/daily-plan/${Number(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status: 'completed' })
+  });
+  return response.item;
+}
+
+export function createLogger({ onSaved } = {}) {
   const host = $('#loggerHost');
   if (!host) return { open() {}, close() {} };
 
@@ -186,12 +203,10 @@ export function createLogger({ onSaved, onIntent }) {
           </div>
           <button class="logger-close" type="button" data-logger-close aria-label="Close logger">×</button>
         </div>
-
         <section class="logger-repeats" aria-labelledby="recentRepeatsTitle">
           <div class="logger-section-head"><h3 id="recentRepeatsTitle">Recent repeats</h3><span>Tap to prefill</span></div>
           <div class="repeat-row" id="loggerRecentRepeats">${repeatButtons(repeats)}</div>
         </section>
-
         <form id="loggerForm" class="logger-form">
           <fieldset class="logger-mode-fieldset">
             <legend>What does this mean right now?</legend>
@@ -202,7 +217,6 @@ export function createLogger({ onSaved, onIntent }) {
             </div>
             <p id="loggerModeHint" class="logger-mode-hint">${escapeHtml(modeCopy(mode, date).hint)}</p>
           </fieldset>
-
           <label class="logger-field"><span>Activity</span><select id="loggerActivity" required>${activityOptions(prefill.activityKey || prefill.activity_key || '')}</select></label>
           <label class="logger-field"><span>Subtype / focus <small>optional</small></span><input id="loggerSubtype" maxlength="80" placeholder="${escapeHtml(subtypePlaceholder())}"></label>
           <div class="logger-field duration-field">
@@ -254,7 +268,7 @@ export function createLogger({ onSaved, onIntent }) {
 
       try {
         if (entryMode === 'planned' || entryMode === 'in_progress') {
-          await onIntent?.({
+          await savePlanIntent({
             planned_for: occurredOn,
             title: subtype || activityLabel,
             activity_key: activityKey,
@@ -267,6 +281,7 @@ export function createLogger({ onSaved, onIntent }) {
           });
           toast(entryMode === 'in_progress' ? 'Added as doing now' : `Added to ${dayLabel(occurredOn)}`);
           close();
+          await onSaved?.({ kind: 'plan-intent' });
           return;
         }
 
@@ -281,10 +296,14 @@ export function createLogger({ onSaved, onIntent }) {
           })
         });
 
+        if (prefill.dailyPlanId) {
+          await completeDailyPlanItem(prefill.dailyPlanId);
+        }
+
         toast('Progress saved');
         close();
         await onSaved?.({
-          dailyPlanId: prefill.dailyPlanId || null,
+          kind: 'progress',
           progressId: response.item?.id || null,
           activity_key: activityKey,
           minutes,
