@@ -55,7 +55,7 @@ function editorHtml(item, defaultDate, todayDate) {
 
 export const dailyPlanModule = Object.freeze({
   id: 'daily-plan', contractVersion: 1, dependsOn: [], defaultEnabled: true,
-  publishes: Object.freeze(['daily-plan.completion-requested']),
+  publishes: Object.freeze(['daily-plan.completion-selected']),
   subscribes: Object.freeze([]),
   slots: Object.freeze([{ name: 'today-after-capacity', order: 10 }]),
 
@@ -95,6 +95,6 @@ export const dailyPlanModule = Object.freeze({
     $$('[data-plan-add]').forEach(button=>button.addEventListener('click',()=>openEditor(null,button.dataset.planAdd)));
     $$('[data-plan-edit]').forEach(button=>button.addEventListener('click',()=>{const item=allItems.find(x=>Number(x.id)===Number(button.dataset.planEdit));if(item)openEditor(item,item.planned_for);}));
     $$('[data-plan-start]').forEach(button=>button.addEventListener('click',async()=>{try{await this.setStatus(Number(button.dataset.planStart),'in_progress');toast('Marked as doing now');await reload?.();}catch(error){toast(error.message||'Could not start this item');}}));
-    $$('[data-plan-done]').forEach(button=>button.addEventListener('click',async()=>{const item=allItems.find(x=>Number(x.id)===Number(button.dataset.planDone));if(!item)return;if(item.activity_key){void events?.publish('daily-plan.completion-requested',{activity_key:item.activity_key,activity_name:item.activity_label||item.activity_key,subtype:item.subtype||'',minutes:Number(item.planned_minutes)||25,date:item.planned_for,note:item.note||'',entryMode:'done',dailyPlanId:item.id});return;}try{await this.setStatus(item.id,'completed');toast('Marked done');await reload?.();}catch(error){toast(error.message||'Could not complete this item');}}));
+    $$('[data-plan-done]').forEach(button=>button.addEventListener('click',async()=>{const item=allItems.find(x=>Number(x.id)===Number(button.dataset.planDone));if(!item)return;if(item.activity_key){void events?.publish('daily-plan.completion-selected',{activity_key:item.activity_key,activity_name:item.activity_label||item.activity_key,subtype:item.subtype||'',minutes:Number(item.planned_minutes)||25,date:item.planned_for,note:item.note||'',entryMode:'done',dailyPlanId:item.id});return;}try{await this.setStatus(item.id,'completed');toast('Marked done');await reload?.();}catch(error){toast(error.message||'Could not complete this item');}}));
   }
 });
