@@ -14,23 +14,11 @@ export const wellbeingModule = Object.freeze({
     'sleep_logs_v1',
     'day_context_logs_v1'
   ]),
-  compatibilityTables: Object.freeze(['energy_logs']),
+  compatibilityTables: Object.freeze([]),
   routes: Object.freeze([
-    {
-      method: 'GET',
-      pattern: '/api/v1/wellbeing/day',
-      handler: wellbeingDayRoute
-    },
-    {
-      method: 'GET',
-      pattern: '/api/v1/wellbeing/energy',
-      handler: listEnergyRoute
-    },
-    {
-      method: 'POST',
-      pattern: '/api/v1/wellbeing/energy',
-      handler: recordEnergyRoute
-    }
+    { method: 'GET', pattern: '/api/v1/wellbeing/day', handler: wellbeingDayRoute },
+    { method: 'GET', pattern: '/api/v1/wellbeing/energy', handler: listEnergyRoute },
+    { method: 'POST', pattern: '/api/v1/wellbeing/energy', handler: recordEnergyRoute }
   ]),
   publishes: Object.freeze(['wellbeing.energy-recorded']),
   subscribes: Object.freeze([])
