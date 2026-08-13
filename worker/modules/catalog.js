@@ -6,6 +6,7 @@ import { goalsModule } from './goals/module.js';
 import { journalModule } from './journal/module.js';
 import { plansModule } from './plans/module.js';
 import { progressModule } from './progress/module.js';
+import { wellbeingModule } from './wellbeing/module.js';
 
 // Composition root: this is the one intentional place where the Worker knows
 // which Version 1 business modules are installed. Core/platform code must not
@@ -18,5 +19,6 @@ export const platformModules = Object.freeze([
   capacityModule,
   dailyPlanModule,
   journalModule,
-  progressModule
+  progressModule,
+  wellbeingModule
 ]);
