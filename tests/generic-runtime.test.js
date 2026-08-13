@@ -14,7 +14,7 @@ async function exists(url) {
 const planCompatibility = await readFile(new URL('../public/js/features/plan/legacy.js', import.meta.url), 'utf8');
 const momenteRoute = await readFile(new URL('../worker/routes/momente.js', import.meta.url), 'utf8');
 const roadmapRoute = await readFile(new URL('../worker/routes/roadmap.js', import.meta.url), 'utf8');
-const bootstrap = await readFile(new URL('../worker/data/bootstrap.js', import.meta.url), 'utf8');
+const bootstrap = await readFile(new URL('../worker/compatibility/legacy-beta/bootstrap.js', import.meta.url), 'utf8');
 
 test('Plan compatibility surface contains no founder-specific roadmap or course model', () => {
   assert.match(planCompatibility, /Areas and Goals are the source of truth/);
@@ -29,11 +29,12 @@ test('Founder-specific mutation endpoints are explicitly retired', () => {
   }
 });
 
-test('Founder seed stays out of bootstrap runtime payload construction', () => {
+test('Founder seed stays out of bootstrap runtime payload construction', async () => {
   assert.doesNotMatch(bootstrap, /momente_lessons|roadmap_items|weekly_targets|getTargets/);
   assert.match(bootstrap, /targets:\s*\[\]/);
   assert.match(bootstrap, /roadmap:\s*\[\]/);
   assert.match(bootstrap, /lessons:\s*\[\]/);
+  assert.equal(await exists(new URL('../worker/data/bootstrap.js', import.meta.url)), false);
 });
 
 test('Unused legacy Week and History frontend screens are removed', async () => {
