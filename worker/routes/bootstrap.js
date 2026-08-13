@@ -1,6 +1,6 @@
 import { json } from '../core/http.js';
 import { resolveProfileId } from '../core/profile.js';
-import { getBootstrap } from '../data/bootstrap.js';
+import { getLegacyBootstrap } from '../compatibility/legacy-beta/bootstrap.js';
 
 export async function bootstrapRoute({ request, url, env }) {
   const date =
@@ -10,7 +10,7 @@ export async function bootstrapRoute({ request, url, env }) {
   const profileId = resolveProfileId(request);
 
   return json(
-    await getBootstrap(
+    await getLegacyBootstrap(
       env.DB,
       profileId,
       date
