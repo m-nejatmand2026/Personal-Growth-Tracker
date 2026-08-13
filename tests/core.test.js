@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { addDays, todayInTimeZone, weekStart } from '../worker/core/dates.js';
-import { energyScore, valenceScore } from '../public/js/config/energy.js';
+import { energyScore, valenceScore } from '../public/js/modules/wellbeing/module.js';
 import { formatMinutes } from '../public/js/core/format.js';
 
 test('weekStart uses Monday as the start of week', () => {

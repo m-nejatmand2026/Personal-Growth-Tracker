@@ -11,33 +11,13 @@ export const activitiesModule = Object.freeze({
   dependsOn: ['goals'],
   defaultEnabled: true,
   ownsTables: Object.freeze(['goal_activities']),
-  compatibilityTables: Object.freeze(['activities']),
+  compatibilityTables: Object.freeze([]),
   routes: Object.freeze([
-    {
-      method: 'GET',
-      pattern: '/api/v1/activities',
-      handler: listActivitiesRoute
-    },
-    {
-      method: 'POST',
-      pattern: '/api/v1/activities',
-      handler: createActivityRoute
-    },
-    {
-      method: 'PUT',
-      pattern: /^\/api\/v1\/activities\/\d+$/,
-      handler: updateActivityRoute
-    },
-    {
-      method: 'DELETE',
-      pattern: /^\/api\/v1\/activities\/\d+$/,
-      handler: archiveActivityRoute
-    }
+    { method: 'GET', pattern: '/api/v1/activities', handler: listActivitiesRoute },
+    { method: 'POST', pattern: '/api/v1/activities', handler: createActivityRoute },
+    { method: 'PUT', pattern: /^\/api\/v1\/activities\/\d+$/, handler: updateActivityRoute },
+    { method: 'DELETE', pattern: /^\/api\/v1\/activities\/\d+$/, handler: archiveActivityRoute }
   ]),
-  publishes: Object.freeze([
-    'activity.created',
-    'activity.updated',
-    'activity.archived'
-  ]),
+  publishes: Object.freeze(['activity.created', 'activity.updated', 'activity.archived']),
   subscribes: Object.freeze([])
 });

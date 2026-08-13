@@ -8,17 +8,9 @@ const todayRegistry = createFrontendModuleRegistry(frontendModules);
 const capacity = todayRegistry.get('capacity');
 const progress = todayRegistry.get('progress');
 const wellbeing = todayRegistry.get('wellbeing');
-const TODAY_COMPOSITION_COMPATIBILITY = Object.freeze([
-  '/api/v1/capacity?date=',
-  'Actual · Minimum · Target',
-  'Activity feed'
-]);
-void TODAY_COMPOSITION_COMPATIBILITY;
 
 function metricHtml(metric) {
-  const value = metric.minutes == null
-    ? escapeHtml(metric.value ?? '—')
-    : formatMinutes(metric.minutes);
+  const value = metric.minutes == null ? escapeHtml(metric.value ?? '—') : formatMinutes(metric.minutes);
   return `<div><span>${escapeHtml(metric.label || '')}</span><strong>${value}</strong></div>`;
 }
 
@@ -47,59 +39,31 @@ function renderModel(model) {
 }
 
 export function focusTodayActivities() {
-  document.querySelector('[data-today-widget="progress.direction"]')?.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start'
-  });
+  document.querySelector('[data-today-widget="progress.direction"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-export async function renderToday({
-  reload,
-  openLogger,
-  dailyPlanPanel = '',
-  journalPreview = ''
-} = {}) {
+export async function renderToday({ reload, openLogger, dailyPlanPanel = '', journalPreview = '' } = {}) {
   const root = $('#todayView');
   if (!root) return;
-
   const date = state.date;
   let capacityModel = null;
   let wellbeingModel = null;
   let wellbeingState = '';
   let wellbeingDetails = '';
 
-  if (capacity) {
-    try {
-      capacityModel = await capacity.loadToday({ date });
-    } catch {
-      capacityModel = null;
-    }
-  }
-
+  if (capacity) { try { capacityModel = await capacity.loadToday({ date }); } catch { capacityModel = null; } }
   if (wellbeing) {
     try {
       wellbeingModel = await wellbeing.getDay(date);
       state.selectedEnergy = wellbeingModel.energy || null;
       wellbeingState = wellbeing.renderTodayState({ model: wellbeingModel });
       wellbeingDetails = wellbeing.renderTodayDetails({ model: wellbeingModel, date });
-    } catch {
-      wellbeingModel = null;
-    }
+    } catch { wellbeingModel = null; }
   }
 
-  const directionModel = progress?.todayDirection({
-    items: state.data.week || []
-  }) || null;
-
-  const recentModel = progress?.todayRecent({
-    items: state.data.sessions || []
-  }) || null;
-
+  const directionModel = progress?.todayDirection({ items: state.data.week || [] }) || null;
+  const recentModel = progress?.todayRecent({ items: state.data.sessions || [] }) || null;
   root.innerHTML = `<section class="today-command"><div><p class="eyebrow">${formatDateLabel(date)}</p><h2>Your daily command center</h2><p>See your state, your time and what you intend to do. Record what actually happens.</p></div><button type="button" class="command-log-btn" id="todayLogButton"><span>＋</span> Log or plan</button></section>${wellbeingState}${renderModel(capacityModel)}${dailyPlanPanel}${renderModel(directionModel)}${renderModel(recentModel)}${journalPreview}${wellbeingDetails}`;
-
   $('#todayLogButton')?.addEventListener('click', () => void openLogger?.());
-
-  if (wellbeing && wellbeingModel) {
-    wellbeing.bindToday({ model: wellbeingModel, date, reload });
-  }
+  if (wellbeing && wellbeingModel) wellbeing.bindToday({ model: wellbeingModel, date, reload });
 }
