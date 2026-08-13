@@ -1,21 +1,59 @@
-import { api } from '../core/api.js';
-import { $, $$, escapeHtml } from '../core/dom.js';
+import { $, escapeHtml } from '../core/dom.js';
 import { formatDateLabel, formatMinutes } from '../core/format.js';
-import { state } from '../core/state.js';
-import { toast } from '../core/toast.js';
-import { ENERGY, energyClass, energyScore, valenceScore } from '../config/energy.js';
 
-function energyMap(){return `<div class="energy-axis high">↑ High Energy</div><div class="valence"><span>← Negative Feeling</span><span>Positive Feeling →</span></div><div class="energy-grid">${ENERGY.flatMap((row,r)=>row.map((label,c)=>`<button class="energy-cell ${energyClass(r,c)} ${state.selectedEnergy?.row_idx===r&&state.selectedEnergy?.col_idx===c?'selected':''}" data-energy-r="${r}" data-energy-c="${c}">${label}</button>`)).join('')}</div><div class="energy-axis low">↓ Low Energy</div>`}
-function planLoadLabel(s){if(!s)return'Not available';if(s.impossible_by_minutes)return'Over capacity';const x=Number(s.plan_load||0);if(x<=.5)return'Spacious';if(x<=.7)return'Balanced';if(x<=.85)return'Full';if(x<=1)return'Very full';return'Over capacity'}
-function loadPercent(s){if(!s||s.plan_load==null)return 0;return Math.max(0,Math.min(100,Math.round(Number(s.plan_load)*100)))}
-function todayGoalItems(){return(state.data.week||[]).slice(0,4)}
-function goalCard(item){const target=Math.max(0,Number(item.target_minutes)||0),minimum=Math.max(0,Number(item.minimum_minutes)||0),actual=Math.max(0,Number(item.actual_minutes)||0),pct=target?Math.min(100,Math.round(actual/target*100)):0,minimumPct=target?Math.min(100,Math.round(minimum/target*100)):0,key=item.key||'';const status=minimum?actual>=minimum?'Minimum reached this week':`${formatMinutes(Math.max(0,minimum-actual))} to good-enough minimum`:'No minimum set for this plan';return `<article class="today-goal-card"><div class="goal-card-top"><div><span class="goal-dot" aria-hidden="true"></span><strong>${escapeHtml(item.name)}</strong></div><button type="button" data-log-goal="${escapeHtml(key)}">Log</button></div><div class="goal-progress-copy"><span>${formatMinutes(actual)} actual</span><span>${formatMinutes(minimum)} minimum</span><span>${formatMinutes(target)} target</span></div><div class="goal-track" aria-label="${escapeHtml(item.name)} ${pct}% of target"><span style="width:${pct}%"></span><i style="left:${minimumPct}%"></i></div><small>${status}</small></article>`}
-function dailyStateHtml(selected){return `<section class="daily-state-grid" aria-label="Daily state"><button class="state-card energy-state" type="button" id="openEnergyCheckin"><span class="state-icon" aria-hidden="true">✦</span><div><span>Energy</span><strong>${selected?escapeHtml(selected.label):'Check in'}</strong><small>${selected?'Tap to update':'How do you feel?'}</small></div></button><div class="state-card"><span class="state-icon sleep-icon" aria-hidden="true">◐</span><div><span>Sleep actual</span><strong>Not logged</strong><small>Sleep logging is the next wellbeing slice</small></div></div><div class="state-card"><span class="state-icon context-icon" aria-hidden="true">◇</span><div><span>Day context</span><strong>Not logged</strong><small>Travel, social, recovery and more</small></div></div></section>`}
-function capacityHtml(c){if(!c)return `<section class="time-reality-card"><div><span class="section-kicker">Time reality</span><h3>Capacity is temporarily unavailable</h3><p>Your goals and logging still work.</p></div></section>`;const pct=loadPercent(c);return `<section class="time-reality-card"><div class="time-reality-head"><div><span class="section-kicker">Time reality today</span><h3>${planLoadLabel(c)}</h3><p>Goals use ${pct}% of currently flexible time.</p></div><div class="capacity-ring" style="--capacity-pct:${pct}" aria-label="Plan load ${pct}%"><strong>${pct}%</strong><span>plan load</span></div></div><div class="time-reality-stats"><div><span>Total</span><strong>${formatMinutes(c.total_minutes)}</strong></div><div><span>Committed</span><strong>${formatMinutes(c.committed_minutes)}</strong></div><div><span>Flexible</span><strong>${formatMinutes(c.flexible_minutes)}</strong></div><div><span>Goals</span><strong>${formatMinutes(c.planned_goal_minutes)}</strong></div></div></section>`}
-function recentActivityHtml(items){if(!items.length)return'<div class="empty activity-empty">Nothing logged yet today.</div>';return items.slice(0,6).map((x,i)=>`<div class="activity-feed-row"><span class="activity-symbol" aria-hidden="true">✓</span><div><strong>${escapeHtml(x.activity_name||x.activity_key)}</strong>${x.subtype?`<small>${escapeHtml(x.subtype)}</small>`:'<small>Progress record</small>'}</div><span class="activity-duration">${formatMinutes(x.minutes)}</span><button type="button" data-repeat-today="${i}">Repeat</button></div>`).join('')}
-export function openEnergyEditor(){const d=$('#energyDetails');if(d)d.open=true;d?.scrollIntoView({behavior:'smooth',block:'start'})}
-export function focusTodayActivities(){$('#todayGoals')?.scrollIntoView({behavior:'smooth',block:'start'})}
+function metricHtml(metric) {
+  const value = metric.minutes == null
+    ? escapeHtml(metric.value ?? '—')
+    : formatMinutes(metric.minutes);
+  return `<div><span>${escapeHtml(metric.label || '')}</span><strong>${value}</strong></div>`;
+}
 
-export async function renderToday({reload,openLogger,dailyPlanPanel='',journalPreview=''}){const root=$('#todayView');if(!root)return;const selected=state.selectedEnergy,goals=todayGoalItems(),todaySessions=state.data.sessions||[];let capacity=null;try{capacity=await api(`/api/v1/capacity?date=${state.date}&period=day`)}catch{}
-root.innerHTML=`<section class="today-command"><div><p class="eyebrow">${formatDateLabel(state.date)}</p><h2>Your daily command center</h2><p>See your state, your time and what you intend to do. Record what actually happens.</p></div><button type="button" class="command-log-btn" id="todayLogButton"><span>＋</span> Log or plan</button></section>${dailyStateHtml(selected)}${capacityHtml(capacity)}${dailyPlanPanel}<section class="os-section" id="todayGoals"><div class="os-section-head"><div><span class="section-kicker">Goals</span><h2>Your weekly direction</h2></div><small>Actual · Minimum · Target</small></div><div class="today-goal-grid">${goals.length?goals.map(goalCard).join(''):'<div class="empty">No active goal data yet.</div>'}</div></section><section class="os-section recent-section"><div class="os-section-head"><div><span class="section-kicker">Activity feed</span><h2>Recent today</h2></div></div><div class="activity-feed">${recentActivityHtml(todaySessions)}</div></section>${journalPreview}<details class="energy-drawer" id="energyDetails"><summary><span><strong>Energy check-in</strong><small>${selected?`Current: ${escapeHtml(selected.label)}`:'Optional daily observation'}</small></span><span>Open map</span></summary><div class="energy-drawer-body"><p class="muted energy-help">Choose the state that best matches how you feel. Energy and valence are observations, not performance scores.</p>${energyMap()}<div class="energy-result">${selected?`<div><span class="small muted">Selected</span><br><strong>${escapeHtml(selected.label)}</strong></div>`:'<span class="muted">Choose one state from the map.</span>'}</div><div class="actions"><input id="energyNote" class="note-input" maxlength="500" placeholder="Optional note" value="${escapeHtml(selected?.note||'')}"><button id="saveEnergy" class="btn primary" ${selected?'':'disabled'}>Save check-in</button></div></div></details>`;
-$('#todayLogButton')?.addEventListener('click',()=>void openLogger?.());$('#openEnergyCheckin')?.addEventListener('click',openEnergyEditor);$$('[data-log-goal]').forEach(b=>b.addEventListener('click',()=>void openLogger?.({activityKey:b.dataset.logGoal||'',minutes:30})));$$('[data-repeat-today]').forEach(b=>b.addEventListener('click',()=>{const x=todaySessions[Number(b.dataset.repeatToday)];if(x)void openLogger?.({activity_key:x.activity_key,activity_name:x.activity_name,subtype:x.subtype||'',minutes:Number(x.minutes)||25,date:state.date})}));$$('[data-energy-r]').forEach(b=>b.addEventListener('click',async()=>{const r=Number(b.dataset.energyR),c=Number(b.dataset.energyC);state.selectedEnergy={occurred_on:state.date,label:ENERGY[r][c],row_idx:r,col_idx:c,energy_score:energyScore(r),valence_score:valenceScore(c),note:state.selectedEnergy?.note||''};await renderToday({reload,openLogger,dailyPlanPanel,journalPreview});openEnergyEditor()}));$('#saveEnergy')?.addEventListener('click',async()=>{state.selectedEnergy.note=$('#energyNote').value;try{await api('/api/energy',{method:'POST',body:JSON.stringify(state.selectedEnergy)});toast('Energy check-in saved')}catch{toast('Preview mode: not saved to database')}await reload?.()})}
+function summaryWidget(model) {
+  if (!model) return '';
+  return `<section class="time-reality-card" data-today-widget="${escapeHtml(model.id || '')}"><div class="time-reality-head"><div><span class="section-kicker">${escapeHtml(model.title || '')}</span><h3>${escapeHtml(model.status || '')}</h3>${model.description ? `<p>${escapeHtml(model.description)}</p>` : ''}</div></div>${model.metrics?.length ? `<div class="time-reality-stats">${model.metrics.map(metricHtml).join('')}</div>` : ''}</section>`;
+}
+
+function cardsWidget(model) {
+  if (!model) return '';
+  const cards = model.cards || [];
+  return `<section class="os-section" data-today-widget="${escapeHtml(model.id || '')}"><div class="os-section-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2></div>${model.detail ? `<small>${escapeHtml(model.detail)}</small>` : ''}</div><div class="today-goal-grid">${cards.length ? cards.map((card) => `<article class="today-goal-card"><div class="goal-card-top"><div><span class="goal-dot" aria-hidden="true"></span><strong>${escapeHtml(card.title || '')}</strong></div></div><div class="goal-progress-copy">${(card.metrics || []).map(metricHtml).join('')}</div>${card.status ? `<small>${escapeHtml(card.status)}</small>` : ''}</article>`).join('') : `<div class="empty">${escapeHtml(model.empty || 'Nothing to show yet.')}</div>`}</div></section>`;
+}
+
+function rowsWidget(model) {
+  if (!model) return '';
+  const rows = model.rows || [];
+  return `<section class="os-section recent-section" data-today-widget="${escapeHtml(model.id || '')}"><div class="os-section-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2></div></div><div class="activity-feed">${rows.length ? rows.map((row) => `<div class="activity-feed-row"><span class="activity-symbol" aria-hidden="true">✓</span><div><strong>${escapeHtml(row.title || '')}</strong><small>${escapeHtml(row.subtitle || '')}</small></div>${row.minutes == null ? '' : `<span class="activity-duration">${formatMinutes(row.minutes)}</span>`}</div>`).join('') : `<div class="empty activity-empty">${escapeHtml(model.empty || 'Nothing to show yet.')}</div>`}</div></section>`;
+}
+
+function renderModel(model) {
+  if (!model) return '';
+  if (model.kind === 'cards') return cardsWidget(model);
+  if (model.kind === 'rows') return rowsWidget(model);
+  return summaryWidget(model);
+}
+
+export function focusTodayActivities() {
+  document.querySelector('[data-today-widget="progress.direction"]')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
+
+export function renderToday({
+  date,
+  openLogger,
+  wellbeingState = '',
+  capacityModel = null,
+  dailyPlanPanel = '',
+  directionModel = null,
+  recentModel = null,
+  journalPreview = '',
+  wellbeingDetails = ''
+} = {}) {
+  const root = $('#todayView');
+  if (!root) return;
+
+  root.innerHTML = `<section class="today-command"><div><p class="eyebrow">${formatDateLabel(date)}</p><h2>Your daily command center</h2><p>See your state, your time and what you intend to do. Record what actually happens.</p></div><button type="button" class="command-log-btn" id="todayLogButton"><span>＋</span> Log or plan</button></section>${wellbeingState}${renderModel(capacityModel)}${dailyPlanPanel}${renderModel(directionModel)}${renderModel(recentModel)}${journalPreview}${wellbeingDetails}`;
+
+  $('#todayLogButton')?.addEventListener('click', () => void openLogger?.());
+}
