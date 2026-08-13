@@ -168,6 +168,15 @@ Phone use is the primary acceptance surface for this slice.
 
 Neither Daily Plan nor Journal may read another module's private table or private DOM.
 
+## Deliberately deferred depth
+
+“Sophisticated” does not mean exposing every possible control on day one. The following are intentionally deferred until the core flows pass phone acceptance:
+
+- Daily Plan subtasks, priorities, recurring items, reminder notifications and drag reordering;
+- Journal rich text, media/audio, bookmarks, multiple journals, biometric/app lock and AI-assisted reflection.
+
+The data/module boundaries leave room for these features, but adding them before the simple Today/Tomorrow and write/review flows are proven would increase friction and coupling. Reminder notifications will also be a separate capability from an active Focus Timer.
+
 ## Release-blocking acceptance
 
 ### Daily Plan
