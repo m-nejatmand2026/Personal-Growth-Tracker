@@ -55,108 +55,64 @@ export async function getActivityByKey(DB, profileId, key) {
 }
 
 /**
- * Temporary compatibility bridge.
- *
- * The Beta factual Logger still writes sessions.activity_key, whose foreign
- * key references the legacy activities table.
- *
- * This legacy table is not the Version 1 Activity ontology.
- *
- * Remove this adapter when Logger and Progress persist through
- * progress_records/activity_id.
+ * Temporary compatibility bridge retired after the Logger/Progress cutover.
+ * Migration 0006 still preserves the one-time Beta identity normalization,
+ * but normal Activity CRUD now writes only goal_activities. Completed facts
+ * persist through progress_records/activity_id instead of legacy sessions.
  */
-function legacyMirrorStatement(DB, { key, name, active }) {
-  return DB.prepare(`
-    INSERT INTO activities(key,name,category,active)
-    VALUES(?,?,?,?)
-    ON CONFLICT(key) DO UPDATE SET
-      name=excluded.name,
-      active=excluded.active
-  `).bind(
-    key,
-    name,
-    'v1-compat',
-    active ? 1 : 0
-  );
-}
-
 export async function createActivity(DB, profileId, input) {
-  await DB.batch([
-    DB.prepare(`
-      INSERT INTO goal_activities(
-        profile_id,
-        goal_id,
-        key,
-        name,
-        description,
-        sort_order,
-        active
-      )
-      VALUES(?,?,?,?,?,?,1)
-    `).bind(
-      profileId,
-      input.goal_id,
-      input.key,
-      input.name,
-      input.description || null,
-      input.sort_order
-    ),
-
-    legacyMirrorStatement(DB, {
-      key: input.key,
-      name: input.name,
-      active: true
-    })
-  ]);
+  await DB.prepare(`
+    INSERT INTO goal_activities(
+      profile_id,
+      goal_id,
+      key,
+      name,
+      description,
+      sort_order,
+      active
+    )
+    VALUES(?,?,?,?,?,?,1)
+  `).bind(
+    profileId,
+    input.goal_id,
+    input.key,
+    input.name,
+    input.description || null,
+    input.sort_order
+  ).run();
 
   return getActivityByKey(DB, profileId, input.key);
 }
 
 export async function updateActivity(DB, profileId, id, input) {
-  await DB.batch([
-    DB.prepare(`
-      UPDATE goal_activities
-      SET goal_id=?,
-          name=?,
-          description=?,
-          sort_order=?,
-          updated_at=CURRENT_TIMESTAMP
-      WHERE id=? AND profile_id=?
-    `).bind(
-      input.goal_id,
-      input.name,
-      input.description || null,
-      input.sort_order,
-      id,
-      profileId
-    ),
-
-    legacyMirrorStatement(DB, {
-      key: input.key,
-      name: input.name,
-      active: true
-    })
-  ]);
+  await DB.prepare(`
+    UPDATE goal_activities
+    SET goal_id=?,
+        name=?,
+        description=?,
+        sort_order=?,
+        updated_at=CURRENT_TIMESTAMP
+    WHERE id=? AND profile_id=?
+  `).bind(
+    input.goal_id,
+    input.name,
+    input.description || null,
+    input.sort_order,
+    id,
+    profileId
+  ).run();
 
   return getActivity(DB, profileId, id);
 }
 
-export async function archiveActivity(DB, profileId, id, activity) {
-  await DB.batch([
-    DB.prepare(`
-      UPDATE goal_activities
-      SET active=0,
-          archived_at=COALESCE(archived_at,CURRENT_TIMESTAMP),
-          updated_at=CURRENT_TIMESTAMP
-      WHERE id=? AND profile_id=?
-    `).bind(id, profileId),
-
-    legacyMirrorStatement(DB, {
-      key: activity.key,
-      name: activity.name,
-      active: false
-    })
-  ]);
+export async function archiveActivity(DB, profileId, id) {
+  await DB.prepare(`
+    UPDATE goal_activities
+    SET active=0,
+        archived_at=COALESCE(archived_at,CURRENT_TIMESTAMP),
+        updated_at=CURRENT_TIMESTAMP
+    WHERE id=? AND profile_id=?
+  `).bind(id, profileId).run();
 
   return getActivity(DB, profileId, id);
 }
