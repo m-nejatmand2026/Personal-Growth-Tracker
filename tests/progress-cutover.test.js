@@ -6,7 +6,7 @@ async function exists(url) {
   try { await access(url); return true; } catch { return false; }
 }
 
-const bootstrap = await readFile(new URL('../worker/data/bootstrap.js', import.meta.url), 'utf8');
+const bootstrap = await readFile(new URL('../worker/compatibility/legacy-beta/bootstrap.js', import.meta.url), 'utf8');
 const history = await readFile(new URL('../worker/routes/history.js', import.meta.url), 'utf8');
 const week = await readFile(new URL('../worker/routes/week.js', import.meta.url), 'utf8');
 const compatibilityWeek = await readFile(new URL('../worker/compatibility/legacy-beta/progress.js', import.meta.url), 'utf8');
@@ -15,11 +15,12 @@ const logger = await readFile(new URL('../public/js/features/logger.js', import.
 const progressUi = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
 const app = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 
-test('Shared Progress data implementation is gone', async () => {
+test('Shared Progress and bootstrap business implementations are gone', async () => {
   assert.equal(await exists(new URL('../worker/data/progress.js', import.meta.url)), false);
+  assert.equal(await exists(new URL('../worker/data/bootstrap.js', import.meta.url)), false);
 });
 
-test('Bootstrap composes factual history through Progress public contract', () => {
+test('Bootstrap compatibility composer uses Progress public contract', () => {
   assert.match(bootstrap, /progressContractV1/);
   assert.match(bootstrap, /modules\/progress\/public\.js/);
   assert.doesNotMatch(bootstrap, /\bFROM\s+sessions\b/i);
