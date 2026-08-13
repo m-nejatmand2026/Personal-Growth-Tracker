@@ -1,3 +1,8 @@
+import {
+  listEnergyRoute,
+  wellbeingDayRoute
+} from './routes.js';
+
 export const wellbeingModule = Object.freeze({
   id: 'wellbeing',
   contractVersion: 1,
@@ -9,7 +14,18 @@ export const wellbeingModule = Object.freeze({
     'day_context_logs_v1'
   ]),
   compatibilityTables: Object.freeze(['energy_logs']),
-  routes: Object.freeze([]),
+  routes: Object.freeze([
+    {
+      method: 'GET',
+      pattern: '/api/v1/wellbeing/day',
+      handler: wellbeingDayRoute
+    },
+    {
+      method: 'GET',
+      pattern: '/api/v1/wellbeing/energy',
+      handler: listEnergyRoute
+    }
+  ]),
   publishes: Object.freeze(['wellbeing.energy-recorded']),
   subscribes: Object.freeze([])
 });
