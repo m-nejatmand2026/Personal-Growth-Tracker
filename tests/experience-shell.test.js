@@ -8,6 +8,7 @@ const planJs = await readFile(new URL('../public/js/features/plan.js', import.me
 const progressJs = await readFile(new URL('../public/js/features/progress.js', import.meta.url), 'utf8');
 const insightsJs = await readFile(new URL('../public/js/features/insights.js', import.meta.url), 'utf8');
 const todayJs = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
+const todayIntentionsJs = await readFile(new URL('../public/js/modules/today-intentions/module.js', import.meta.url), 'utf8');
 const experienceDoc = await readFile(new URL('../docs/EXPERIENCE_ARCHITECTURE.md', import.meta.url), 'utf8');
 
 test('primary navigation matches the Version 1 experience contract on mobile and desktop', () => {
@@ -20,25 +21,40 @@ test('primary navigation matches the Version 1 experience contract on mobile and
   assert.doesNotMatch(indexHtml, /data-view="history"/);
 });
 
-test('center add opens a dedicated logger with exact duration and explicit save', () => {
+test('logger supports plan doing-now done without confusing intentions with progress facts', () => {
   assert.match(loggerJs, /export function createLogger/);
   assert.match(loggerJs, /id="loggerDuration"[^>]*min="1"[^>]*max="1440"/);
-  assert.match(loggerJs, /Save progress/);
+  assert.match(loggerJs, /Plan today/);
+  assert.match(loggerJs, /Doing now/);
+  assert.match(loggerJs, /Save completed progress/);
+  assert.match(loggerJs, /This is an intention, not completed progress/);
   assert.match(loggerJs, /Recent repeats/);
   assert.match(loggerJs, /data-repeat-index/);
   assert.match(loggerJs, /method: 'POST'/);
+  assert.doesNotMatch(loggerJs, /Energy check-in instead/);
   assert.doesNotMatch(loggerJs, /from '\.\/today\.js'/);
   assert.doesNotMatch(loggerJs, /from '\.\/plan\.js'/);
 });
 
-test('Today is a command center with capacity, goals, activity feed and progressive Energy detail', () => {
+test('logger subtype hint changes with the selected activity', () => {
+  assert.match(loggerJs, /Back, Abs, Push-ups/);
+  assert.match(loggerJs, /Speaking, Grammar, Vocabulary/);
+  assert.match(loggerJs, /Chords, Technique, Song practice/);
+  assert.match(loggerJs, /loggerActivity.*addEventListener\('change', updateSubtypeHint\)/s);
+});
+
+test('Today is a command center with capacity, Today plan, goals and activity feed', () => {
   assert.match(todayJs, /Your daily command center/);
   assert.match(todayJs, /\/api\/v1\/capacity\?date=/);
+  assert.match(todayJs, /intentionPanel/);
   assert.match(todayJs, /Actual · Minimum · Target/);
   assert.match(todayJs, /Activity feed/);
   assert.match(todayJs, /id="energyDetails"/);
   assert.match(todayJs, /id="openEnergyCheckin"/);
   assert.match(todayJs, /function energyMap\(/);
+  assert.match(todayIntentionsJs, /Today&apos;s plan/);
+  assert.match(todayIntentionsJs, /data-intent-start/);
+  assert.match(todayIntentionsJs, /data-intent-done/);
 });
 
 test('Progress foregrounds Actual Minimum Target and no catch-up debt', () => {
