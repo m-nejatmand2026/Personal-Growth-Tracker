@@ -54,27 +54,57 @@ Required presentation order:
 1. compact command/header area with the primary `Log progress` action;
 2. Daily State summary (Energy, actual Sleep, Day Context as those modules become available);
 3. Time Reality / Capacity summary;
-4. today-relevant Goals showing Actual / Minimum / Target;
-5. recent activity with repeat access;
-6. detailed Energy map progressively disclosed.
+4. **Today's plan** — things the user intends to do or is doing now;
+5. weekly Goal direction showing Actual / Minimum / Target;
+6. recent completed activity with repeat access;
+7. detailed Energy map progressively disclosed.
 
 A missing optional module must degrade locally. For example, until actual Sleep logging exists, Today may show an explicit “not logged / coming next” state; it must not fabricate sleep values.
+
+### Today's plan lifecycle
+
+A planned item is not the same thing as a Progress Record.
+
+```text
+Plan today → Doing now → Done → confirm actual progress
+```
+
+- `Plan today` creates a dated intention with activity, optional subtype/focus, planned duration and note.
+- `Doing now` creates the same kind of intention with status `in_progress`.
+- neither state counts toward Actual progress;
+- Today shows active intentions separately from completed activity;
+- tapping `Done` opens the Universal Logger prefilled with the planned activity/subtype/duration;
+- the user may accept the planned duration or change it to the actual duration before saving;
+- only the explicit completed save creates progress;
+- after the completed save, the Today intention is marked completed and disappears from the active Today-plan list;
+- an intention may be removed without deleting historical progress because it is not historical progress.
+
+This avoids turning plans into fake completion and preserves the “record what actually happens” rule.
 
 ## Universal Logger
 
 The center `+` opens the logger directly. It is not a generic menu that makes the user choose “log progress” again.
 
+The same logger supports three clear entry meanings:
+
+```text
+Plan today | Doing now | Done
+```
+
 Current beta logger responsibilities:
 
 - Activity selection from available data;
 - optional subtype/focus while the dedicated Activity model is still transitional;
+- subtype example text changes with the selected Activity (for example Sport → `Back, Abs, Push-ups`; German → `Speaking, Grammar, Vocabulary`);
 - exact integer duration 1–1440 minutes;
 - preset durations as accelerators only;
 - selected date, editable;
 - optional note, maximum 500 characters;
 - up to three recent unique activity + subtype + duration combinations;
 - recent repeat prefills but never auto-saves;
-- explicit `Save progress` action.
+- `Plan today` and `Doing now` create Today intentions, not progress;
+- `Done` explicitly saves completed progress;
+- unrelated Daily State actions such as Energy check-in do not appear inside the logger.
 
 The logger talks only to public API/core boundaries. Today may request the logger with a prefill; it must not write logger form DOM or persistence directly.
 
@@ -142,6 +172,7 @@ The car-parts rule applies to every experience component:
 
 - replacing the Logger must not change Capacity calculations;
 - changing Today layout must not change Progress persistence;
+- replacing the Today-intentions module must leave manual completed logging available;
 - replacing the Energy editor must not change Sleep or Context;
 - restyling Progress must not change weekly formulas;
 - replacing desktop navigation must not require changing mobile navigation domain behavior;
@@ -167,6 +198,10 @@ This iteration changes the visible experience more substantially while preservin
 - Progress rebuilt around Actual / Minimum / Target;
 - Insights uses explicit evidence readiness and refuses fake relationship cards;
 - Plan gains an at-a-glance operating summary before its independent management modules.
+
+### Iteration 2.1 — Today action lifecycle
+
+Phone use exposed a missing interaction: a person may open Growth Compass **before** doing an activity, not only afterward. The logger therefore supports Plan today / Doing now / Done, while a separate Today-intentions module owns the temporary daily lifecycle. Completed Progress Records remain factual and separate.
 
 ## Acceptance principle
 
