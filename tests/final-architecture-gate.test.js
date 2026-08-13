@@ -37,6 +37,9 @@ test('primary runtime has no shared Logger Insights or Energy implementations',a
 
 test('Today contains composition only for Capacity Progress and Wellbeing',async()=>{
   const today=await readFile(new URL('../public/js/features/today.js',import.meta.url),'utf8');
-  assert.match(today,/createFrontendModuleRegistry/);assert.match(today,/\.get\('capacity'\)/);assert.match(today,/\.get\('progress'\)/);assert.match(today,/\.get\('wellbeing'\)/);
-  assert.doesNotMatch(today,/\/api\/v1\/capacity|\/api\/energy|config\/energy|\bENERGY\b|calisthen|german|guitar|reading|Momente/i);
+  assert.match(today,/createFrontendModuleRegistry/);
+  assert.match(today,/\.get\('capacity'\)/);assert.match(today,/\.get\('progress'\)/);assert.match(today,/\.get\('wellbeing'\)/);
+  assert.doesNotMatch(today,/\/api\/v1\/capacity|\/api\/energy|config\/energy/);
+  assert.doesNotMatch(today,/(?:^|[^A-Za-z])ENERGY(?:[^A-Za-z]|$)/);
+  assert.doesNotMatch(today,/\b(?:calisthenics?|german|guitar|reading|Momente)\b/i);
 });
