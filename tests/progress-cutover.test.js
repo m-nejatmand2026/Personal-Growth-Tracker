@@ -67,5 +67,5 @@ test('Progress UI owns canonical history and deletion', () => {
 test('App composes Progress from frontend registry and subscribes Journal once', () => {
   assert.match(app, /moduleRegistry\.get\('progress'\)/);
   assert.doesNotMatch(app, /features\/progress\.js/);
-  assert.equal((app.match(/eventBus\.subscribe\(\s*['"]journal\.view-requested['"]/g) || []).length, 1);
+  assert.equal((app.match(/eventBus\.subscribe\(\s*['"]journal\.preview-selected['"]/g) || []).length, 1);
 });
