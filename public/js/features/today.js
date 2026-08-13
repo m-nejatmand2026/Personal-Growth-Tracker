@@ -111,7 +111,7 @@ export function focusTodayActivities() {
   $('#todayGoals')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-export async function renderToday({ reload, openLogger }) {
+export async function renderToday({ reload, openLogger, intentionPanel = '' }) {
   const root = $('#todayView');
   if (!root) return;
   const day = new Date(`${state.date}T12:00:00`).getDay();
@@ -138,10 +138,11 @@ export async function renderToday({ reload, openLogger }) {
 
     ${dailyStateHtml(selected)}
     ${capacityHtml(capacity)}
+    ${intentionPanel}
 
     <section class="os-section" id="todayGoals">
       <div class="os-section-head">
-        <div><span class="section-kicker">Today</span><h2>Your goals</h2></div>
+        <div><span class="section-kicker">Goals</span><h2>Your weekly direction</h2></div>
         <small>Actual · Minimum · Target</small>
       </div>
       <div class="today-goal-grid">${goals.length ? goals.map((item) => goalCard(item, day)).join('') : '<div class="empty">No active goal data yet.</div>'}</div>
@@ -197,7 +198,7 @@ export async function renderToday({ reload, openLogger }) {
       valence_score: valenceScore(column),
       note: state.selectedEnergy?.note || ''
     };
-    await renderToday({ reload, openLogger });
+    await renderToday({ reload, openLogger, intentionPanel });
     openEnergyEditor();
   }));
 
@@ -209,6 +210,6 @@ export async function renderToday({ reload, openLogger }) {
     } catch {
       toast('Preview mode: not saved to database');
     }
-    await renderToday({ reload, openLogger });
+    await renderToday({ reload, openLogger, intentionPanel });
   });
 }
