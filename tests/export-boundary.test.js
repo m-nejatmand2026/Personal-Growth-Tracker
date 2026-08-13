@@ -29,6 +29,8 @@ test('Export composition never reads Version 1 module tables directly', () => {
 });
 
 test('Legacy Beta export is explicit compatibility data only', () => {
+  assert.match(source, /legacy_beta\s*:/);
+
   for (const legacyTable of [
     'activities',
     'weekly_targets',
@@ -40,6 +42,4 @@ test('Legacy Beta export is explicit compatibility data only', () => {
   ]) {
     assert.match(source, new RegExp(`\\bFROM\\s+${legacyTable}\\b`, 'i'));
   }
-
-  assert.match(source, /Legacy Beta compatibility export/);
 });
