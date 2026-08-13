@@ -1,5 +1,6 @@
 import {
   listEnergyRoute,
+  recordEnergyRoute,
   wellbeingDayRoute
 } from './routes.js';
 
@@ -24,6 +25,11 @@ export const wellbeingModule = Object.freeze({
       method: 'GET',
       pattern: '/api/v1/wellbeing/energy',
       handler: listEnergyRoute
+    },
+    {
+      method: 'POST',
+      pattern: '/api/v1/wellbeing/energy',
+      handler: recordEnergyRoute
     }
   ]),
   publishes: Object.freeze(['wellbeing.energy-recorded']),
