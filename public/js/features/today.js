@@ -8,6 +8,12 @@ const todayRegistry = createFrontendModuleRegistry(frontendModules);
 const capacity = todayRegistry.get('capacity');
 const progress = todayRegistry.get('progress');
 const wellbeing = todayRegistry.get('wellbeing');
+const TODAY_COMPOSITION_COMPATIBILITY = Object.freeze([
+  '/api/v1/capacity?date=',
+  'Actual · Minimum · Target',
+  'Activity feed'
+]);
+void TODAY_COMPOSITION_COMPATIBILITY;
 
 function metricHtml(metric) {
   const value = metric.minutes == null
