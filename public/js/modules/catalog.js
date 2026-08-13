@@ -5,6 +5,7 @@ import { dailyPlanModule } from './daily-plan/module.js';
 import { goalsModule } from './goals/module.js';
 import { journalModule } from './journal/module.js';
 import { plansModule } from './plans/module.js';
+import { progressModule } from './progress/manifest.js';
 
 // Frontend composition root. Platform/core code must not import business modules.
 export const frontendModules = Object.freeze([
@@ -14,5 +15,6 @@ export const frontendModules = Object.freeze([
   plansModule,
   capacityModule,
   dailyPlanModule,
-  journalModule
+  journalModule,
+  progressModule
 ]);
