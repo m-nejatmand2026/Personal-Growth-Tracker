@@ -5,6 +5,7 @@ import { dailyPlanModule } from './daily-plan/module.js';
 import { goalsModule } from './goals/module.js';
 import { insightsModule } from './insights/manifest.js';
 import { journalModule } from './journal/module.js';
+import { loggerModule } from './logger/manifest.js';
 import { plansModule } from './plans/module.js';
 import { progressModule } from './progress/manifest.js';
 import { wellbeingModule } from './wellbeing/module.js';
@@ -19,6 +20,7 @@ export const frontendModules = Object.freeze([
   dailyPlanModule,
   journalModule,
   progressModule,
+  loggerModule,
   wellbeingModule,
   insightsModule
 ]);
