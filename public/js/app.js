@@ -11,115 +11,31 @@ import { focusTodayActivities, renderToday } from './features/today.js';
 import { frontendModules } from './modules/catalog.js';
 import { createFrontendModuleRegistry } from './platform/module-registry.js';
 
-const PRIMARY_VIEWS = new Set(['today','plan','progress','insights']);
-const viewTitles = {
-  today: 'Today',
-  plan: 'Plan',
-  progress: 'Progress',
-  insights: 'Insights',
-  settings: 'Settings'
-};
+const PRIMARY_VIEWS=new Set(['today','plan','progress','insights']);
+const viewTitles={today:'Today',plan:'Plan',progress:'Progress',insights:'Insights',journal:'Journal',settings:'Settings'};
+const moduleRegistry=createFrontendModuleRegistry(frontendModules);
+const dailyPlan=moduleRegistry.get('daily-plan');
+const journal=moduleRegistry.get('journal');
+let lastPrimaryView='today';
+let journalFilters={query:'',filterDate:''};
 
-const moduleRegistry = createFrontendModuleRegistry(frontendModules);
-const todayIntentions = moduleRegistry.get('today-intentions');
-let lastPrimaryView = 'today';
+async function load(){try{state.data=await api(`/api/bootstrap?date=${state.date}`)}catch{state.data=createFallback(state.date)}state.selectedEnergy=state.data.energy;await renderCurrentView()}
 
-async function load() {
-  try {
-    state.data = await api(`/api/bootstrap?date=${state.date}`);
-  } catch {
-    state.data = createFallback(state.date);
-  }
-  state.selectedEnergy = state.data.energy;
-  await renderCurrentView();
-}
+async function renderTodayView(){let dailyPlanModel=null,dailyPlanPanel='',journalPreviewModel=null,journalPreview='';if(dailyPlan){try{dailyPlanModel=await dailyPlan.load({date:state.date});dailyPlanPanel=dailyPlan.render({model:dailyPlanModel,date:state.date})}catch(error){dailyPlanPanel=`<section class="os-section daily-plan-section"><div class="daily-plan-empty"><strong>Short-term planning is temporarily unavailable.</strong><span>${error?.message||'Other parts of Today still work.'}</span></div></section>`}}if(journal){try{journalPreviewModel=await journal.loadPreview({date:state.date});journalPreview=journal.renderPreview({model:journalPreviewModel})}catch{journalPreview=''}}await renderToday({reload:load,openLogger:logger.open,dailyPlanPanel,journalPreview});if(dailyPlan&&dailyPlanModel)dailyPlan.bind({model:dailyPlanModel,openLogger:logger.open,reload:load});if(journal&&journalPreviewModel)journal.bindPreview({model:journalPreviewModel,openView:()=>showView('journal'),reload:load})}
 
-async function renderTodayView() {
-  let intentionModel = { items: [] };
-  let intentionPanel = '';
+async function renderJournalView(overrides=null){const root=$('#journalView');if(!root)return;if(!journal){root.innerHTML='<div class="empty">Journal is unavailable.</div>';return}if(overrides)journalFilters={...journalFilters,...overrides};try{const model=await journal.loadView({date:state.date,query:journalFilters.query,filterDate:journalFilters.filterDate});root.innerHTML=journal.renderView({model});journal.bindView({model,rerender:async next=>{if(next)journalFilters={...journalFilters,...next};await renderJournalView()}})}catch(error){root.innerHTML=`<section class="os-section"><div class="empty">${error?.message||'Could not load journal.'}</div></section>`}}
 
-  if (todayIntentions) {
-    try {
-      intentionModel = await todayIntentions.load({ date: state.date });
-      intentionPanel = todayIntentions.render({ model: intentionModel, date: state.date });
-    } catch (error) {
-      intentionPanel = `<section class="os-section today-plan-section"><div class="today-plan-empty"><strong>Today&apos;s plan is temporarily unavailable.</strong><span>${error?.message || 'Other parts of Today still work.'}</span></div></section>`;
-    }
-  }
+async function renderCurrentView(){if(state.view==='today')await renderTodayView();if(state.view==='plan')await renderPlan({reload:load});if(state.view==='progress')await renderProgress({reload:load});if(state.view==='insights')await renderInsights();if(state.view==='journal')await renderJournalView();if(state.view==='settings')renderSettings({reload:load})}
 
-  await renderToday({ reload: load, openLogger: logger.open, intentionPanel });
+async function showView(name){if(!viewTitles[name])return;state.view=name;if(PRIMARY_VIEWS.has(name))lastPrimaryView=name;$$('.view').forEach(v=>v.classList.remove('active'));$(`#${name}View`)?.classList.add('active');$$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('#journalBtn')?.classList.toggle('active',name==='journal');$('#journalRailBtn')?.classList.toggle('active',name==='journal');$('#pageTitle').textContent=viewTitles[name];await renderCurrentView()}
 
-  if (todayIntentions && intentionPanel && typeof todayIntentions.bind === 'function') {
-    todayIntentions.bind({
-      model: intentionModel,
-      openLogger: logger.open,
-      reload: load
-    });
-  }
-}
+const logger=createLogger({onIntent:async input=>{if(!dailyPlan)throw new Error('Daily planning is unavailable.');await dailyPlan.create(input);await load()},onSaved:async({dailyPlanId}={})=>{if(dailyPlanId&&dailyPlan){try{await dailyPlan.setStatus(Number(dailyPlanId),'completed')}catch(error){console.error('Progress saved, but the daily-plan item could not be completed.',error)}}await load()}});
 
-async function renderCurrentView() {
-  if (state.view === 'today') await renderTodayView();
-  if (state.view === 'plan') await renderPlan({ reload: load });
-  if (state.view === 'progress') await renderProgress({ reload: load });
-  if (state.view === 'insights') await renderInsights();
-  if (state.view === 'settings') renderSettings({ reload: load });
-}
-
-async function showView(name) {
-  if (!viewTitles[name]) return;
-  state.view = name;
-  if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
-
-  $$('.view').forEach((view) => view.classList.remove('active'));
-  $(`#${name}View`)?.classList.add('active');
-  $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => {
-    button.classList.toggle('active', button.dataset.view === name);
-  });
-  $('#pageTitle').textContent = viewTitles[name];
-  await renderCurrentView();
-}
-
-const logger = createLogger({
-  onIntent: async (input) => {
-    if (!todayIntentions) throw new Error('Today planning is unavailable.');
-    await todayIntentions.create(input);
-    await load();
-  },
-  onSaved: async ({ intentionId } = {}) => {
-    if (intentionId && todayIntentions) {
-      try {
-        await todayIntentions.setStatus(Number(intentionId), 'completed');
-      } catch (error) {
-        console.error('Progress saved, but Today item could not be completed.', error);
-      }
-    }
-    await load();
-  }
-});
-
-$$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => {
-  button.addEventListener('click', () => { void showView(button.dataset.view); });
-});
-
-$$('[data-open-logger]').forEach((button) => {
-  button.addEventListener('click', () => { void logger.open(); });
-});
-
-function toggleSettings() {
-  void showView(state.view === 'settings' ? lastPrimaryView : 'settings');
-}
-
-$('#settingsBtn')?.addEventListener('click', toggleSettings);
-$('#settingsRailBtn')?.addEventListener('click', toggleSettings);
-
-window.addEventListener('growth-compass:open-logger', (event) => {
-  void logger.open(event.detail || {});
-});
-
-window.addEventListener('growth-compass:focus-today', async () => {
-  await showView('today');
-  requestAnimationFrame(focusTodayActivities);
-});
-
+$$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach(b=>b.addEventListener('click',()=>void showView(b.dataset.view)));
+$$('[data-open-logger]').forEach(b=>b.addEventListener('click',()=>void logger.open()));
+function toggleSettings(){void showView(state.view==='settings'?lastPrimaryView:'settings')}
+$('#settingsBtn')?.addEventListener('click',toggleSettings);$('#settingsRailBtn')?.addEventListener('click',toggleSettings);$('#journalBtn')?.addEventListener('click',()=>void showView('journal'));$('#journalRailBtn')?.addEventListener('click',()=>void showView('journal'));
+window.addEventListener('growth-compass:open-logger',event=>void logger.open(event.detail||{}));
+window.addEventListener('growth-compass:open-journal',()=>void showView('journal'));
+window.addEventListener('growth-compass:focus-today',async()=>{await showView('today');requestAnimationFrame(focusTodayActivities)});
 void load();

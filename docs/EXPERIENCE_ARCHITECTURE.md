@@ -1,26 +1,18 @@
 # Growth Compass — Version 1 experience architecture
 
-Status: active UX redesign contract. This document complements `MODULARITY_STANDARD.md`; the Modularity Standard wins if they ever conflict.
+Status: active UX redesign contract. This document complements `MODULARITY_STANDARD.md`; the Modularity Standard wins if they conflict.
 
 ## Design source and naming
 
-The second experience iteration is deliberately informed by the supplied Growth Compass platform presentation and accompanying platform specification dated 12 August 2026. Those references are used for product/visual direction: personal operating-system framing, Today as a command center, the universal logger as the core interaction, clear Life Capacity, Actual/Minimum/Target progress, evidence-gated Insights and AI proposals that require approval.
+The experience is informed by the supplied Growth Compass platform presentation and accompanying platform specification dated 12 August 2026: personal operating-system framing, Today as a command center, the Universal Logger as the core interaction, Life Capacity, Actual/Minimum/Target progress, evidence-gated Insights and AI proposals that require approval.
 
-Repository/product naming remains **Growth Compass — Version 1 Beta**. The supplied reference files do not create a second product/version line in this repository.
+Repository/product naming remains **Growth Compass — Version 1 Beta**.
 
 ## North star
 
-The visible product should feel like a personal-development operating system rather than a habit list or configuration console.
+A normal user should quickly answer: What is my state today? How much time reality do I have? What do I intend to do today or tomorrow? What matters in my longer-term goals? What have I logged? What is the fastest useful next action? What do I want to remember or reflect on?
 
-A normal user should be able to answer these questions quickly:
-
-- What is my state today?
-- How much time reality do I have?
-- What matters today?
-- What have I already logged?
-- What is the fastest useful next action?
-
-The user should understand Today in about five seconds and be able to log a common action in under ten seconds.
+The user should understand Today in about five seconds and log or plan a common action in under ten seconds.
 
 ## Primary navigation
 
@@ -28,133 +20,77 @@ The user should understand Today in about five seconds and be able to log a comm
 Today | Plan | + | Progress | Insights
 ```
 
-Settings is secondary. On narrow screens it lives in the header; on wide screens it lives in the application rail.
-
-Desktop may use a persistent left rail. Mobile uses the bottom navigation. They are two responsive presentations of the same navigation contract, not separate applications.
-
-## Visual language
-
-The experience uses:
-
-- deep teal as the operating-system/navigation accent;
-- dark navy for strong analytical surfaces;
-- white/off-white content surfaces;
-- restrained mint, sky, lavender and warm accent tints for state categories;
-- compact information cards with clear hierarchy;
-- stronger dashboard composition on desktop and focused vertical flows on mobile.
-
-Avoid decorative card overload. Every surface should communicate a state, action, comparison or explanation.
+Settings and Journal are secondary capabilities. Desktop may use a persistent rail; mobile uses bottom navigation. They are responsive presentations of the same contract, not separate applications.
 
 ## Today — daily command center
 
-Today is a composition surface, not a spreadsheet.
+Required order:
+1. command/header with Logger action;
+2. Daily State;
+3. Time Reality / Capacity;
+4. **Daily Plan** with Today and Tomorrow;
+5. weekly Goal direction with Actual / Minimum / Target;
+6. recent completed activity;
+7. compact Journal entry point/preview;
+8. Energy map progressively disclosed.
 
-Required presentation order:
+A missing optional module must degrade locally rather than blanking Today or fabricating values.
 
-1. compact command/header area with the primary `Log progress` action;
-2. Daily State summary (Energy, actual Sleep, Day Context as those modules become available);
-3. Time Reality / Capacity summary;
-4. **Today's plan** — things the user intends to do or is doing now;
-5. weekly Goal direction showing Actual / Minimum / Target;
-6. recent completed activity with repeat access;
-7. detailed Energy map progressively disclosed.
+## Daily Plan — short-horizon intentions
 
-A missing optional module must degrade locally. For example, until actual Sleep logging exists, Today may show an explicit “not logged / coming next” state; it must not fabricate sleep values.
-
-### Today's plan lifecycle
-
-A planned item is not the same thing as a Progress Record.
+Daily Plan is deliberately not the same object as a long-term Goal.
 
 ```text
-Plan today → Doing now → Done → confirm actual progress
+Goal                long-term direction
+Daily Plan item     dated intention
+Progress Record     historical fact
 ```
 
-- `Plan today` creates a dated intention with activity, optional subtype/focus, planned duration and note.
-- `Doing now` creates the same kind of intention with status `in_progress`.
-- neither state counts toward Actual progress;
-- Today shows active intentions separately from completed activity;
-- tapping `Done` opens the Universal Logger prefilled with the planned activity/subtype/duration;
-- the user may accept the planned duration or change it to the actual duration before saving;
-- only the explicit completed save creates progress;
-- after the completed save, the Today intention is marked completed and disappears from the active Today-plan list;
-- an intention may be removed without deleting historical progress because it is not historical progress.
+A person can plan tonight for tomorrow, plan something for Today, or mark an item Doing now.
 
-This avoids turning plans into fake completion and preserves the “record what actually happens” rule.
+```text
+Planned → Doing now → Done
+```
+
+Generic items require only title + date. Activity-linked items may carry a focus/subtype and expected duration. Today and Tomorrow are first-class. An unfinished item remains on its original date; nothing automatically rolls forward as catch-up debt. Activity-linked Done opens Logger to confirm actual minutes. Only explicit completed Logger save creates factual Progress. Generic items may complete without creating Progress.
+
+See `DAILY_PLAN_AND_JOURNAL_SPEC.md`.
 
 ## Universal Logger
 
-The center `+` opens the logger directly. It is not a generic menu that makes the user choose “log progress” again.
-
-The same logger supports three clear entry meanings:
+The center `+` opens Logger directly. For an Activity, Logger supports:
 
 ```text
-Plan today | Doing now | Done
+Plan | Doing now | Done
 ```
 
-Current beta logger responsibilities:
+It owns Activity selection, optional subtype/focus, Activity-aware subtype hints, exact 1–1440 minute duration, presets as accelerators, date, note and recent repeats. Plan/Doing now hand off to Daily Plan. Done explicitly saves completed progress. Logger does not own Daily Plan persistence.
 
-- Activity selection from available data;
-- optional subtype/focus while the dedicated Activity model is still transitional;
-- subtype example text changes with the selected Activity (for example Sport → `Back, Abs, Push-ups`; German → `Speaking, Grammar, Vocabulary`);
-- exact integer duration 1–1440 minutes;
-- preset durations as accelerators only;
-- selected date, editable;
-- optional note, maximum 500 characters;
-- up to three recent unique activity + subtype + duration combinations;
-- recent repeat prefills but never auto-saves;
-- `Plan today` and `Doing now` create Today intentions, not progress;
-- `Done` explicitly saves completed progress;
-- unrelated Daily State actions such as Energy check-in do not appear inside the logger.
+## Journal — private reflection
 
-The logger talks only to public API/core boundaries. Today may request the logger with a prefill; it must not write logger form DOM or persistence directly.
+Journal is a separate optional module, not an extension of Progress. Easy path: open Journal, write, save. Optional depth: Free write, Morning, Evening or Reflection prompts; title; tags; date; search/review/edit/delete.
 
-When the Version 1 Progress Records API replaces legacy session persistence, the logger UI contract should remain stable while its internal persistence adapter changes.
+Version 1 Beta privacy boundary: Journal text is not consumed by Progress, Insights or AI Planner. Future AI use requires explicit permission. No streaks or journaling-pressure mechanics are added.
 
 ## Plan
 
 Plan answers: **What am I trying to do, and does it fit my real life?**
 
-The Plan overview should summarize active Goals, flexible time, Plan Load and current plan state before exposing management forms.
-
-The target mental model remains:
-
 ```text
 Goals | Capacity | Schedule | Compass
 ```
 
-During the beta transition, existing registered Plan modules remain independent and are composed under this overview. Normal UI must not expose terms such as module registry, public contract, persistence adapter or failure boundary.
+Daily Plan is intentionally not hidden inside long-term Plan management; short-horizon planning belongs close to Today.
 
 ## Progress
 
-Progress is built around **Actual vs Minimum vs Target**.
-
-The primary weekly surface should show:
-
-- overall target progress;
-- how many goal minimums are reached;
-- actual and target time totals;
-- week status;
-- per-goal Actual, Minimum and Target values with a visible minimum marker;
-- recent history with explicit deletion confirmation.
-
-No streak pressure and no catch-up debt language is allowed.
+Progress is **Actual vs Minimum vs Target**. Planned Daily Plan items and Journal entries do not count as Actual. No streak pressure and no catch-up debt.
 
 ## Insights
 
-Insights follows the canonical evidence thresholds:
-
-- 0–6 tracked/paired observations: readiness only;
-- 7–20: descriptive summaries;
-- 21–41: early association signals when genuinely paired data exists;
-- 42+: stronger association summaries, still non-causal.
-
-Never fabricate an association because one side of the relationship is missing. Until actual Sleep and Day Context records are connected, the UI should explicitly say relationship cards are waiting for paired data.
-
-Every future relationship card shows N and uses language such as `associated with` or `tends to coincide with`, never causal wording.
+Evidence thresholds remain 0–6 readiness only; 7–20 descriptive; 21–41 early associations; 42+ stronger non-causal association summaries. Journal content is excluded. Never fabricate an association.
 
 ## Progressive disclosure
-
-Easy and advanced views use one domain model, one API contract, one validation path and one calculation model.
 
 ```text
 same domain + same API + same validation
@@ -164,45 +100,30 @@ same domain + same API + same validation
        Easy              Detailed
 ```
 
-Normal screens show the minimum useful information. Detailed measurement settings, effective dates, advanced recurrence and historical controls appear only when requested.
+Normal screens show the minimum useful information; details appear only when requested.
 
 ## Recursive modularity
 
-The car-parts rule applies to every experience component:
+The car-parts rule applies to every experience component: replacing Logger must not change Capacity; changing Today must not change Progress persistence; replacing Daily Plan must leave manual completed logging available; replacing Journal must not change Today, Progress, Insights or Goals beyond its explicit slot disappearing; replacing Energy must not change Sleep or Context. Private implementations may not read another module’s private tables or manipulate another module’s private DOM.
 
-- replacing the Logger must not change Capacity calculations;
-- changing Today layout must not change Progress persistence;
-- replacing the Today-intentions module must leave manual completed logging available;
-- replacing the Energy editor must not change Sleep or Context;
-- restyling Progress must not change weekly formulas;
-- replacing desktop navigation must not require changing mobile navigation domain behavior;
-- changing a module’s internal visual component must not require editing unrelated modules.
+## Interaction accessibility
 
-Composition roots may know installed capabilities. Private feature implementations may not read another module’s private tables or manipulate another module’s private DOM.
+Modal/sheet experiences follow the platform modal contract: focus enters the dialog, Tab/Shift+Tab stay inside, Escape closes, and focus returns to the invoker. Mobile controls use comfortable touch targets, with approximately 44px targets for frequent actions where practical.
 
 ## Iteration history
 
 ### Iteration 1 — rejected prototype
-
-The first shell redesign introduced the correct primary navigation and progressive disclosure but still felt too generic, card-heavy and insufficiently interactive. It is not the visual target.
+Corrected navigation, but remained generic, card-heavy and insufficiently interactive.
 
 ### Iteration 2 — platform-reference direction
+Introduced responsive OS shell, command-center Today, Life Capacity, direct Logger, stronger Progress and evidence-ready Insights.
 
-This iteration changes the visible experience more substantially while preserving the same backend/domain foundation:
+### Iteration 2.1 — action lifecycle
+Phone use exposed that a person may open Growth Compass before doing an Activity. Plan/Doing now/Done were separated from factual completion.
 
-- responsive operating-system shell with desktop rail and mobile bottom navigation;
-- Today rebuilt as a command center;
-- Life Capacity surfaced directly on Today;
-- center `+` opens a real Universal Logger;
-- recent repeats prefill the logger without invisible saves;
-- Progress rebuilt around Actual / Minimum / Target;
-- Insights uses explicit evidence readiness and refuses fake relationship cards;
-- Plan gains an at-a-glance operating summary before its independent management modules.
-
-### Iteration 2.1 — Today action lifecycle
-
-Phone use exposed a missing interaction: a person may open Growth Compass **before** doing an activity, not only afterward. The logger therefore supports Plan today / Doing now / Done, while a separate Today-intentions module owns the temporary daily lifecycle. Completed Progress Records remain factual and separate.
+### Iteration 2.2 — Daily Plan + Journal
+The short-horizon lifecycle is generalized beyond Activities into a true Today/Tomorrow Daily Plan, while Journal becomes an independent private-reflection module. Both keep easy first-use flows and deeper optional controls.
 
 ## Acceptance principle
 
-A visual redesign is successful only if it materially improves comprehension and speed **without** weakening historical integrity, calculations, privacy or module isolation.
+A redesign is successful only if it materially improves comprehension and speed **without** weakening historical integrity, calculations, privacy or module isolation.
