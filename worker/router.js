@@ -15,6 +15,29 @@ import { weekRoute } from './routes/week.js';
 // no request-scoped mutable state and is safe to reuse across Worker requests.
 const moduleRegistry = createModuleRegistry(platformModules);
 
+// Explicit migration-only compatibility surface. No new Version 1 capability
+// may be added here: new capabilities register routes in their module manifest.
+// These routes disappear after Beta compatibility data/clients are retired.
+export const legacyBetaRoutes = Object.freeze([
+  Object.freeze({ method: 'GET', path: '/api/bootstrap', classification: 'read-model', handler: bootstrapRoute }),
+  Object.freeze({ method: 'GET', path: '/api/week', classification: 'read-model', handler: weekRoute }),
+  Object.freeze({ method: 'GET', path: '/api/history', classification: 'read-model', handler: historyRoute }),
+  Object.freeze({ method: 'POST', path: '/api/energy', classification: 'forwarder', handler: energyRoute }),
+  Object.freeze({ method: 'POST', path: '/api/session', classification: 'forwarder', handler: createSessionRoute }),
+  Object.freeze({ method: 'DELETE', path: '/api/session', classification: 'retired', handler: deleteSessionRoute }),
+  Object.freeze({ method: 'PUT', path: '/api/targets', classification: 'retired', handler: targetsRoute }),
+  Object.freeze({ method: 'PUT', path: '/api/momente', classification: 'retired', handler: momenteRoute }),
+  Object.freeze({ method: 'POST', path: '/api/roadmap', classification: 'retired', handler: createRoadmapRoute }),
+  Object.freeze({ method: 'PUT', prefix: '/api/roadmap/', classification: 'retired', handler: updateRoadmapRoute })
+]);
+
+function matchesLegacyRoute(route, method, path) {
+  if (route.method !== method) return false;
+  if (route.path) return route.path === path;
+  if (route.prefix) return path.startsWith(route.prefix);
+  return false;
+}
+
 export async function routeApi(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -26,17 +49,13 @@ export async function routeApi(request, env) {
   const registered = moduleRegistry.match(method, path);
   if (registered) return registered.route.handler({ ...context, module: registered.module });
 
-  // Legacy beta APIs remain explicit only during the migration period.
-  if (method === 'GET' && path === '/api/bootstrap') return bootstrapRoute(context);
-  if (method === 'GET' && path === '/api/week') return weekRoute(context);
-  if (method === 'GET' && path === '/api/history') return historyRoute(context);
-  if (method === 'POST' && path === '/api/energy') return energyRoute(context);
-  if (method === 'POST' && path === '/api/session') return createSessionRoute(context);
-  if (method === 'DELETE' && path === '/api/session') return deleteSessionRoute(context);
-  if (method === 'PUT' && path === '/api/targets') return targetsRoute(context);
-  if (method === 'PUT' && path === '/api/momente') return momenteRoute(context);
-  if (method === 'POST' && path === '/api/roadmap') return createRoadmapRoute(context);
-  if (method === 'PUT' && path.startsWith('/api/roadmap/')) return updateRoadmapRoute(context);
+  for (const route of legacyBetaRoutes) {
+    if (matchesLegacyRoute(route, method, path)) {
+      return route.handler(context);
+    }
+  }
+
+  // Export is a cross-cutting platform service, not a business-module route.
   if (method === 'GET' && path === '/api/export') return exportRoute(context);
 
   return bad('API route not found', 404);
