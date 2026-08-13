@@ -43,3 +43,12 @@ test('Today contains composition only for Capacity Progress and Wellbeing',async
   assert.doesNotMatch(today,/(?:^|[^A-Za-z])ENERGY(?:[^A-Za-z]|$)/);
   assert.doesNotMatch(today,/\b(?:calisthenics?|german|guitar|reading|Momente)\b/i);
 });
+
+test('registered frontend events describe facts rather than commands',()=>{
+  const publishers=frontendModules.flatMap(module=>(module.publishes||[]).map(event=>({module:module.id,event})));
+  for(const {module,event} of publishers){
+    assert.doesNotMatch(event,/(?:requested|refresh|update|open|save)/i,`${module} publishes command-shaped event ${event}`);
+  }
+  assert.ok(publishers.some(item=>item.event==='daily-plan.completion-selected'));
+  assert.ok(publishers.some(item=>item.event==='journal.preview-selected'));
+});
