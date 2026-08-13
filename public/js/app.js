@@ -101,8 +101,8 @@ async function showView(name) {
   await renderCurrentView();
 }
 
-eventBus.subscribe('daily-plan.completion-requested', async (input) => { await logger.open(input); });
-eventBus.subscribe('journal.view-requested', async () => { await showView('journal'); });
+eventBus.subscribe('daily-plan.completion-selected', async (input) => { await logger.open(input); });
+eventBus.subscribe('journal.preview-selected', async () => { await showView('journal'); });
 
 $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => button.addEventListener('click', () => void showView(button.dataset.view)));
 $$('[data-open-logger]').forEach((button) => button.addEventListener('click', () => void logger.open()));
