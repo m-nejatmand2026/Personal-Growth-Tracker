@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 const indexHtml=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
-const loggerJs=await readFile(new URL('../public/js/features/logger.js',import.meta.url),'utf8');
+const loggerJs=await readFile(new URL('../public/js/modules/logger/ui.js',import.meta.url),'utf8');
 const planJs=await readFile(new URL('../public/js/features/plan.js',import.meta.url),'utf8');
 const progressJs=await readFile(new URL('../public/js/modules/progress/ui.js',import.meta.url),'utf8');
 const insightsJs=await readFile(new URL('../public/js/modules/insights/ui.js',import.meta.url),'utf8');
