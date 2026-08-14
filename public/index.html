@@ -33,9 +33,10 @@
   <link rel="stylesheet" href="/css/experience-framework.css" />
   <link rel="stylesheet" href="/css/install-app.css" />
   <link rel="stylesheet" href="/css/accessibility-regression.css" />
-  <title>Growth Compass</title>
+  <title>Today — Growth Compass</title>
 </head>
 <body>
+  <a class="gc-skip-link" href="#mainContent">Skip to main content</a>
   <main id="app" class="shell os-shell">
     <aside class="app-rail" aria-label="Growth Compass navigation">
       <div class="rail-brand"><span class="brand-mark" aria-hidden="true">GC</span><div><strong>Growth Compass</strong><small>Personal development OS</small></div></div>
@@ -50,9 +51,9 @@
       <button class="rail-log-btn" type="button" data-open-logger><span aria-hidden="true">＋</span> Log progress</button>
       <button id="settingsRailBtn" class="rail-settings" type="button"><span aria-hidden="true">⚙</span> Settings</button>
     </aside>
-    <div class="workspace">
+    <div id="mainContent" class="workspace" tabindex="-1">
       <header class="topbar"><div class="topbar-title"><span class="mobile-brand-mark" aria-hidden="true">GC</span><div><p class="eyebrow">Growth Compass</p><h1 id="pageTitle">Today</h1></div></div><div class="top-actions"><button id="insightsBtn" class="icon-btn top-section-btn" type="button" aria-label="Open Insights" title="Insights"><span aria-hidden="true">✦</span><b class="top-section-label">Insights</b></button><button id="journalBtn" class="top-journal-btn" type="button" aria-label="Open journal" title="Journal">✎</button><button class="top-log-btn" type="button" data-open-logger aria-label="Log progress">＋ <span>Log</span></button><button id="settingsBtn" class="icon-btn" type="button" aria-label="Open settings" title="Settings">⚙</button></div></header>
-      <section id="todayView" class="view active"></section><section id="planView" class="view"></section><section id="progressView" class="view"></section><section id="insightsView" class="view"></section><section id="wellness-boostView" class="view"></section><section id="journalView" class="view"></section><section id="settingsView" class="view"></section>
+      <section id="todayView" class="view active" aria-labelledby="pageTitle"></section><section id="planView" class="view" aria-labelledby="pageTitle" hidden></section><section id="progressView" class="view" aria-labelledby="pageTitle" hidden></section><section id="insightsView" class="view" aria-labelledby="pageTitle" hidden></section><section id="wellness-boostView" class="view" aria-labelledby="pageTitle" hidden></section><section id="journalView" class="view" aria-labelledby="pageTitle" hidden></section><section id="settingsView" class="view" aria-labelledby="pageTitle" hidden></section>
     </div>
     <nav class="bottom-nav" aria-label="Primary navigation">
       <button type="button" data-view="today" class="nav-btn active" aria-current="page"><span aria-hidden="true">⌂</span>Today</button><button type="button" data-view="plan" class="nav-btn"><span aria-hidden="true">◎</span>Plan</button><button id="quickAddBtn" class="nav-btn nav-add" type="button" data-open-logger aria-label="Log progress"><span aria-hidden="true">＋</span><b>Log</b></button><button type="button" data-view="progress" class="nav-btn"><span aria-hidden="true">↗</span>Progress</button><button type="button" data-view="wellness-boost" class="nav-btn" aria-label="Wellness Boost"><span aria-hidden="true">☼</span>Wellness</button>
