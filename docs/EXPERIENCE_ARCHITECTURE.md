@@ -51,17 +51,17 @@ Targets remain:
 
 ## Primary navigation
 
-The five-position mobile bottom navigation remains:
+The five-position mobile bottom navigation is:
 
 ```text
-Today | Plan | + | Progress | Insights
+Today | Plan | + | Progress | Wellness
 ```
 
 The center `+` opens Logger directly and must be optically centered, visually distinct and reachable with a comfortable touch target.
 
-**Wellness Boost is a first-class app section.** It has its own dedicated view rather than rendering its full practice library inside Today. On desktop it appears in the persistent rail alongside the primary destinations. On mobile it is reachable from a dedicated top navigation action, preserving the five-position bottom bar and the centered Logger action.
+**Wellness Boost is a first-class app section.** It has its own dedicated view rather than rendering its full practice library inside Today. On desktop it appears in the persistent rail alongside Insights and the other primary destinations. On mobile it occupies the fifth bottom-navigation position so it remains discoverable as a first-class section.
 
-Journal and Settings remain separate sections/actions. Responsive navigation may present destinations differently by screen size, but every destination must open its own owned view rather than leaking business UI into the shell.
+Insights remains a labeled secondary top action on mobile and a persistent rail destination on desktop. Journal and Settings remain separate secondary sections/actions. Responsive navigation may present destinations differently by screen size, but every destination must open its own owned view rather than leaking business UI into the shell.
 
 ## Human-language rule
 
@@ -120,6 +120,91 @@ Detailed path:
 - expert controls.
 
 The detailed path must never become a second incompatible implementation.
+
+## Shared visual experience framework
+
+Revision B visual simplification is a **cross-app framework**, not a sequence of page-specific redesigns.
+
+The shared implementation lives in `public/css/experience-framework.css`. It owns reusable presentation primitives and visual rhythm; business modules continue to own their content, behavior, domain rules and module-specific details.
+
+The framework is the default for first-class views including Today, Plan, Progress, Insights, Journal and Wellness Boost.
+
+### Page hierarchy
+
+A first-class screen should normally use:
+
+1. the shell page title;
+2. at most one small eyebrow or section label when it adds meaning;
+3. one short human-facing heading when needed;
+4. at most one concise supporting sentence before the first useful action or content.
+
+Avoid repeating the same meaning through multiple large layers such as:
+
+```text
+Wellness Boost
+Meditation
+Take a few minutes for yourself.
+Featured meditation
+```
+
+when a smaller section label plus the actual choice communicates the same thing more clearly.
+
+The reusable page primitives include:
+
+- `gc-page-frame` for readable maximum width;
+- `gc-page-flow` for shared vertical rhythm;
+- `gc-page-header` and its action/aside/stat variants for calm introductions;
+- `gc-stat-grid` for compact factual summaries;
+- `gc-section-label` and `gc-section-heading` for consistent hierarchy.
+
+### Choice surfaces
+
+Do not default every choice to a large bordered white dashboard card.
+
+Use:
+
+- `gc-feature-card` when one option deserves visual emphasis;
+- `gc-choice-row` for compact peer alternatives;
+- one clearly clickable/tappable surface rather than a card plus a repeated inner `Open` button.
+
+Featured content should create hierarchy; it must not make every option compete at the same visual weight.
+
+### Color and tone
+
+Growth Compass teal remains the primary navigation/action identity. Supporting content may use restrained, low-saturation semantic tones through shared classes such as:
+
+- `gc-tone--reset`;
+- `gc-tone--calm`;
+- `gc-tone--focus`;
+- `gc-tone--restore`.
+
+These tones provide differentiation without turning the product into a bright multi-color dashboard. Module CSS should not recreate private copies of the shared tone system.
+
+### Density and surfaces
+
+Prefer:
+
+- constrained readable content width on wide screens;
+- intentional whitespace rather than stretched empty cards;
+- fewer nested white panels;
+- borders only when they help distinguish an interactive or semantic surface;
+- compact factual rows where a large card adds no value;
+- shorter copy on phones rather than merely shrinking the same desktop text.
+
+The framework may normalize presentation across modules, but it must not absorb business rules or create cross-module coupling. A module may add its own content-specific CSS after using the shared primitives when the shared framework does not express a genuinely module-specific need.
+
+### Mobile contract
+
+The visual framework remains phone-first:
+
+- frequent controls remain approximately 44px or larger;
+- the centered Logger action is unchanged;
+- page headings become denser on small screens;
+- readable hierarchy must not depend on desktop whitespace;
+- no horizontal scrolling at 375px;
+- reduced-motion and focus requirements remain intact.
+
+A framework change is accepted only after both automated regression gates and real phone/desktop preview review. A green test suite alone does not prove that the visual result feels calm or usable.
 
 ## Universal Logger - Revision B
 
@@ -248,6 +333,8 @@ Meditation content may support:
 - voice + ambient together;
 - different durations and purposes;
 - title, description, category and accessible playback controls.
+
+Its landing view follows the shared experience framework: a small Meditation label, one featured practice, and compact alternatives rather than a text-heavy hero or equal-weight dashboard grid.
 
 The module is designed so future content types such as Breathing, Focus, Reset, Stretch or Sleep can be added without changing platform/core or Today.
 
@@ -480,7 +567,10 @@ Implemented design system, responsive shell, Today, Logger, Plan, Progress, Insi
 Triggered by real preview walkthrough on 14 August 2026. Revision A remains the architectural/presentation foundation, but its human interaction model is not accepted as final. Revision B is now the active UX/UI direction.
 
 ### Revision B - Wellness Boost section
-Wellness Boost is a first-class optional app destination. Meditation is the first module-owned practice type. The full practice library does not render inside Today, and the mobile five-position Logger navigation remains stable.
+Wellness Boost is a first-class optional app destination. Meditation is the first module-owned practice type. The full practice library does not render inside Today, and the centered mobile Logger navigation remains stable.
+
+### Revision B - shared visual framework
+Real phone and desktop review showed that solving visual density page by page caused inconsistent hierarchy. The shared experience framework now owns calm headers, readable widths, compact stat/choice patterns, featured choices and restrained semantic tones across first-class screens while business modules retain their domain ownership.
 
 ## Revision B acceptance gate
 
@@ -492,6 +582,8 @@ Release-blocking UX checks include:
 - Logger supports contextual new-Activity creation;
 - focus styling is accessible but visually calm;
 - expandable controls look expandable;
+- first-class views use the shared visual framework rather than recreating unrelated hero/card systems;
+- page introductions are concise and do not repeat the same meaning in multiple heavy text layers;
 - Today period switching is understandable and does not invent targets;
 - Capacity uses concrete time language;
 - Life Areas are visibly user-owned and creatable in context;
