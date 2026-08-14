@@ -24,6 +24,25 @@ function secureResponse(response) {
   });
 }
 
+function logApiFailure(request, url, error) {
+  const status = error instanceof HttpError ? error.status : 500;
+
+  // Expected client/validation errors remain visible through invocation status
+  // metrics without copying request content or validation details into custom
+  // logs. Custom error logs are reserved for server-side failures.
+  if (status < 500) return;
+
+  console.error(JSON.stringify({
+    event: 'api_error',
+    path: url.pathname,
+    method: request.method,
+    status,
+    error_name: error?.name || 'Error',
+    message: error?.message || 'Unexpected error',
+    ray_id: request.headers.get('cf-ray') || null
+  }));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -41,12 +60,7 @@ export default {
         await routeApi(request, env)
       );
     } catch (error) {
-      console.error(JSON.stringify({
-        event: 'api_error',
-        path: url.pathname,
-        method: request.method,
-        message: error?.message || 'Unexpected error'
-      }));
+      logApiFailure(request, url, error);
 
       if (error instanceof HttpError) {
         return secureResponse(
