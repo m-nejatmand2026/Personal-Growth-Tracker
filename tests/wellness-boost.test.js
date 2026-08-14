@@ -29,42 +29,61 @@ test('Wellness Boost owns an independent dependency-free capability', () => {
   assert.equal(typeof frontend.deactivate, 'function');
 });
 
-test('Meditation starter library owns 3 5 10 and 20 minute original guided content', () => {
+test('Meditation starter library owns concise choice copy plus original guided content', () => {
   assert.ok(boostTypes.meditation);
   assert.deepEqual(boostContent.map((item) => item.durationMinutes), [3, 5, 10, 20]);
   assert.ok(boostContent.every((item) => item.boostType === 'meditation'));
-  assert.ok(boostContent.every((item) => item.title && item.category && item.description));
+  assert.ok(boostContent.every((item) => item.title && item.category && item.icon && item.summary && item.description));
+  assert.ok(boostContent.every((item) => item.summary.length < item.description.length));
   assert.ok(boostContent.every((item) => item.availableModes.join(',') === 'voice,ambient,both'));
   assert.ok(boostContent.every((item) => item.cues.length >= 5));
   assert.ok(boostContent.every((item) => item.cues[0].atSeconds === 0));
   assert.ok(boostContent.every((item) => item.cues.every((cue) => cue.text && cue.atSeconds < item.durationMinutes * 60)));
 });
 
-test('dedicated library exposes duration choice before a practice player', () => {
+test('Meditation library is calm and defers secondary decisions until after selection', () => {
   const html = wellnessBoostModule.renderView();
   assert.match(html, /data-module="wellness-boost"/);
-  assert.match(html, /Wellness Boost/);
+  assert.match(html, /Take a few minutes for yourself\./);
   assert.match(html, />Meditation</);
   for (const duration of ['3 min', '5 min', '10 min', '20 min']) assert.match(html, new RegExp(duration));
-  assert.match(html, /data-wb-duration=/);
-  assert.match(html, /data-wb-open="meditation-gentle-arrival"/);
-  assert.match(html, /Guided voice · Ambient · Both/);
-  assert.doesNotMatch(html, /<audio|unlicensed recording|rights-safe placeholder/);
+  assert.equal((html.match(/data-wb-open=/g) || []).length, 4);
+  assert.equal((html.match(/class="wellness-boost-card"/g) || []).length, 4);
+  assert.match(html, /Settle into the moment\./);
+  assert.match(html, /Reconnect with your breath\./);
+  assert.doesNotMatch(html, /data-wb-duration=|wellness-boost-filter|Open practice/);
+  assert.doesNotMatch(html, /Guided voice · Ambient · Both|How would you like to listen\?|data-wb-mode=/);
 });
 
-test('Meditation playback is local rights-safe and does not create Progress', () => {
+test('Meditation player asks listening style only after a practice is chosen and then becomes minimal', () => {
+  assert.match(moduleJs, /How would you like to listen\?/);
+  assert.match(moduleJs, /id: 'voice', label: 'Guided'/);
+  assert.match(moduleJs, /id: 'ambient', label: 'Ambient'/);
+  assert.match(moduleJs, /id: 'both', label: 'Both'/);
+  assert.match(moduleJs, /data-wb-start[^>]*aria-label="Start meditation"/);
+  assert.match(moduleJs, /wellness-boost-active-player/);
+  assert.match(moduleJs, /wellness-boost-player-time/);
+  assert.match(moduleJs, />remaining</);
+  assert.match(moduleJs, /role="progressbar"/);
+  assert.match(moduleJs, /Read guidance/);
+  assert.match(css, /\.wellness-boost-player\.is-active \.wellness-boost-prestart\{display:none\}/);
+  assert.match(css, /\.wellness-boost-player\.is-active \.wellness-boost-active-player\{display:grid\}/);
+});
+
+test('Meditation playback is local rights-safe and does not create Progress or Wellbeing facts', () => {
   assert.match(moduleJs, /SpeechSynthesisUtterance/);
   assert.match(moduleJs, /window\.AudioContext \|\| window\.webkitAudioContext/);
-  assert.match(moduleJs, /Locally generated tone/);
+  assert.match(moduleJs, /Ambient sound is generated locally in your browser/);
   assert.match(moduleJs, /No meditation recording is uploaded/);
-  assert.match(moduleJs, /Nothing (?:here )?creates Progress|Nothing was added to Progress/);
-  assert.doesNotMatch(moduleJs, /\/api\/v1\/progress|fetch\(|localStorage|sessionStorage/);
+  assert.match(moduleJs, /nothing here is added to Progress or Wellbeing/);
+  assert.doesNotMatch(moduleJs, /\/api\/v1\/progress|\/api\/v1\/wellbeing|fetch\(|localStorage|sessionStorage/);
 });
 
-test('Meditation player owns start pause resume end and navigation cleanup lifecycle', () => {
+test('Meditation player owns start pause resume end remaining-time and navigation cleanup lifecycle', () => {
   assert.match(moduleJs, /data-wb-start/);
   assert.match(moduleJs, /data-wb-toggle/);
   assert.match(moduleJs, /data-wb-end/);
+  assert.match(moduleJs, /formatClock\(total - safeElapsed\)/);
   assert.match(moduleJs, /speechSynthesis\.pause\(\)/);
   assert.match(moduleJs, /speechSynthesis\.resume\(\)/);
   assert.match(moduleJs, /function deactivate\(\)/);
@@ -100,14 +119,14 @@ test('module removal leaves unrelated capabilities available', () => {
   assert.equal(enabled.some((module) => module.id === 'journal'), true);
 });
 
-test('Wellness Boost library and player remain phone-first accessible', () => {
-  assert.match(css, /\.wellness-boost-player/);
+test('Wellness Boost choice cards and player remain phone-first accessible', () => {
+  assert.match(css, /\.wellness-boost-card\{[^}]*min-height:132px/s);
   assert.match(css, /min-height:var\(--gc-target-min\)/);
   assert.match(css, /@media\(max-width:650px\)/);
-  assert.match(css, /\.wellness-boost-grid\{grid-template-columns:1fr\}/);
-  assert.match(css, /\.wellness-boost-mode-picker\{grid-template-columns:1fr\}/);
+  assert.match(css, /\.wellness-boost-grid\{grid-template-columns:1fr/);
+  assert.match(css, /\.wellness-boost-mode-picker\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(moduleJs, /role="status" aria-live="polite"/);
   assert.match(moduleJs, /role="group" aria-label="Playback style"/);
-  assert.match(moduleJs, /Read the guidance/);
+  assert.match(moduleJs, /aria-label="[^\"]+, \$\{item\.durationMinutes\} minutes/);
 });
