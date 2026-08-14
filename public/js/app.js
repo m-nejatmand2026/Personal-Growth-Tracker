@@ -75,6 +75,7 @@ function renderWellnessBoostView() {
   const root = $('#wellness-boostView');
   if (!root) return;
   root.innerHTML = wellnessBoost?.renderView?.() || '<section class="os-section"><div class="empty">Wellness Boost is unavailable.</div></section>';
+  wellnessBoost?.bindView?.({ root, rerender: renderWellnessBoostView });
 }
 
 async function renderCurrentView() {
@@ -103,6 +104,7 @@ async function renderCurrentView() {
 
 async function showView(name) {
   if (!viewTitles[name]) return;
+  if (state.view === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
   state.view = name;
   if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
   $$('.view').forEach((view) => view.classList.remove('active'));
