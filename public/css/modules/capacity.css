@@ -1,0 +1,16 @@
+/* Capacity-owned Today presentation. */
+.time-reality-card{padding:18px;border-radius:var(--gc-radius-xl);background:var(--gc-brand-strong);color:#fff;box-shadow:0 16px 34px rgba(10,87,86,.16)}
+.time-reality-card .section-kicker{color:#a9e7de}
+.time-reality-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.time-reality-head h2{margin:4px 0 5px;color:#fff;font-size:clamp(1.25rem,4vw,1.6rem);line-height:1.12}
+.time-reality-head p{max-width:620px;margin:0;color:#c6e3e0;font-size:11.5px}
+.time-reality-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}
+.time-reality-stats .today-metric{min-width:0;padding-top:9px;border-top:1px solid rgba(255,255,255,.18)}
+.time-reality-stats span,.time-reality-stats strong{display:block}
+.time-reality-stats span{color:#b7d7d4;font-size:10px}
+.time-reality-stats strong{margin-top:2px;color:#fff;font-size:14px;overflow-wrap:anywhere}
+
+@media (min-width:680px){
+  .time-reality-card{padding:20px}
+  .time-reality-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
