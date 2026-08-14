@@ -18,10 +18,12 @@ test('Goal easy path explains progress methods with examples instead of data-mod
 });
 
 test('human progress choices map onto the existing canonical Goal contract', () => {
-  assert.match(goalsUi, /value="time"/);
-  assert.match(goalsUi, /value="count"/);
-  assert.match(goalsUi, /value="boolean"/);
-  assert.match(goalsUi, /value="milestone"/);
+  assert.match(goalsUi, /HUMAN_MEASUREMENTS = Object\.freeze\(\['time', 'count', 'boolean', 'milestone'\]\)/);
+  assert.match(goalsUi, /\['time', 'Time spent'/);
+  assert.match(goalsUi, /\['count', 'Quantity'/);
+  assert.match(goalsUi, /\['boolean', 'Completed'/);
+  assert.match(goalsUi, /\['milestone', 'Milestones'/);
+  assert.match(goalsUi, /name="goalMeasureChoice" value="\$\{value\}"/);
   assert.match(goalsUi, /id="goalMeasurement" type="hidden"/);
   assert.match(goalsUi, /measurement_type: \$\('#goalMeasurement'\)\.value/);
   for (const type of ['time', 'count', 'milestone', 'boolean', 'number']) {
