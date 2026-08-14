@@ -10,6 +10,7 @@ const capacity = todayRegistry.get('capacity');
 const progress = todayRegistry.get('progress');
 const today = todayRegistry.get('today');
 const wellbeing = todayRegistry.get('wellbeing');
+let directionPeriod = 'week';
 
 function metricHtml(metric) {
   const value = metric.minutes == null ? escapeHtml(metric.value ?? '—') : formatMinutes(metric.minutes);
@@ -23,7 +24,7 @@ function thresholdHtml(card) {
   const target = Math.max(0, Number(card.threshold.target) || 0);
   if (!minimum && !target) return '';
   return renderThresholdTrack({
-    label: card.title || 'Weekly direction',
+    label: card.title || 'Progress direction',
     actual,
     minimum,
     target,
@@ -31,6 +32,12 @@ function thresholdHtml(card) {
     minimumText: minimum ? formatMinutes(minimum) : 'Not set',
     targetText: target ? formatMinutes(target) : 'Not set'
   });
+}
+
+function periodSwitcher(model) {
+  if (!model?.periods?.length) return '';
+  const labels = { day: 'Day', week: 'Week', month: 'Month', year: 'Year' };
+  return `<div class="today-period-switch" role="group" aria-label="Progress direction period">${model.periods.map((period) => `<button type="button" data-direction-period="${escapeHtml(period)}" aria-pressed="${period === model.period ? 'true' : 'false'}">${escapeHtml(labels[period] || period)}</button>`).join('')}</div>`;
 }
 
 function summaryWidget(model) {
@@ -45,7 +52,7 @@ function cardsWidget(model) {
   if (!model) return '';
   const cards = model.cards || [];
   return `<section class="os-section today-direction-section" data-today-widget="${escapeHtml(model.id || '')}">
-    <div class="os-section-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2></div>${model.detail ? `<small>${escapeHtml(model.detail)}</small>` : ''}</div>
+    <div class="os-section-head today-direction-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2>${model.detail ? `<small>${escapeHtml(model.detail)}</small>` : ''}</div>${periodSwitcher(model)}</div>
     <div class="today-goal-grid">${cards.length ? cards.map((card) => `<article class="today-goal-card"><div class="goal-card-top"><div><span class="goal-dot" aria-hidden="true"></span><strong>${escapeHtml(card.title || '')}</strong></div><span class="today-goal-status">${escapeHtml(card.status || '')}</span></div><div class="goal-progress-copy">${(card.metrics || []).map(metricHtml).join('')}</div>${thresholdHtml(card)}</article>`).join('') : `<div class="empty">${escapeHtml(model.empty || 'Nothing to show yet.')}</div>`}</div>
   </section>`;
 }
@@ -82,7 +89,7 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
 
   const [capacityResult, todayResult, wellbeingResult] = await Promise.allSettled([
     capacity ? capacity.loadToday({ date }) : null,
-    today ? today.loadSummary({ date }) : null,
+    today ? today.loadSummary({ date, period: directionPeriod }) : null,
     wellbeing ? wellbeing.getDay(date) : null
   ]);
   if (capacityResult.status === 'fulfilled') capacityModel = capacityResult.value;
@@ -95,7 +102,8 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   }
 
   const directionModel = progress?.todayDirection({
-    items: todayModel?.weeklyDirection || []
+    items: todayModel?.direction || todayModel?.weeklyDirection || [],
+    period: todayModel?.directionPeriod || directionPeriod
   }) || null;
   const recentModel = progress?.todayRecent({
     items: todayModel?.progress || []
@@ -113,5 +121,13 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   </div>`;
 
   $('#todayLogButton')?.addEventListener('click', () => void openLogger?.());
+  root.querySelectorAll('[data-direction-period]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const next = button.dataset.directionPeriod;
+      if (!['day', 'week', 'month', 'year'].includes(next) || next === directionPeriod) return;
+      directionPeriod = next;
+      void reload?.();
+    });
+  });
   if (wellbeing && wellbeingModel) wellbeing.bindToday({ model: wellbeingModel, date, reload });
 }
