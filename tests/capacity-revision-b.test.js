@@ -52,8 +52,12 @@ test('full Capacity panel uses concrete time language and removes qualitative lo
 test('Today and Plan consume the same Capacity-owned time-fit semantics', () => {
   assert.match(capacityModule, /capacityTimeFit\(summary\)/);
   assert.match(capacityModule, /timeFit\(summary\)/);
+  assert.match(capacityModule, /model\?\.timeFit\?\.week/);
+  assert.match(capacityModule, /Available this week/);
+  assert.match(capacityModule, /Planned this week/);
+  assert.match(capacityModule, /Still flexible/);
   assert.match(capacityModule, /label: 'Available'/);
   assert.match(capacityModule, /label: 'Planned'/);
-  assert.match(planJs, /models\.capacity\?\.timeFit\?\.week/);
-  assert.doesNotMatch(planJs, /plan_load|impossible_by_minutes/);
+  assert.match(planJs, /module\.planSummary/);
+  assert.doesNotMatch(planJs, /models\.capacity|plan_load|impossible_by_minutes/);
 });
