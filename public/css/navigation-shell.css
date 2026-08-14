@@ -16,6 +16,7 @@ body{min-width:320px;overflow-x:clip}
 .top-actions button,.icon-btn,.top-journal-btn,.top-log-btn{min-width:var(--gc-target-min);min-height:var(--gc-target-min)}
 .top-log-btn{border-radius:var(--gc-radius-md);padding-inline:14px;background:var(--gc-brand);box-shadow:var(--gc-shadow-sm)}
 .top-log-btn:hover{background:var(--gc-brand-strong)}
+.top-wellness-btn.active,.top-wellness-btn[aria-current="page"]{background:var(--gc-brand-soft);color:var(--gc-brand-strong);border-color:color-mix(in srgb,var(--gc-brand) 35%,var(--gc-border))}
 
 .bottom-nav{position:fixed;z-index:70;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,780px);min-height:74px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:2px;padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));background:color-mix(in srgb,var(--gc-surface) 96%,transparent);border-top:1px solid var(--gc-border);box-shadow:0 -12px 32px rgba(13,27,42,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .nav-btn{position:relative;min-width:0;min-height:var(--gc-target-min);display:grid;place-items:center;align-content:center;gap:2px;border:0;border-radius:var(--gc-radius-md);padding:6px 2px;background:transparent;color:var(--gc-text-muted);font:inherit;font-size:11px;font-weight:700;line-height:1.1;cursor:pointer;-webkit-tap-highlight-color:transparent}
