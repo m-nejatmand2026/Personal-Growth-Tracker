@@ -8,6 +8,7 @@ import { renderThresholdTrack } from '../platform/charts.js';
 const todayRegistry = createFrontendModuleRegistry(frontendModules);
 const capacity = todayRegistry.get('capacity');
 const progress = todayRegistry.get('progress');
+const today = todayRegistry.get('today');
 const wellbeing = todayRegistry.get('wellbeing');
 
 function metricHtml(metric) {
@@ -74,22 +75,31 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   if (!root) return;
   const date = state.date;
   let capacityModel = null;
+  let todayModel = null;
   let wellbeingModel = null;
   let wellbeingState = '';
   let wellbeingDetails = '';
 
-  if (capacity) { try { capacityModel = await capacity.loadToday({ date }); } catch { capacityModel = null; } }
-  if (wellbeing) {
-    try {
-      wellbeingModel = await wellbeing.getDay(date);
-      state.selectedEnergy = wellbeingModel.energy || null;
-      wellbeingState = wellbeing.renderTodayState({ model: wellbeingModel });
-      wellbeingDetails = wellbeing.renderTodayDetails({ model: wellbeingModel, date });
-    } catch { wellbeingModel = null; }
+  const [capacityResult, todayResult, wellbeingResult] = await Promise.allSettled([
+    capacity ? capacity.loadToday({ date }) : null,
+    today ? today.loadSummary({ date }) : null,
+    wellbeing ? wellbeing.getDay(date) : null
+  ]);
+  if (capacityResult.status === 'fulfilled') capacityModel = capacityResult.value;
+  if (todayResult.status === 'fulfilled') todayModel = todayResult.value;
+  if (wellbeingResult.status === 'fulfilled') wellbeingModel = wellbeingResult.value;
+  if (wellbeing && wellbeingModel) {
+    state.selectedEnergy = wellbeingModel.energy || null;
+    wellbeingState = wellbeing.renderTodayState({ model: wellbeingModel });
+    wellbeingDetails = wellbeing.renderTodayDetails({ model: wellbeingModel, date });
   }
 
-  const directionModel = progress?.todayDirection({ items: state.data.week || [] }) || null;
-  const recentModel = progress?.todayRecent({ items: state.data.sessions || [] }) || null;
+  const directionModel = progress?.todayDirection({
+    items: todayModel?.weeklyDirection || []
+  }) || null;
+  const recentModel = progress?.todayRecent({
+    items: todayModel?.progress || []
+  }) || null;
 
   root.innerHTML = `<div class="today-layout">
     <section class="today-command"><div class="today-command-copy"><p class="eyebrow">${formatDateLabel(date)}</p><h2>Your daily command center</h2><p>See what is true, choose what fits, and log only what actually happens.</p></div><button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Log or plan</button></section>

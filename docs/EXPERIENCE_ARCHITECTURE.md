@@ -175,9 +175,20 @@ The UI may use the internal concept `subtype`, but the normal person-facing labe
 
 Plan and Start now hand off to Daily Plan. Done creates factual Progress only after explicit confirmation. Logger does not own Daily Plan persistence.
 
+The runtime Logger is registry-owned. Activity choices come from
+`/api/v1/activities`, completed facts go to `/api/v1/progress`, and Plan or
+Start now intentions go to `/api/v1/daily-plan`. There is no runtime fallback
+to legacy session writes or founder-specific activity seeds.
+
 ## Today - Revision B
 
 Today remains a composition surface, not a business monolith.
+
+Its table-free Worker contract, `GET /api/v1/today`, combines weekly direction
+and recent facts only through the public Activities, Plans and Progress
+contracts. The frontend then combines those facts with module-owned Capacity,
+Wellbeing, Daily Plan and Journal contributions. Primary runtime does not
+consume the legacy bootstrap, week, history, session or energy endpoints.
 
 Required conceptual order:
 
@@ -206,6 +217,13 @@ Minimum/Target must never be fabricated by naive division or multiplication. Sho
 `No target set for this period.`
 
 Historical facts remain unchanged when the view changes.
+
+## Wellbeing observations
+
+Wellbeing independently owns profile-scoped Energy, Sleep and Day Context
+observations. Canonical writes use `/api/v1/wellbeing/energy`,
+`/api/v1/wellbeing/sleep` and `/api/v1/wellbeing/context`. These remain optional
+observations, not performance scores or evidence of causation.
 
 ## Capacity - ordinary language
 
@@ -325,6 +343,10 @@ Evidence thresholds remain:
 
 Sample size must be visible. Journal content remains excluded in Version 1 Beta. Never fabricate an association.
 
+Insights reads canonical Progress and Wellbeing contracts only. If either is
+unavailable, it shows an evidence-unavailable state rather than falling back
+to legacy bootstrap data or inventing observations.
+
 ## Journal
 
 Journal remains optional and private.
@@ -387,6 +409,11 @@ The car-parts rule remains mandatory for every experience component.
 Changing Logger must not change Capacity. Changing Today must not change Progress persistence. Replacing Daily Plan must leave manual completed logging available. Replacing Journal must not change Goals, Progress or Insights beyond its explicit slot disappearing. Replacing one Wellbeing observation type must not mutate unrelated observation modules.
 
 Private implementations may not read another module's private tables, import private implementation files, or reach into another module's DOM.
+
+Cross-module frontend facts have one declared publisher, and the composition
+root chooses reactions without turning facts into commands. Legacy Beta reads
+remain isolated compatibility data for the original profile; new runtime writes
+and profile-scoped exports use Version 1 module contracts.
 
 ## External product research - principles, not copying
 

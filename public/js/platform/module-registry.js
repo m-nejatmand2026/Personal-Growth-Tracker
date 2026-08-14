@@ -4,6 +4,22 @@ const MODULE_ID =
 const SLOT_ID =
   /^[a-z][a-z0-9-]*$/;
 
+const EVENT_ID =
+  /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/;
+
+function assertUniqueStrings(values, label, pattern) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== 'string' || !pattern.test(value)) {
+      throw new Error(`${label} contains invalid value: ${value}`);
+    }
+    if (seen.has(value)) {
+      throw new Error(`${label} contains duplicate value: ${value}`);
+    }
+    seen.add(value);
+  }
+}
+
 function validateModule(module) {
   if (!module || typeof module !== 'object') {
     throw new Error(
@@ -43,6 +59,25 @@ function validateModule(module) {
       `Frontend module ${module.id} slots must be an array.`
     );
   }
+
+  for (const field of ['publishes', 'subscribes']) {
+    if (!Array.isArray(module[field])) {
+      throw new Error(
+        `Frontend module ${module.id} ${field} must be an array.`
+      );
+    }
+  }
+
+  assertUniqueStrings(
+    module.publishes,
+    `Frontend module ${module.id} published events`,
+    EVENT_ID
+  );
+  assertUniqueStrings(
+    module.subscribes,
+    `Frontend module ${module.id} subscriptions`,
+    EVENT_ID
+  );
 
   const dependencies = new Set();
 
@@ -135,6 +170,7 @@ export function createFrontendModuleRegistry(
   }
 
   const modulesById = new Map();
+  const publishedEventOwners = new Map();
 
   for (const module of modules) {
     validateModule(module);
@@ -149,6 +185,32 @@ export function createFrontendModuleRegistry(
       module.id,
       Object.freeze(module)
     );
+
+    for (const event of module.publishes) {
+      if (publishedEventOwners.has(event)) {
+        throw new Error(
+          `Frontend event ${event} has multiple publishers: `
+          + `${publishedEventOwners.get(event)} and ${module.id}.`
+        );
+      }
+      publishedEventOwners.set(event, module.id);
+    }
+  }
+
+  for (const module of modulesById.values()) {
+    for (const event of module.subscribes) {
+      const publisher = publishedEventOwners.get(event);
+      if (!publisher) {
+        throw new Error(
+          `Frontend module ${module.id} subscribes to unpublished event ${event}.`
+        );
+      }
+      if (publisher !== module.id && !module.dependsOn.includes(publisher)) {
+        throw new Error(
+          `Frontend module ${module.id} subscribes to ${event} without depending on ${publisher}.`
+        );
+      }
+    }
   }
 
   const ordered =
@@ -201,6 +263,10 @@ export function createFrontendModuleRegistry(
 
     get(id) {
       return modulesById.get(id) || null;
+    },
+
+    eventPublisher(event) {
+      return publishedEventOwners.get(event) || null;
     },
 
     enabled,

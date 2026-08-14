@@ -16,7 +16,8 @@ const routes = await readFile(new URL('../worker/modules/progress/routes.js', im
 const activitiesPublic = await readFile(new URL('../worker/modules/activities/public.js', import.meta.url), 'utf8');
 const logger = await readFile(new URL('../public/js/modules/logger/ui.js', import.meta.url), 'utf8');
 const legacySessionRoute = await readFile(new URL('../worker/routes/sessions.js', import.meta.url), 'utf8');
-const legacyWeek = await readFile(new URL('../worker/compatibility/legacy-beta/progress.js', import.meta.url), 'utf8');
+const todayPublic = await readFile(new URL('../worker/modules/today/public.js', import.meta.url), 'utf8');
+const legacyWeekRoute = await readFile(new URL('../worker/routes/week.js', import.meta.url), 'utf8');
 const frontendManifest = await readFile(new URL('../public/js/modules/progress/manifest.js', import.meta.url), 'utf8');
 const frontendUi = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
 const app = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
@@ -82,10 +83,12 @@ test('Legacy session endpoint forwards writes to Progress and cannot mutate sess
   assert.doesNotMatch(legacySessionRoute, /\b(?:INSERT|UPDATE|DELETE)\b[\s\S]*\bsessions\b/i);
 });
 
-test('Legacy week compatibility reads Progress through its public contract', () => {
-  assert.match(legacyWeek, /progressContractV1/);
-  assert.match(legacyWeek, /modules\/progress\/public\.js/);
-  assert.doesNotMatch(legacyWeek, /\bFROM\s+sessions\b/i);
+test('Legacy week route delegates to Today, which reads Progress publicly', () => {
+  assert.match(legacyWeekRoute, /todayContractV1/);
+  assert.match(legacyWeekRoute, /modules\/today\/public\.js/);
+  assert.match(todayPublic, /progressContractV1/);
+  assert.match(todayPublic, /progress\/public\.js/);
+  assert.doesNotMatch(todayPublic, /\bFROM\s+sessions\b/i);
 });
 
 test('Progress frontend owns its UI and app composes the registered module', async () => {

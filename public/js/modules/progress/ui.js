@@ -11,8 +11,7 @@ function addDays(dateText, amount) {
   return date.toISOString().slice(0, 10);
 }
 
-function weeklySummary() {
-  const items = state.data.week || [];
+function weeklySummary(items = []) {
   const targetTotal = items.reduce((sum, item) => sum + Math.max(0, Number(item.target_minutes) || 0), 0);
   const actualTotal = items.reduce((sum, item) => sum + Math.max(0, Number(item.actual_minutes) || 0), 0);
   const cappedActual = items.reduce((sum, item) => sum + Math.min(Math.max(0, Number(item.actual_minutes) || 0), Math.max(0, Number(item.target_minutes) || 0)), 0);
@@ -82,11 +81,11 @@ function recentRows(items) {
   }).join('');
 }
 
-export async function renderProgress({ reload } = {}) {
+export async function renderProgress({ reload, weeklyDirection = [] } = {}) {
   const root = $('#progressView');
   if (!root) return;
 
-  const week = weeklySummary();
+  const week = weeklySummary(weeklyDirection);
   const from = addDays(state.date, -29);
   let history = [];
 
@@ -94,7 +93,7 @@ export async function renderProgress({ reload } = {}) {
     const response = await api(`/api/v1/progress?from=${from}&to=${state.date}&limit=100`);
     history = response.items || [];
   } catch {
-    history = state.data.sessions || [];
+    history = [];
   }
 
   root.innerHTML = `<section class="progress-dashboard"><div class="progress-dashboard-head"><div><p class="eyebrow">Progress</p><h2>Actual, minimum, target</h2><p>Enough counts. Targets guide direction; they do not create debt.</p></div><span class="week-status">${escapeHtml(week.status)}</span></div><div class="progress-stat-grid"><div><span>Target coverage</span><strong>${week.targetTotal ? `${week.targetProgress}%` : 'Not set'}</strong><small>capped at each target</small></div><div><span>Minimums reached</span><strong>${week.measurableCount ? `${week.minimumReached}/${week.measurableCount}` : 'Not set'}</strong><small>only goals with guidance</small></div><div><span>Actual time</span><strong>${formatMinutes(week.actualTotal)}</strong><small>facts recorded this week</small></div><div><span>Target time</span><strong>${week.targetTotal ? formatMinutes(week.targetTotal) : 'Not set'}</strong><small>time-allocation goals only</small></div></div></section><section class="os-section progress-goals-section"><div class="os-section-head"><div><span class="section-kicker">This week</span><h2>Goal progress</h2></div><small>Minimum and target are guidance, not debt</small></div><div class="amt-list">${goalRows(week.items)}</div></section><section class="os-section progress-history-section"><div class="os-section-head"><div><span class="section-kicker">History</span><h2>Recent factual records</h2></div><small>Time, quantity and yes/no facts stay distinct</small></div><div class="progress-history-list">${recentRows(history)}</div></section>`;

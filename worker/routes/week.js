@@ -1,17 +1,18 @@
 import { addDays } from '../core/dates.js';
 import { bad, json } from '../core/http.js';
 import { resolveProfileId } from '../core/profile.js';
-import { getLegacyWeek } from '../compatibility/legacy-beta/progress.js';
+import { isDateKey } from '../core/validation.js';
+import { todayContractV1 } from '../modules/today/public.js';
 
 export async function weekRoute({ request, url, env }) {
   const start = url.searchParams.get('start');
-  if (!start) return bad('start is required');
+  if (!isDateKey(start)) return bad('start is required and must be valid.');
 
   const profileId = resolveProfileId(request);
 
   return json({
     start,
     end: addDays(start, 6),
-    items: await getLegacyWeek(env.DB, profileId, start)
+    items: await todayContractV1.getWeeklyDirection(env.DB, profileId, start)
   });
 }

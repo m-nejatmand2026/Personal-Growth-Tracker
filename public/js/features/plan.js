@@ -106,7 +106,7 @@ export async function renderPlan({ reload }) {
     <div class="plan-module-stack">${panels}</div>
     <section id="compassSection" class="compass-section">
       <div class="os-section-head"><div><span class="section-kicker">Long-term direction</span><h2>Compass</h2></div><small>Directional, editable, never contractual</small></div>
-      ${legacyPlanHtml(state.data)}
+      ${legacyPlanHtml()}
     </section>
   `;
 
@@ -125,5 +125,5 @@ export async function renderPlan({ reload }) {
       console.error(`Failed to bind module ${module.id}`, error);
     }
   }
-  bindLegacyPlan(state.data, { reload });
+  bindLegacyPlan();
 }

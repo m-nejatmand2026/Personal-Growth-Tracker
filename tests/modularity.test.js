@@ -37,8 +37,10 @@ test('Worker module catalog is valid, dependency-safe and route-conflict free', 
   assert.equal(registry.has('goals'), true);
   assert.equal(registry.has('plans'), true);
   assert.equal(registry.has('capacity'), true);
+  assert.equal(registry.has('today'), true);
   assert.equal(registry.match('GET', '/api/v1/areas')?.module.id, 'areas');
   assert.equal(registry.match('GET', '/api/v1/capacity')?.module.id, 'capacity');
+  assert.equal(registry.match('GET', '/api/v1/today')?.module.id, 'today');
 });
 
 test('Frontend module catalog has explicit dependency ordering', () => {
@@ -47,6 +49,27 @@ test('Frontend module catalog has explicit dependency ordering', () => {
   assert.ok(ids.indexOf('areas') < ids.indexOf('goals'));
   assert.ok(ids.indexOf('goals') < ids.indexOf('plans'));
   assert.ok(ids.indexOf('plans') < ids.indexOf('capacity'));
+});
+
+test('Frontend cross-module facts have one registered publisher', () => {
+  const registry = createFrontendModuleRegistry(frontendModules);
+  assert.equal(registry.eventPublisher('daily-plan.completion-selected'), 'daily-plan');
+  assert.equal(registry.eventPublisher('journal.preview-selected'), 'journal');
+});
+
+test('Frontend registry rejects undeclared and multiply-owned events', () => {
+  const base = { contractVersion: 1, dependsOn: [], defaultEnabled: true, slots: [], publishes: [], subscribes: [] };
+  assert.throws(
+    () => createFrontendModuleRegistry([{ ...base, id: 'reader', subscribes: ['sample.changed'] }]),
+    /unpublished event/
+  );
+  assert.throws(
+    () => createFrontendModuleRegistry([
+      { ...base, id: 'first', publishes: ['sample.changed'] },
+      { ...base, id: 'second', publishes: ['sample.changed'] }
+    ]),
+    /multiple publishers/
+  );
 });
 
 test('Frontend event bus publishes without coupling publisher to subscribers', async () => {

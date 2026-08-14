@@ -1,6 +1,7 @@
 import { json } from '../core/http.js';
 import { resolveProfileId } from '../core/profile.js';
 import { getProfile } from '../data/profiles.js';
+import { exportLegacyBeta } from '../compatibility/legacy-beta/export.js';
 import { exportActivitiesV1 } from '../modules/activities/public.js';
 import { exportAreasV1 } from '../modules/areas/public.js';
 import { exportCapacityV1 } from '../modules/capacity/public.js';
@@ -25,13 +26,7 @@ export async function exportRoute({ request, env }) {
     journalEntries,
     progressRecords,
     wellbeing,
-    activities,
-    targets,
-    sessions,
-    energy,
-    lessons,
-    roadmap,
-    settings
+    legacyBeta
   ] = await Promise.all([
     exportAreasV1(env.DB, profileId),
     exportGoalsV1(env.DB, profileId),
@@ -42,13 +37,7 @@ export async function exportRoute({ request, env }) {
     exportJournalV1(env.DB, profileId),
     exportProgressV1(env.DB, profileId),
     exportWellbeingV1(env.DB, profileId),
-    env.DB.prepare('SELECT * FROM activities').all(),
-    env.DB.prepare('SELECT * FROM weekly_targets').all(),
-    env.DB.prepare('SELECT * FROM sessions ORDER BY occurred_on,id').all(),
-    env.DB.prepare('SELECT * FROM energy_logs ORDER BY occurred_on').all(),
-    env.DB.prepare('SELECT * FROM momente_lessons ORDER BY lesson').all(),
-    env.DB.prepare('SELECT * FROM roadmap_items ORDER BY horizon,sort_order,id').all(),
-    env.DB.prepare('SELECT * FROM settings').all()
+    exportLegacyBeta(env.DB, profileId)
   ]);
 
   return json({
@@ -70,14 +59,6 @@ export async function exportRoute({ request, env }) {
       daily_plan_items: dailyPlanItems,
       journal_entries: journalEntries
     },
-    legacy_beta: {
-      activities: activities.results,
-      targets: targets.results,
-      sessions: sessions.results,
-      energy: energy.results,
-      momente_lessons: lessons.results,
-      roadmap: roadmap.results,
-      settings: settings.results
-    }
+    legacy_beta: legacyBeta
   });
 }

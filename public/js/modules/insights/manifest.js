@@ -5,6 +5,8 @@ export const insightsModule = Object.freeze({
   contractVersion: 1,
   dependsOn: ['progress', 'wellbeing'],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([]),
   render() {
     return renderInsights();

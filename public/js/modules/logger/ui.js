@@ -12,22 +12,6 @@ function addDays(dateText, amount) {
   return d.toISOString().slice(0, 10);
 }
 
-function fallbackActivities() {
-  const items = [];
-  const seen = new Set();
-  for (const x of state.data.week || []) {
-    if (!x?.key || seen.has(x.key)) continue;
-    seen.add(x.key);
-    items.push({ key: x.key, name: x.name || x.key });
-  }
-  for (const x of state.data.sessions || []) {
-    if (!x?.activity_key || seen.has(x.activity_key)) continue;
-    seen.add(x.activity_key);
-    items.push({ key: x.activity_key, name: x.activity_name || x.activity_key });
-  }
-  return items;
-}
-
 function repeatKey(x) {
   return [x.activity_key, x.subtype || '', Number(x.minutes) || 0].join('|');
 }
@@ -62,7 +46,7 @@ async function loadRecentRepeats() {
     const response = await api(`/api/v1/progress?from=${from}&to=${state.date}&limit=100`);
     return recentRepeats(response.items || []);
   } catch {
-    return recentRepeats(state.data.sessions || []);
+    return [];
   }
 }
 
@@ -71,7 +55,7 @@ async function loadActivities() {
     const response = await api('/api/v1/activities');
     return response.items || [];
   } catch {
-    return fallbackActivities();
+    return [];
   }
 }
 

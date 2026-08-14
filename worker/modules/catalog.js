@@ -6,6 +6,7 @@ import { goalsModule } from './goals/module.js';
 import { journalModule } from './journal/module.js';
 import { plansModule } from './plans/module.js';
 import { progressModule } from './progress/module.js';
+import { todayModule } from './today/module.js';
 import { wellbeingModule } from './wellbeing/module.js';
 
 // Composition root: this is the one intentional place where the Worker knows
@@ -20,5 +21,6 @@ export const platformModules = Object.freeze([
   dailyPlanModule,
   journalModule,
   progressModule,
-  wellbeingModule
+  wellbeingModule,
+  todayModule
 ]);

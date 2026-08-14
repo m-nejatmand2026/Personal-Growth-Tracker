@@ -1,6 +1,4 @@
-import { api } from './core/api.js';
 import { $, $$ } from './core/dom.js';
-import { createFallback } from './core/fallback.js';
 import { state } from './core/state.js';
 import { renderPlan } from './features/plan.js';
 import { renderSettings } from './features/settings.js';
@@ -19,13 +17,11 @@ const insights = moduleRegistry.get('insights');
 const journal = moduleRegistry.get('journal');
 const loggerCapability = moduleRegistry.get('logger');
 const progress = moduleRegistry.get('progress');
+const today = moduleRegistry.get('today');
 let lastPrimaryView = 'today';
 let journalFilters = { query: '', filterDate: '' };
 
 async function load() {
-  try { state.data = await api(`/api/bootstrap?date=${state.date}`); }
-  catch { state.data = createFallback(state.date); }
-  state.selectedEnergy = state.data.energy;
   await renderCurrentView();
 }
 
@@ -77,7 +73,15 @@ async function renderCurrentView() {
   if (state.view === 'today') await renderTodayView();
   if (state.view === 'plan') await renderPlan({ reload: load });
   if (state.view === 'progress') {
-    if (progress) await progress.render({ reload: load });
+    if (progress) {
+      const summary = today
+        ? await today.loadSummary({ date: state.date })
+        : null;
+      await progress.render({
+        reload: load,
+        weeklyDirection: summary?.weeklyDirection || []
+      });
+    }
     else { const root = $('#progressView'); if (root) root.innerHTML = '<div class="empty">Progress is unavailable.</div>'; }
   }
   if (state.view === 'insights') {

@@ -46,6 +46,8 @@ export const wellbeingModule = Object.freeze({
   contractVersion: 1,
   dependsOn: [],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([
     { name: 'today-state', order: 10 },
     { name: 'today-details', order: 80 }
@@ -66,6 +68,22 @@ export const wellbeingModule = Object.freeze({
 
   async recordEnergy(input) {
     const response = await api('/api/v1/wellbeing/energy', {
+      method: 'POST',
+      body: JSON.stringify(input)
+    });
+    return response.item;
+  },
+
+  async recordSleep(input) {
+    const response = await api('/api/v1/wellbeing/sleep', {
+      method: 'POST',
+      body: JSON.stringify(input)
+    });
+    return response.item;
+  },
+
+  async recordDayContext(input) {
+    const response = await api('/api/v1/wellbeing/context', {
       method: 'POST',
       body: JSON.stringify(input)
     });

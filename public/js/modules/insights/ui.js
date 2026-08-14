@@ -49,8 +49,8 @@ export async function renderInsights() {
     energy = energyResponse.items || [];
     progress = progressResponse.items || [];
   } catch {
-    energy = state.selectedEnergy ? [state.selectedEnergy] : [];
-    progress = state.data.sessions || [];
+    energy = [];
+    progress = [];
   }
 
   const trackedDays = new Set([

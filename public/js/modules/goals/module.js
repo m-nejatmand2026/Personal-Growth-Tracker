@@ -9,6 +9,8 @@ export const goalsModule = Object.freeze({
   contractVersion: 1,
   dependsOn: ['areas'],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([{ name: 'plan', order: 30 }]),
   async load() {
     return loadGoalsModel();

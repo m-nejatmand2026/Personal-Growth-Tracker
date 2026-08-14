@@ -9,7 +9,7 @@ async function exists(url) {
 const bootstrap = await readFile(new URL('../worker/compatibility/legacy-beta/bootstrap.js', import.meta.url), 'utf8');
 const history = await readFile(new URL('../worker/routes/history.js', import.meta.url), 'utf8');
 const week = await readFile(new URL('../worker/routes/week.js', import.meta.url), 'utf8');
-const compatibilityWeek = await readFile(new URL('../worker/compatibility/legacy-beta/progress.js', import.meta.url), 'utf8');
+const todayPublic = await readFile(new URL('../worker/modules/today/public.js', import.meta.url), 'utf8');
 const sessionsRoute = await readFile(new URL('../worker/routes/sessions.js', import.meta.url), 'utf8');
 const logger = await readFile(new URL('../public/js/modules/logger/ui.js', import.meta.url), 'utf8');
 const progressUi = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
@@ -20,9 +20,10 @@ test('Shared Progress and bootstrap business implementations are gone', async ()
   assert.equal(await exists(new URL('../worker/data/bootstrap.js', import.meta.url)), false);
 });
 
-test('Bootstrap compatibility composer uses Progress public contract', () => {
-  assert.match(bootstrap, /progressContractV1/);
-  assert.match(bootstrap, /modules\/progress\/public\.js/);
+test('Bootstrap compatibility composer delegates runtime summary to Today', () => {
+  assert.match(bootstrap, /todayContractV1/);
+  assert.match(bootstrap, /modules\/today\/public\.js/);
+  assert.match(todayPublic, /progressContractV1/);
   assert.doesNotMatch(bootstrap, /\bFROM\s+sessions\b/i);
   assert.doesNotMatch(bootstrap, /\bJOIN\s+activities\b/i);
 });
@@ -34,11 +35,17 @@ test('Legacy history composes Progress facts without private table joins', () =>
   assert.doesNotMatch(history, /\bJOIN\s+activities\b/i);
 });
 
-test('Legacy week delegates to explicit compatibility adapter', () => {
-  assert.match(week, /compatibility\/legacy-beta\/progress\.js/);
+test('Legacy week delegates to the Today public contract', async () => {
+  assert.match(week, /modules\/today\/public\.js/);
+  assert.match(week, /todayContractV1/);
+  assert.match(week, /isDateKey/);
   assert.doesNotMatch(week, /data\/progress\.js/);
-  assert.match(compatibilityWeek, /progressContractV1/);
-  assert.doesNotMatch(compatibilityWeek, /\bFROM\s+sessions\b/i);
+  assert.match(todayPublic, /progressContractV1/);
+  assert.doesNotMatch(todayPublic, /\bFROM\s+sessions\b/i);
+  assert.equal(
+    await exists(new URL('../worker/compatibility/legacy-beta/progress.js', import.meta.url)),
+    false
+  );
 });
 
 test('Legacy session POST can only forward to Progress V1', () => {
@@ -62,10 +69,12 @@ test('Progress UI owns canonical history and deletion', () => {
   assert.match(progressUi, /data-delete-progress/);
   assert.match(progressUi, /Beta history/);
   assert.doesNotMatch(progressUi, /data-delete-session/);
+  assert.doesNotMatch(progressUi, /state\.data|\/api\/history/);
 });
 
 test('App composes Progress from frontend registry and subscribes Journal once', () => {
   assert.match(app, /moduleRegistry\.get\('progress'\)/);
   assert.doesNotMatch(app, /features\/progress\.js/);
+  assert.doesNotMatch(app, /\/api\/bootstrap|state\.data/);
   assert.equal((app.match(/eventBus\.subscribe\(\s*['"]journal\.preview-selected['"]/g) || []).length, 1);
 });

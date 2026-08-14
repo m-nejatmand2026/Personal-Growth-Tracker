@@ -12,12 +12,14 @@ export const progressModule = Object.freeze({
   contractVersion: 1,
   dependsOn: ['activities'],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([
     { name: 'today-direction', order: 40 },
     { name: 'today-recent', order: 50 }
   ]),
-  render({ reload } = {}) {
-    return renderProgress({ reload });
+  render({ reload, weeklyDirection = [] } = {}) {
+    return renderProgress({ reload, weeklyDirection });
   },
   todayDirection({ items = [] } = {}) {
     return Object.freeze({

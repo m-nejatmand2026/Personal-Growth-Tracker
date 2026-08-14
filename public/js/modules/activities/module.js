@@ -13,6 +13,8 @@ export const activitiesModule = Object.freeze({
   contractVersion: 1,
   dependsOn: ['goals'],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([]),
 
   async list({ goalId = null, includeArchived = false } = {}) {

@@ -85,12 +85,56 @@ export async function getSleepObservation(DB, profileId, date) {
   `).bind(profileId, date).first();
 }
 
+export async function upsertSleepObservation(DB, profileId, input) {
+  await DB.prepare(`
+    INSERT INTO sleep_logs_v1(
+      profile_id, occurred_on, bedtime, wake_time, minutes, quality, note
+    )
+    VALUES(?,?,?,?,?,?,?)
+    ON CONFLICT(profile_id,occurred_on) DO UPDATE SET
+      bedtime=excluded.bedtime,
+      wake_time=excluded.wake_time,
+      minutes=excluded.minutes,
+      quality=excluded.quality,
+      note=excluded.note,
+      updated_at=CURRENT_TIMESTAMP
+  `).bind(
+    profileId,
+    input.occurred_on,
+    input.bedtime,
+    input.wake_time,
+    input.minutes,
+    input.quality,
+    input.note
+  ).run();
+  return getSleepObservation(DB, profileId, input.occurred_on);
+}
+
 export async function getDayContextObservation(DB, profileId, date) {
   return DB.prepare(`
     SELECT *
     FROM day_context_logs_v1
     WHERE profile_id=? AND occurred_on=?
   `).bind(profileId, date).first();
+}
+
+export async function upsertDayContextObservation(DB, profileId, input) {
+  await DB.prepare(`
+    INSERT INTO day_context_logs_v1(
+      profile_id, occurred_on, context_key, note
+    )
+    VALUES(?,?,?,?)
+    ON CONFLICT(profile_id,occurred_on) DO UPDATE SET
+      context_key=excluded.context_key,
+      note=excluded.note,
+      updated_at=CURRENT_TIMESTAMP
+  `).bind(
+    profileId,
+    input.occurred_on,
+    input.context_key,
+    input.note
+  ).run();
+  return getDayContextObservation(DB, profileId, input.occurred_on);
 }
 
 export async function exportWellbeingData(DB, profileId) {

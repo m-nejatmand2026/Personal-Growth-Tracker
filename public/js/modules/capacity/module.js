@@ -10,6 +10,8 @@ export const capacityModule = Object.freeze({
   contractVersion: 1,
   dependsOn: ['plans'],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([
     { name: 'plan', order: 10 },
     { name: 'today-capacity', order: 20 }

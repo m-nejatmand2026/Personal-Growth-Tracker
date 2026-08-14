@@ -1,6 +1,8 @@
 import {
   listEnergyRoute,
+  recordDayContextRoute,
   recordEnergyRoute,
+  recordSleepRoute,
   wellbeingDayRoute
 } from './routes.js';
 
@@ -18,8 +20,14 @@ export const wellbeingModule = Object.freeze({
   routes: Object.freeze([
     { method: 'GET', pattern: '/api/v1/wellbeing/day', handler: wellbeingDayRoute },
     { method: 'GET', pattern: '/api/v1/wellbeing/energy', handler: listEnergyRoute },
-    { method: 'POST', pattern: '/api/v1/wellbeing/energy', handler: recordEnergyRoute }
+    { method: 'POST', pattern: '/api/v1/wellbeing/energy', handler: recordEnergyRoute },
+    { method: 'POST', pattern: '/api/v1/wellbeing/sleep', handler: recordSleepRoute },
+    { method: 'POST', pattern: '/api/v1/wellbeing/context', handler: recordDayContextRoute }
   ]),
-  publishes: Object.freeze(['wellbeing.energy-recorded']),
+  publishes: Object.freeze([
+    'wellbeing.energy-recorded',
+    'wellbeing.sleep-recorded',
+    'wellbeing.context-recorded'
+  ]),
   subscribes: Object.freeze([])
 });

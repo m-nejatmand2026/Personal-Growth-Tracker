@@ -9,6 +9,8 @@ export const areasModule = Object.freeze({
   contractVersion: 1,
   dependsOn: [],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([{ name: 'plan', order: 20 }]),
   async load() {
     return loadAreasModel();

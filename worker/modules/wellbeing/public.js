@@ -4,7 +4,9 @@ import {
   getEnergyObservation,
   getSleepObservation,
   listEnergyObservations,
-  upsertEnergyObservation
+  upsertDayContextObservation,
+  upsertEnergyObservation,
+  upsertSleepObservation
 } from './data.js';
 
 function freezeObservation(item) {
@@ -38,6 +40,16 @@ export const wellbeingContractV1 = Object.freeze({
 
   async recordEnergy(DB, profileId, input) {
     return freezeObservation(await upsertEnergyObservation(DB, profileId, input));
+  },
+
+  async recordSleep(DB, profileId, input) {
+    return freezeObservation(await upsertSleepObservation(DB, profileId, input));
+  },
+
+  async recordDayContext(DB, profileId, input) {
+    return freezeObservation(
+      await upsertDayContextObservation(DB, profileId, input)
+    );
   }
 });
 
