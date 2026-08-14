@@ -34,7 +34,7 @@ function thresholdHtml(count) {
 }
 
 function unavailableHtml() {
-  return `<section class="insights-hero gc-page-header"><div><h2>Insights unavailable</h2><p>Try again later.</p></div></section>`;
+  return `<section class="insights-hero gc-page-header"><div><h2>Evidence is unavailable</h2><p>No summaries were generated. Try again later.</p></div></section>`;
 }
 
 export async function renderInsights() {
@@ -74,21 +74,21 @@ export async function renderInsights() {
   root.innerHTML = `
     <section class="insights-hero gc-page-header gc-page-header--aside">
       <div><h2>${escapeHtml(stage.label)}</h2><p class="gc-sr-only">${escapeHtml(stage.detail)} Association never means cause.</p></div>
-      <div class="insight-readiness-ring" role="img" style="--readiness:${readinessPct}" aria-label="${readinessPct}% toward 21 tracked days"><strong>${trackedDays}</strong><span>tracked days</span></div>
+      <div class="insight-readiness-ring" role="img" style="--readiness:${readinessPct}" aria-label="${trackedDays} tracked days so far; ${readinessPct}% toward 21 tracked days"><strong>${trackedDays}</strong><span>tracked days</span></div>
     </section>
     <div class="insight-summary-grid">
       <article class="insight-summary-card"><span>Evidence</span><strong>${escapeHtml(stage.label)}</strong><small class="gc-sr-only">${escapeHtml(stage.detail)}</small></article>
-      <article class="insight-summary-card"><span>Energy</span><strong>${energy.length}</strong><small class="gc-sr-only">${energyAverage == null ? 'No average yet' : `Average recorded energy ${energyAverage.toFixed(1)} across ${energy.length} check-ins.`}</small></article>
+      <article class="insight-summary-card"><span>Energy</span><strong>${energy.length}</strong><small class="gc-sr-only">${energy.length} check-ins. ${energyAverage == null ? 'No average yet.' : `Average recorded energy ${energyAverage.toFixed(1)}.`}</small></article>
       <article class="insight-summary-card"><span>Active days</span><strong>${activityDays}</strong><small class="gc-sr-only">${progress.length} completed progress records.</small></article>
     </div>
     <section class="association-waiting">
       <div class="association-icon" aria-hidden="true">↔</div>
-      <div><h2>No matched patterns yet</h2><p>Keep logging. Patterns appear only when matching observations are strong enough.</p></div>
+      <div><h2>No matched patterns yet</h2><p>Keep logging. Patterns appear only when matching observations are strong enough.</p><p class="gc-sr-only">Not enough matching wellbeing data yet.</p></div>
     </section>
     <details class="insight-method-disclosure os-section">
       <summary><strong>How insights work</strong><span>${trackedDays} days</span></summary>
       <div class="insight-method-content">
-        <p>Only observations that can be meaningfully matched are compared. More history can strengthen an association; it never proves cause.</p>
+        <p>Only observations that can be meaningfully matched are compared. Any future pattern must say how many observations support it and describe what is associated with an outcome. More history can strengthen an association; it does not prove cause.</p>
         <div class="insight-stage-grid">${thresholdHtml(trackedDays)}</div>
       </div>
     </details>`;
