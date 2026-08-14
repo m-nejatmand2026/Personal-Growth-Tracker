@@ -140,7 +140,7 @@ export function createLogger({ onSaved, activities: activityCapability } = {}) {
   }
 
   function subtypePlaceholder() {
-    return 'e.g. chords, vocabulary, chapter 2';
+    return 'e.g. warm-up, review, chapter 2';
   }
 
   function ensureActivity(item = {}) {
