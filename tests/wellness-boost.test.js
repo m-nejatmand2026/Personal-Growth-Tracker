@@ -8,6 +8,7 @@ import { frontendModules } from '../public/js/modules/catalog.js';
 import { boostContent, boostTypes } from '../public/js/modules/wellness-boost/content.js';
 import { wellnessBoostModule } from '../public/js/modules/wellness-boost/module.js';
 
+const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 const todayUi = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
 const app = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 const css = await readFile(new URL('../public/css/modules/wellness-boost.css', import.meta.url), 'utf8');
@@ -21,7 +22,8 @@ test('Wellness Boost owns an independent dependency-free capability', () => {
   assert.deepEqual(frontend.dependsOn, []);
   assert.deepEqual(worker.ownsTables, []);
   assert.deepEqual(worker.routes, []);
-  assert.equal(frontend.slots[0].name, 'today-boost');
+  assert.deepEqual(frontend.slots, []);
+  assert.equal(typeof frontend.renderView, 'function');
 });
 
 test('boost platform metadata is generic while Meditation remains module content', () => {
@@ -33,9 +35,11 @@ test('boost platform metadata is generic while Meditation remains module content
   assert.ok(boostContent.some((item) => item.audioKind === 'both'));
 });
 
-test('module-owned UI provides native accessible audio semantics', () => {
-  const html = wellnessBoostModule.renderSlot({ slot: 'today-boost' });
+test('module-owned dedicated UI provides native accessible audio semantics', () => {
+  const html = wellnessBoostModule.renderView();
   assert.match(html, /data-module="wellness-boost"/);
+  assert.match(html, /Wellness Boost/);
+  assert.match(html, />Meditation</);
   assert.match(html, /<audio controls preload="metadata" aria-label="Play/);
   assert.match(html, /<source src="data:audio\/wav;base64,/);
   assert.match(html, /Duration 3 minutes/);
@@ -43,20 +47,36 @@ test('module-owned UI provides native accessible audio semantics', () => {
   assert.match(html, /no unlicensed recording has been added/i);
 });
 
-test('Today stays composition-only and does not own Wellness Boost content or controls', () => {
-  assert.match(app, /forSlot\('today-boost'\)/);
-  assert.match(todayUi, /\$\{todayBoostPanel\}/);
-  assert.doesNotMatch(todayUi, /Meditation|<audio|wellness-boost-card|boostContent/);
+test('Wellness Boost is a first-class app section while the five-slot mobile Logger navigation remains stable', () => {
+  assert.match(indexHtml, /data-view="wellness-boost"[^>]*class="rail-nav-btn"/);
+  assert.match(indexHtml, /id="wellnessBoostBtn"/);
+  assert.match(indexHtml, /id="wellness-boostView" class="view"/);
+  assert.match(app, /moduleRegistry\.get\('wellness-boost'\)/);
+  assert.match(app, /state\.view === 'wellness-boost'/);
+  assert.match(app, /wellnessBoost\?\.renderView/);
+  assert.match(indexHtml, /grid-template-columns|id="quickAddBtn"/);
+  assert.match(indexHtml, /data-view="today"/);
+  assert.match(indexHtml, /data-view="plan"/);
+  assert.match(indexHtml, /data-view="progress"/);
+  assert.match(indexHtml, /data-view="insights"/);
 });
 
-test('module removal leaves Today valid and removes only its optional slot', () => {
+test('Today no longer owns or embeds Wellness Boost content', () => {
+  assert.doesNotMatch(app, /forSlot\('today-boost'\)/);
+  assert.doesNotMatch(todayUi, /todayBoostPanel|Meditation|<audio|wellness-boost-card|boostContent|Wellness Boost/);
+});
+
+test('module removal leaves unrelated capabilities available', () => {
   const registry = createFrontendModuleRegistry(frontendModules);
-  assert.equal(registry.forSlot('today-boost').length, 1);
-  assert.equal(registry.forSlot('today-boost', { 'wellness-boost': false }).length, 0);
-  assert.equal(registry.enabled({ 'wellness-boost': false }).some((module) => module.id === 'today'), true);
+  const enabled = registry.enabled({ 'wellness-boost': false });
+  assert.equal(enabled.some((module) => module.id === 'wellness-boost'), false);
+  assert.equal(enabled.some((module) => module.id === 'today'), true);
+  assert.equal(enabled.some((module) => module.id === 'progress'), true);
+  assert.equal(enabled.some((module) => module.id === 'journal'), true);
 });
 
-test('Wellness Boost is mobile-safe with accessible touch-size audio controls', () => {
+test('Wellness Boost dedicated view is mobile-safe with accessible touch-size audio controls', () => {
+  assert.match(css, /\.wellness-boost-view/);
   assert.match(css, /min-height:var\(--gc-target-min\)/);
   assert.match(css, /@media\(max-width:650px\)/);
   assert.match(css, /grid-template-columns:1fr/);
