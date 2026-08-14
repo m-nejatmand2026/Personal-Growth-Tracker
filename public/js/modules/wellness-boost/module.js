@@ -29,6 +29,15 @@ function renderItem(item) {
   </article>`;
 }
 
+function renderType(typeId, type) {
+  const items = boostContent.filter((item) => item.boostType === typeId);
+  if (!items.length) return '';
+  return `<section class="os-section wellness-boost-type" aria-labelledby="wellnessBoostType-${escapeHtml(typeId)}">
+    <div class="os-section-head"><div><span class="section-kicker">Practice</span><h2 id="wellnessBoostType-${escapeHtml(typeId)}">${escapeHtml(type.label)}</h2><small>${escapeHtml(type.description || '')}</small></div></div>
+    <div class="wellness-boost-grid">${items.map(renderItem).join('')}</div>
+  </section>`;
+}
+
 export const wellnessBoostModule = Object.freeze({
   id: 'wellness-boost',
   contractVersion: 1,
@@ -36,13 +45,17 @@ export const wellnessBoostModule = Object.freeze({
   defaultEnabled: true,
   publishes: Object.freeze([]),
   subscribes: Object.freeze([]),
-  slots: Object.freeze([{ name: 'today-boost', order: 45 }]),
+  slots: Object.freeze([]),
 
-  renderSlot({ slot } = {}) {
-    if (slot !== 'today-boost') return '';
-    return `<section class="os-section wellness-boost-section" data-module="wellness-boost" aria-labelledby="wellnessBoostTitle">
-      <div class="os-section-head"><div><span class="section-kicker">Optional pause</span><h2 id="wellnessBoostTitle">Wellness Boost</h2><small>Choose something that fits the moment. This is separate from your wellbeing observations.</small></div></div>
-      <div class="wellness-boost-grid">${boostContent.map(renderItem).join('')}</div>
-    </section>`;
+  renderView() {
+    const groups = Object.entries(boostTypes).map(([typeId, type]) => renderType(typeId, type)).join('');
+    return `<div class="wellness-boost-view" data-module="wellness-boost">
+      <section class="wellness-boost-hero" aria-labelledby="wellnessBoostTitle">
+        <p class="eyebrow">Wellness Boost</p>
+        <h2 id="wellnessBoostTitle">Choose a small reset that fits the moment</h2>
+        <p>Meditation is the first Wellness Boost practice. More optional practices can be added here later without changing your Progress or wellbeing history.</p>
+      </section>
+      ${groups || '<section class="os-section"><div class="empty">No Wellness Boost practices are available yet.</div></section>'}
+    </div>`;
   }
 });
