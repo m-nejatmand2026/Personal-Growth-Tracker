@@ -5,7 +5,7 @@ export const boostTypes = Object.freeze({
   meditation: Object.freeze({
     id: 'meditation',
     label: 'Meditation',
-    description: 'Short guided pauses for settling, breathing, focusing, or restoring.'
+    description: 'Choose a practice that fits the moment.'
   })
 });
 
@@ -24,6 +24,8 @@ export const boostContent = Object.freeze([
     title: 'Gentle arrival',
     durationMinutes: 3,
     category: 'Reset',
+    icon: '◌',
+    summary: 'Settle into the moment.',
     description: 'A brief pause to notice the body, the breath, and where you are now.',
     cues: [
       { atSeconds: 0, text: 'Settle into a position that feels steady enough. You do not need to make anything perfect.' },
@@ -38,6 +40,8 @@ export const boostContent = Object.freeze([
     title: 'A steadier breath',
     durationMinutes: 5,
     category: 'Calm',
+    icon: '∿',
+    summary: 'Reconnect with your breath.',
     description: 'Use the breath as a simple anchor without forcing a particular rhythm.',
     cues: [
       { atSeconds: 0, text: 'Find a comfortable position and let your breathing be ordinary.' },
@@ -53,6 +57,8 @@ export const boostContent = Object.freeze([
     title: 'Open attention',
     durationMinutes: 10,
     category: 'Focus',
+    icon: '✦',
+    summary: 'Clear some mental space.',
     description: 'Practice returning attention without turning distraction into a problem.',
     cues: [
       { atSeconds: 0, text: 'Let yourself arrive. Feel the contact points between your body and whatever is supporting you.' },
@@ -70,6 +76,8 @@ export const boostContent = Object.freeze([
     title: 'Settle and restore',
     durationMinutes: 20,
     category: 'Restore',
+    icon: '☾',
+    summary: 'Take a longer restorative pause.',
     description: 'A longer practice with spacious pauses for body awareness, breath, and open attention.',
     cues: [
       { atSeconds: 0, text: 'Choose a position you can stay with comfortably. Let this time be unhurried.' },
