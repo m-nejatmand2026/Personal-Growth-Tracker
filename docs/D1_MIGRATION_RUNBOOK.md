@@ -110,7 +110,7 @@ Then rerun `PRAGMA quick_check`.
 
 ### 7. Allow automatic preview deployment to resume
 
-Once no preview migrations are pending, the guarded GitHub workflow may deploy the exact Quality-tested feature SHA and must pass both UI and read-only API smoke tests.
+Once no preview migrations are pending, the guarded GitHub workflow may deploy the exact Quality-tested feature SHA. Its authenticated operational smoke test must verify the root UI plus the platform-owned `/api/health` route, which executes a data-free `SELECT 1` against the preview D1 binding. The smoke test must not read user-owned module data merely to prove database availability.
 
 ### 8. Human preview validation
 
@@ -189,6 +189,8 @@ If a remote migration or data transformation produces an unacceptable state:
 7. rerun `PRAGMA quick_check`, `PRAGMA foreign_key_check`, migration listing, and application smoke tests after recovery.
 
 Never improvise a production restore without an explicit recovery decision.
+
+Worker code rollback is a separate operation. See `docs/OPERATIONS_RUNBOOK.md`; a Worker rollback does not undo D1 schema/data changes.
 
 ## Current Beta state
 
