@@ -1,0 +1,113 @@
+name: Deploy Preview
+
+on:
+  workflow_run:
+    workflows: [Quality]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: growth-compass-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    name: Deploy tested feature head to preview
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_branch == 'feature/experience-refinement' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout the exact tested feature commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Verify preview-only deployment contract
+        shell: bash
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TESTED_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          TESTED_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+        run: |
+          set -euo pipefail
+
+          test "$TESTED_BRANCH" = "feature/experience-refinement"
+          test "$TESTED_REPOSITORY" = "$GITHUB_REPOSITORY"
+          test "$(git rev-parse HEAD)" = "$TESTED_SHA"
+
+          node <<'NODE'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('wrangler.jsonc', 'utf8'));
+          const preview = config.env?.preview;
+          const db = preview?.d1_databases?.find((item) => item.binding === 'DB');
+
+          const expectedPreviewDb = {
+            name: 'personal-growth-tracker-preview',
+            id: '1937971c-f2f2-4dad-bc65-3d22952584bb'
+          };
+          const productionDbId = 'a182d8c8-c009-461e-ac7e-04694c1047ab';
+
+          if (!preview) throw new Error('Missing explicit preview Wrangler environment.');
+          if (!db) throw new Error('Missing DB binding in preview environment.');
+          if (db.database_name !== expectedPreviewDb.name) {
+            throw new Error(`Unexpected preview DB name: ${db.database_name}`);
+          }
+          if (db.database_id !== expectedPreviewDb.id) {
+            throw new Error(`Unexpected preview DB id: ${db.database_id}`);
+          }
+          if (db.database_id === productionDbId) {
+            throw new Error('Preview environment points at production D1. Refusing deployment.');
+          }
+          NODE
+
+      - name: Verify Cloudflare CI credentials exist
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN repository secret.'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID repository secret.'; exit 1; }
+
+      - name: Refuse automatic database migrations
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          output="$(npx --yes wrangler@4.123.0 d1 migrations list DB --remote --env preview 2>&1)"
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -F 'No migrations to apply' >/dev/null || {
+            echo 'Preview has pending D1 migrations. Automatic Worker deployment is blocked until migrations are reviewed and applied explicitly.'
+            exit 1
+          }
+
+      - name: Preview dry run
+        shell: bash
+        run: npx --yes wrangler@4.123.0 deploy --dry-run --env preview
+
+      - name: Deploy preview only
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.123.0 deploy --env preview
+
+      - name: Smoke test preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://personal-growth-tracker-preview.m-nejatmand.workers.dev/'
+          body="$(curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors "$url")"
+          printf '%s' "$body" | grep -F 'Growth Compass' >/dev/null
+          echo "Preview smoke test passed: $url"
