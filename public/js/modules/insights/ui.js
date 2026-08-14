@@ -35,11 +35,11 @@ function thresholdHtml(count) {
 
 function unavailableHtml() {
   return `
-    <section class="insights-hero">
+    <section class="insights-hero gc-page-header">
       <div>
         <p class="eyebrow">Insights</p>
-        <h2>Evidence is temporarily unavailable</h2>
-        <p>Growth Compass could not read both Progress and Wellbeing evidence, so no summaries or relationships were generated. Please try again.</p>
+        <h2>Evidence is unavailable</h2>
+        <p>No summaries were generated. Try again later.</p>
       </div>
     </section>`;
 }
@@ -79,11 +79,11 @@ export async function renderInsights() {
   const readinessPct = Math.min(100, Math.round((trackedDays / 21) * 100));
 
   root.innerHTML = `
-    <section class="insights-hero">
+    <section class="insights-hero gc-page-header gc-page-header--aside">
       <div>
         <p class="eyebrow">Insights</p>
-        <h2>See patterns only when there is enough evidence</h2>
-        <p>Growth Compass shows how much history supports an insight and uses association language rather than claiming cause.</p>
+        <h2>Patterns, when the evidence is ready</h2>
+        <p>History supports the insight; association never means cause.</p>
       </div>
       <div class="insight-readiness-ring" role="img" style="--readiness:${readinessPct}" aria-label="${readinessPct}% toward 21 tracked days"><strong>${trackedDays}</strong><span>tracked days</span></div>
     </section>
