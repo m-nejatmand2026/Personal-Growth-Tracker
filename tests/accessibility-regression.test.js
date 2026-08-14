@@ -39,11 +39,13 @@ test('threshold graphics expose equivalent Actual Minimum Target text',()=>{
   assert.match(charts,/aria-hidden="true"/);
 });
 
-test('Insights exposes visual readiness and current evidence stage semantically',()=>{
+test('Insights exposes visual readiness current evidence stage and sample sizes semantically',()=>{
   assert.match(insights,/insight-readiness-ring" role="img"/);
   assert.match(insights,/aria-current="step"/);
-  assert.match(insights,/Current tracked days:/);
-  assert.match(insights,/N=\$\{energy\.length\}/);
+  assert.match(insights,/\$\{trackedDays\} tracked days so far/);
+  assert.match(insights,/\$\{energy\.length\} check-ins/);
+  assert.match(insights,/how many observations support it/);
+  assert.doesNotMatch(insights,/N=/);
 });
 
 test('iPhone installation instructions use the shared modal accessibility controller',()=>{
