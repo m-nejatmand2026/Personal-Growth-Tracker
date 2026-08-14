@@ -12,6 +12,7 @@ const viewTitles = { today: 'Today', plan: 'Plan', progress: 'Progress', insight
 
 const moduleRegistry = createFrontendModuleRegistry(frontendModules);
 const eventBus = createEventBus();
+const activities = moduleRegistry.get('activities');
 const dailyPlan = moduleRegistry.get('daily-plan');
 const insights = moduleRegistry.get('insights');
 const journal = moduleRegistry.get('journal');
@@ -25,7 +26,7 @@ async function load() {
   await renderCurrentView();
 }
 
-const logger = loggerCapability?.create({ onSaved: load }) || Object.freeze({ open() {}, close() {} });
+const logger = loggerCapability?.create({ onSaved: load, activities }) || Object.freeze({ open() {}, close() {} });
 
 async function renderTodayView() {
   let dailyPlanModel = null;
