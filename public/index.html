@@ -53,7 +53,20 @@
       <button id="settingsRailBtn" class="rail-settings" type="button"><span aria-hidden="true">⚙</span> Settings</button>
     </aside>
     <div id="mainContent" class="workspace" tabindex="-1">
-      <header class="topbar"><div class="topbar-title"><span class="mobile-brand-mark" aria-hidden="true">GC</span><div><p class="eyebrow">Growth Compass</p><h1 id="pageTitle">Today</h1></div></div><div class="top-actions"><button id="insightsBtn" class="icon-btn top-section-btn" type="button" aria-label="Open Insights" title="Insights"><span aria-hidden="true">✦</span><b class="top-section-label">Insights</b></button><button id="journalBtn" class="top-journal-btn" type="button" aria-label="Open journal" title="Journal">✎</button><button class="top-log-btn" type="button" data-open-logger aria-label="Log progress">＋ <span>Add</span></button><button id="settingsBtn" class="icon-btn" type="button" aria-label="Open settings" title="Settings">⚙</button></div></header>
+      <header class="topbar">
+        <div class="topbar-title"><div><p class="eyebrow">Growth Compass</p><h1 id="pageTitle">Today</h1></div></div>
+        <div class="top-actions">
+          <button class="top-log-btn" type="button" data-open-logger aria-label="Log progress">＋ <span>Add</span></button>
+          <details id="topMore" class="top-more">
+            <summary aria-label="More sections and settings" title="More"><span aria-hidden="true">•••</span></summary>
+            <div class="top-more-menu" role="group" aria-label="More sections and settings">
+              <button id="insightsBtn" type="button"><span aria-hidden="true">✦</span><b>Insights</b></button>
+              <button id="journalBtn" type="button"><span aria-hidden="true">✎</span><b>Journal</b></button>
+              <button id="settingsBtn" type="button"><span aria-hidden="true">⚙</span><b>Settings</b></button>
+            </div>
+          </details>
+        </div>
+      </header>
       <section id="todayView" class="view active" aria-labelledby="pageTitle"></section><section id="planView" class="view" aria-labelledby="pageTitle" hidden></section><section id="progressView" class="view" aria-labelledby="pageTitle" hidden></section><section id="insightsView" class="view" aria-labelledby="pageTitle" hidden></section><section id="wellness-boostView" class="view" aria-labelledby="pageTitle" hidden></section><section id="journalView" class="view" aria-labelledby="pageTitle" hidden></section><section id="settingsView" class="view" aria-labelledby="pageTitle" hidden></section>
     </div>
     <nav class="bottom-nav" aria-label="Primary navigation">
