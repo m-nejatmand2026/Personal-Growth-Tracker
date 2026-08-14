@@ -1,5 +1,12 @@
 /* Progress-owned Today presentation only. Full Progress view remains separate. */
 .today-direction-section{padding:16px}
+.today-direction-head{align-items:flex-start;gap:12px}
+.today-direction-head>div:first-child{min-width:0}
+.today-direction-head small{display:block;margin-top:3px;color:var(--gc-text-muted)}
+.today-period-switch{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;min-width:min(100%,250px);padding:3px;border:1px solid var(--gc-border);border-radius:var(--gc-radius-md);background:var(--gc-surface-subtle)}
+.today-period-switch button{min-width:0;min-height:var(--gc-target-min);padding:6px 7px;border:0;border-radius:calc(var(--gc-radius-md) - 4px);background:transparent;color:var(--gc-text-muted);font:inherit;font-size:10px;font-weight:850;cursor:pointer}
+.today-period-switch button[aria-pressed="true"]{background:var(--gc-surface);color:var(--gc-brand-strong);box-shadow:var(--gc-shadow-sm)}
+.today-period-switch button:hover{color:var(--gc-text);background:var(--gc-brand-soft)}
 .today-goal-grid{display:grid;grid-template-columns:1fr;gap:10px}
 .today-goal-card{min-width:0;padding:14px;border:1px solid var(--gc-border);border-radius:var(--gc-radius-lg);background:var(--gc-surface)}
 .goal-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
@@ -7,7 +14,7 @@
 .goal-card-top strong{min-width:0;overflow-wrap:anywhere}
 .goal-dot{width:9px;height:9px;flex:0 0 auto;border-radius:999px;background:var(--gc-brand);box-shadow:0 0 0 5px var(--gc-brand-soft)}
 .today-goal-status{max-width:46%;padding:5px 8px;border-radius:var(--gc-radius-pill);background:var(--gc-surface-subtle);color:var(--gc-text-muted);font-size:9.5px;font-weight:800;line-height:1.15;text-align:right}
-.goal-progress-copy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:13px 0 8px}
+.goal-progress-copy{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:7px;margin:13px 0 8px}
 .goal-progress-copy .today-metric{min-width:0}
 .goal-progress-copy span,.goal-progress-copy strong{display:block}
 .goal-progress-copy span{color:var(--gc-text-muted);font-size:9.5px}
@@ -28,6 +35,11 @@
 @media (min-width:720px){
   .today-direction-section,.recent-section{padding:18px}
   .today-goal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (max-width:620px){
+  .today-direction-head{display:grid;grid-template-columns:1fr}
+  .today-period-switch{width:100%;min-width:0}
 }
 
 @media (max-width:420px){
