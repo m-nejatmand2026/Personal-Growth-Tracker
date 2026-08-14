@@ -29,6 +29,31 @@ test('Worker routes unknown API requests through the real API router', async () 
   assert.deepEqual(await json(response), { error: 'API route not found' });
 });
 
+test('platform health route verifies D1 without reading profile data', async () => {
+  const statements = [];
+  const response = await worker.fetch(
+    new Request('https://growth-compass.test/api/health'),
+    {
+      DB: {
+        prepare(statement) {
+          statements.push(statement);
+          return {
+            async first() {
+              return { ok: 1 };
+            }
+          };
+        }
+      }
+    }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assertSecurityHeaders(response);
+  assert.deepEqual(await json(response), { status: 'ok', database: 'ok' });
+  assert.deepEqual(statements, ['SELECT 1 AS ok']);
+});
+
 test('Worker preserves explicit retirement responses for legacy mutation routes', async () => {
   const response = await worker.fetch(
     new Request('https://growth-compass.test/api/targets', { method: 'PUT' }),
@@ -41,34 +66,58 @@ test('Worker preserves explicit retirement responses for legacy mutation routes'
   });
 });
 
-test('Worker converts malformed JSON into a controlled client error', async () => {
-  const response = await worker.fetch(
-    new Request('https://growth-compass.test/api/v1/areas', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{not-json'
-    }),
-    {}
-  );
-
-  assert.equal(response.status, 400);
-  assert.equal(response.headers.get('cache-control'), 'no-store');
-  assert.deepEqual(await json(response), { error: 'Invalid JSON request body' });
-});
-
-test('Worker does not disclose unexpected internal errors to API clients', async () => {
+test('Worker converts malformed JSON into a controlled client error without custom error logging', async () => {
   const originalError = console.error;
-  console.error = () => {};
+  const logs = [];
+  console.error = (...parts) => logs.push(parts.join(' '));
 
   try {
     const response = await worker.fetch(
-      new Request('https://growth-compass.test/api/v1/areas'),
+      new Request('https://growth-compass.test/api/v1/areas', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{not-json'
+      }),
+      {}
+    );
+
+    assert.equal(response.status, 400);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await json(response), { error: 'Invalid JSON request body' });
+    assert.deepEqual(logs, []);
+  } finally {
+    console.error = originalError;
+  }
+});
+
+test('Worker does not disclose unexpected internal errors and logs only operational request context', async () => {
+  const originalError = console.error;
+  const logs = [];
+  console.error = (...parts) => logs.push(parts.join(' '));
+
+  try {
+    const response = await worker.fetch(
+      new Request('https://growth-compass.test/api/v1/areas', {
+        headers: { 'cf-ray': 'test-ray-123' }
+      }),
       {}
     );
 
     assert.equal(response.status, 500);
     assert.equal(response.headers.get('cache-control'), 'no-store');
     assert.deepEqual(await json(response), { error: 'Unexpected server error' });
+    assert.equal(logs.length, 1);
+
+    const entry = JSON.parse(logs[0]);
+    assert.equal(entry.event, 'api_error');
+    assert.equal(entry.path, '/api/v1/areas');
+    assert.equal(entry.method, 'GET');
+    assert.equal(entry.status, 500);
+    assert.equal(entry.ray_id, 'test-ray-123');
+    assert.equal(typeof entry.error_name, 'string');
+    assert.equal(typeof entry.message, 'string');
+    assert.equal('body' in entry, false);
+    assert.equal('profile' in entry, false);
   } finally {
     console.error = originalError;
   }
