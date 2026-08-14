@@ -7,7 +7,9 @@ import {
   exportProgressData,
   getProgressRecord,
   listLegacySessions,
-  listProgressRecords
+  listProgressRecords,
+  summarizeLegacyMinutesByActivityKey,
+  summarizeProgressMinutesByGoal
 } from './data.js';
 
 function canonicalReference(
@@ -237,6 +239,49 @@ export const progressContractV1 =
       return canonicalReference(
         row,
         activity
+      );
+    },
+
+    async sumMinutesByGoal(
+      DB,
+      profileId,
+      {
+        from,
+        to,
+        includeLegacy = true
+      }
+    ) {
+      const [canonical, legacy, activities] = await Promise.all([
+        summarizeProgressMinutesByGoal(DB, profileId, { from, to }),
+        includeLegacy
+          ? summarizeLegacyMinutesByActivityKey(DB, profileId, { from, to })
+          : Promise.resolve([]),
+        activitiesContractV1.listReferences(DB, profileId, { includeArchived: true })
+      ]);
+
+      const totals = new Map();
+      for (const row of canonical) {
+        const goalId = Number(row.goal_id);
+        if (!Number.isInteger(goalId) || goalId <= 0) continue;
+        totals.set(goalId, (totals.get(goalId) || 0) + Math.max(0, Number(row.actual_minutes) || 0));
+      }
+
+      const goalByActivityKey = new Map(
+        activities.map((activity) => [activity.key, Number(activity.goal_id)])
+      );
+      for (const row of legacy) {
+        const goalId = goalByActivityKey.get(row.activity_key);
+        if (!Number.isInteger(goalId) || goalId <= 0) continue;
+        totals.set(goalId, (totals.get(goalId) || 0) + Math.max(0, Number(row.actual_minutes) || 0));
+      }
+
+      return Object.freeze(
+        [...totals.entries()]
+          .map(([goal_id, actual_minutes]) => Object.freeze({
+            goal_id,
+            actual_minutes: Math.round(actual_minutes)
+          }))
+          .sort((a, b) => a.goal_id - b.goal_id)
       );
     },
 
