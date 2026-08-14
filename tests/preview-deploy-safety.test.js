@@ -57,6 +57,15 @@ test('preview deployment is structurally pinned to preview Worker and preview D1
   assert.notEqual(previewDb?.database_id, 'a182d8c8-c009-461e-ac7e-04694c1047ab');
 });
 
+test('Workers Logs observability is explicit for production and preview', () => {
+  const config = JSON.parse(wrangler);
+  assert.equal(config.observability?.enabled, true);
+  assert.equal(config.observability?.head_sampling_rate, 1);
+  assert.equal(config.env?.preview?.observability?.enabled, true);
+  assert.equal(config.env?.preview?.observability?.head_sampling_rate, 1);
+  assert.match(workflow, /Workers Logs observability must stay enabled/);
+});
+
 test('automatic preview deployment never applies migrations and every Wrangler deploy is explicit preview', () => {
   assert.match(workflow, /d1 migrations list DB --remote --env preview/);
   assert.match(workflow, /No migrations to apply/);
@@ -70,6 +79,8 @@ test('automatic preview deployment never applies migrations and every Wrangler d
   }
   assert.match(deployCommands[0], /--dry-run/);
   assert.doesNotMatch(deployCommands[1], /--dry-run/);
+  assert.match(deployCommands[1], /--message "git:\$TESTED_SHA"/);
+  assert.match(workflow, /TESTED_SHA: \$\{\{ github\.event\.workflow_run\.head_sha \}\}/);
 });
 
 test('Cloudflare deployment credentials remain secret-backed', () => {
@@ -88,14 +99,17 @@ test('preview deployment requires the configured Cloudflare Access service token
   assert.doesNotMatch(workflow, /transitional unauthenticated preview smoke test/);
 });
 
-test('preview smoke gate proves anonymous API access is blocked and authenticated UI plus API work', () => {
+test('preview smoke gate proves anonymous health access is blocked and authenticated UI plus D1 health work', () => {
   assert.match(workflow, /https:\/\/personal-growth-tracker-preview\.m-nejatmand\.workers\.dev/);
   assert.match(workflow, /unauth_status=/);
-  assert.match(workflow, /Unauthenticated preview API access returned HTTP/);
+  assert.match(workflow, /Unauthenticated preview health access returned HTTP/);
   assert.match(workflow, /CF-Access-Client-Id:/);
   assert.match(workflow, /CF-Access-Client-Secret:/);
   assert.match(workflow, /grep -F 'Growth Compass'/);
-  assert.match(workflow, /\/api\/v1\/areas/);
-  assert.match(workflow, /Cloudflare Access boundary \+ authenticated Preview smoke tests passed/);
+  assert.match(workflow, /\/api\/health/);
+  assert.match(workflow, /'"status":"ok"'/);
+  assert.match(workflow, /'"database":"ok"'/);
+  assert.match(workflow, /Cloudflare Access boundary \+ UI \+ D1 health smoke tests passed/);
+  assert.doesNotMatch(workflow, /\/api\/v1\/areas/);
   assert.doesNotMatch(workflow, /(?:echo|printf)[^\n]*\$(?:\{)?CF_ACCESS_CLIENT_(?:ID|SECRET)/);
 });
