@@ -31,6 +31,8 @@ test('Progress history preserves mixed measurement facts in plain language', () 
   assert.match(progressJs, /Time, quantity and yes\/no progress remain separate/);
   assert.match(progressJs, /Earlier Beta history/);
   assert.match(progressJs, /Read-only history from the earlier Beta version/);
+  const history = progressJs.indexOf('${historySection}${goalsSection}');
+  assert.ok(history >= 0, 'factual history must render before goal guidance');
 });
 
 test('Progress does not pull Wellbeing through a legacy or undeclared history path', () => {
@@ -45,8 +47,17 @@ test('Insights keeps evidence thresholds sample size and association-only langua
   assert.match(insightsJs, /how many observations support it/);
   assert.match(insightsJs, /associated with/);
   assert.match(insightsJs, /does not prove cause/);
-  assert.doesNotMatch(insightsJs, /N=|Evidence guardrail|Descriptive stage|paired wellbeing data/i);
+  assert.doesNotMatch(insightsJs, /\bN=/);
+  assert.doesNotMatch(insightsJs, /Evidence guardrail|Descriptive stage|paired wellbeing data/i);
   assert.doesNotMatch(insightsJs, /causes higher|causes lower|because of sleep/i);
+});
+
+test('Insights distinguishes unavailable evidence from an honest empty sample', () => {
+  assert.match(insightsJs, /let evidenceAvailable = true/);
+  assert.match(insightsJs, /evidenceAvailable = false/);
+  assert.match(insightsJs, /Evidence is temporarily unavailable/);
+  assert.match(insightsJs, /could not read both Progress and Wellbeing evidence/);
+  assert.match(insightsJs, /so no summaries or relationships were generated/);
 });
 
 test('Progress and Insights presentation remains module-owned and responsive', () => {

@@ -33,6 +33,17 @@ function thresholdHtml(count) {
   }).join('');
 }
 
+function unavailableHtml() {
+  return `
+    <section class="insights-hero">
+      <div>
+        <p class="eyebrow">Insights</p>
+        <h2>Evidence is temporarily unavailable</h2>
+        <p>Growth Compass could not read both Progress and Wellbeing evidence, so no summaries or relationships were generated. Please try again.</p>
+      </div>
+    </section>`;
+}
+
 export async function renderInsights() {
   const root = $('#insightsView');
   if (!root) return;
@@ -40,6 +51,7 @@ export async function renderInsights() {
   const from = addDays(state.date, -59);
   let energy = [];
   let progress = [];
+  let evidenceAvailable = true;
 
   try {
     const [energyResponse, progressResponse] = await Promise.all([
@@ -49,8 +61,12 @@ export async function renderInsights() {
     energy = energyResponse.items || [];
     progress = progressResponse.items || [];
   } catch {
-    energy = [];
-    progress = [];
+    evidenceAvailable = false;
+  }
+
+  if (!evidenceAvailable) {
+    root.innerHTML = unavailableHtml();
+    return;
   }
 
   const trackedDays = new Set([
