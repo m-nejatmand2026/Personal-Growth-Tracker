@@ -23,26 +23,27 @@ test('Revision A shell stylesheet loads after design tokens and before module sh
   assert.ok(modules > shell);
 });
 
-test('mobile navigation preserves Today Plan plus Progress Insights order with Logger as the distinct center action', () => {
+test('mobile main navigation makes Wellness first-class while Logger stays centered', () => {
   const nav = between(indexHtml, '<nav class="bottom-nav"', '</nav>');
   const today = nav.indexOf('data-view="today"');
   const plan = nav.indexOf('data-view="plan"');
   const add = nav.indexOf('id="quickAddBtn"');
   const progress = nav.indexOf('data-view="progress"');
-  const insights = nav.indexOf('data-view="insights"');
-  assert.ok(today >= 0 && today < plan && plan < add && add < progress && progress < insights);
+  const wellness = nav.indexOf('data-view="wellness-boost"');
+  assert.ok(today >= 0 && today < plan && plan < add && add < progress && progress < wellness);
   assert.match(nav, /quickAddBtn[^>]*nav-add[^>]*data-open-logger/);
   assert.doesNotMatch(nav.match(/id="quickAddBtn"[^>]*>/)?.[0] || '', /data-view=/);
-  assert.match(nav, /aria-label="Log progress"/);
+  assert.match(nav, /data-view="wellness-boost"[^>]*aria-label="Wellness Boost"/);
+  assert.doesNotMatch(nav, /data-view="insights"/);
 });
 
-test('mobile header exposes Wellness Boost as a labeled section without duplicating the primary Log action', () => {
-  assert.match(indexHtml, /id="wellnessBoostBtn"[^>]*aria-label="Open Wellness Boost"[^>]*>[\s\S]*?<b class="top-wellness-label">Wellness<\/b>/);
-  assert.match(shellCss, /\.top-wellness-btn\{[^}]*display:inline-flex[^}]*min-width|\.top-wellness-btn\{[^}]*display:inline-flex/s);
+test('mobile header keeps Insights reachable as a labeled secondary section without duplicating Log', () => {
+  assert.match(indexHtml, /id="insightsBtn"[^>]*aria-label="Open Insights"[^>]*>[\s\S]*?<b class="top-section-label">Insights<\/b>/);
+  assert.match(shellCss, /\.top-section-btn\{[^}]*display:inline-flex/s);
   assert.match(shellCss, /@media \(max-width:760px\)\{\s*\.top-log-btn\{display:none\}/s);
-  assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*?\.top-wellness-btn\{display:none\}/);
-  assert.match(appJs, /wellnessBoostBtn/);
-  assert.match(appJs, /showView\('wellness-boost'\)/);
+  assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*?\.top-section-btn\{display:none\}/);
+  assert.match(appJs, /insightsBtn/);
+  assert.match(appJs, /showView\('insights'\)/);
 });
 
 test('navigation shell is phone-first safe-area aware and keeps frequent controls at touch size', () => {
@@ -54,7 +55,7 @@ test('navigation shell is phone-first safe-area aware and keeps frequent control
   assert.match(shellCss, /@media \(max-width:420px\)/);
 });
 
-test('desktop presentation replaces bottom navigation with the persistent rail without changing destinations', () => {
+test('desktop presentation keeps all major destinations in the persistent rail', () => {
   assert.match(shellCss, /@media \(min-width:900px\)/);
   assert.match(shellCss, /\.bottom-nav\{display:none\}/);
   assert.match(shellCss, /\.app-rail\{[^}]*position:sticky[^}]*display:flex/s);
@@ -77,7 +78,7 @@ test('active primary navigation is semantic as well as visual', () => {
 test('decorative navigation symbols stay out of accessible names', () => {
   const bottomNav = between(indexHtml, '<nav class="bottom-nav"', '</nav>');
   const railNav = between(indexHtml, '<nav class="rail-nav"', '</nav>');
-  assert.doesNotMatch(bottomNav, /<span>(?:⌂|◎|＋|↗|✦)<\/span>/);
+  assert.doesNotMatch(bottomNav, /<span>(?:⌂|◎|＋|↗|✦|☼)<\/span>/);
   assert.doesNotMatch(railNav, /<span>(?:⌂|◎|↗|✦|☼)<\/span>/);
   assert.match(bottomNav, /aria-hidden="true"/);
   assert.match(railNav, /aria-hidden="true"/);
