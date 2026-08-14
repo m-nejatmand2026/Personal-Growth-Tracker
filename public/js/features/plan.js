@@ -52,8 +52,8 @@ function planOverview(models) {
 function planNavigation() {
   return `<nav class="plan-section-nav" aria-label="Plan sections">
     <button type="button" data-plan-scroll="plan-module-goals"><span>01</span><b>Goals</b><small>Direction</small></button>
-    <button type="button" data-plan-scroll="capacitySummary"><span>02</span><b>Capacity</b><small>Time fit</small></button>
-    <button type="button" data-plan-scroll="capacitySchedule"><span>03</span><b>Schedule</b><small>Commitments</small></button>
+    <button type="button" data-plan-scroll="capacityPanel"><span>02</span><b>Capacity</b><small>Time fit</small></button>
+    <button type="button" data-plan-scroll="commitmentEditor"><span>03</span><b>Schedule</b><small>Commitments</small></button>
     <button type="button" data-plan-scroll="compassSection"><span>04</span><b>Compass</b><small>Long term</small></button>
   </nav>`;
 }
