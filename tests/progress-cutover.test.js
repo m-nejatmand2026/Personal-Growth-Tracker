@@ -12,6 +12,7 @@ const week = await readFile(new URL('../worker/routes/week.js', import.meta.url)
 const todayPublic = await readFile(new URL('../worker/modules/today/public.js', import.meta.url), 'utf8');
 const sessionsRoute = await readFile(new URL('../worker/routes/sessions.js', import.meta.url), 'utf8');
 const logger = await readFile(new URL('../public/js/modules/logger/ui.js', import.meta.url), 'utf8');
+const activitiesFrontend = await readFile(new URL('../public/js/modules/activities/module.js', import.meta.url), 'utf8');
 const progressUi = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
 const app = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 
@@ -56,8 +57,13 @@ test('Legacy session POST can only forward to Progress V1', () => {
   assert.doesNotMatch(sessionsRoute, /\bDELETE\s+FROM\s+sessions\b/i);
 });
 
-test('Universal Logger uses canonical Activities Progress and Daily Plan APIs', () => {
-  assert.match(logger, /\/api\/v1\/activities/);
+test('Universal Logger consumes canonical Activities capability plus Progress and Daily Plan APIs', () => {
+  assert.match(app, /const activities = moduleRegistry\.get\('activities'\)/);
+  assert.match(app, /create\(\{ onSaved: load, activities \}\)/);
+  assert.match(logger, /activityCapability\?\.list/);
+  assert.match(logger, /activityCapability\.create/);
+  assert.doesNotMatch(logger, /\/api\/v1\/activities|\/api\/v1\/goals/);
+  assert.match(activitiesFrontend, /\/api\/v1\/activities/);
   assert.match(logger, /\/api\/v1\/progress/);
   assert.match(logger, /\/api\/v1\/daily-plan/);
   assert.doesNotMatch(logger, /api\(['"]\/api\/session/);
