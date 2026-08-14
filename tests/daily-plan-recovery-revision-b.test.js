@@ -48,7 +48,11 @@ test('Complete reuses the same explicit factual completion path as the checkmark
 test('Drop dismisses intent without creating Progress', () => {
   assert.match(dailyPlan, /dailyPlanDrop'\)\?\.addEventListener[\s\S]*this\.setStatus\(item\.id, 'dismissed'\)/);
   assert.match(dailyPlan, /Dropped from active plan/);
-  assert.doesNotMatch(dailyPlan, /dailyPlanDrop[\s\S]{0,500}progress/i);
+  const dropStart = dailyPlan.indexOf("$('#dailyPlanDrop')");
+  const dropEnd = dailyPlan.indexOf('\n      });', dropStart);
+  const dropHandler = dailyPlan.slice(dropStart, dropEnd);
+  assert.ok(dropStart >= 0 && dropEnd > dropStart);
+  assert.doesNotMatch(dropHandler, /progress|completion-selected|completeItem|events\?\.publish/i);
 });
 
 test('recovery uses the shared accessible modal controller', () => {
