@@ -73,18 +73,17 @@ test('Meditation player owns start pause resume end and navigation cleanup lifec
   assert.match(app, /wellnessBoost\?\.deactivate/);
 });
 
-test('Wellness Boost is a first-class app section while the five-slot mobile Logger navigation remains stable', () => {
+test('Wellness Boost is a first-class app section on both mobile and desktop', () => {
+  const bottomNav = indexHtml.slice(indexHtml.indexOf('<nav class="bottom-nav"'), indexHtml.indexOf('</nav>', indexHtml.indexOf('<nav class="bottom-nav"')) + 6);
   assert.match(indexHtml, /data-view="wellness-boost"[^>]*class="rail-nav-btn"/);
-  assert.match(indexHtml, /id="wellnessBoostBtn"/);
+  assert.match(bottomNav, /data-view="wellness-boost"[^>]*class="nav-btn"[^>]*aria-label="Wellness Boost"|data-view="wellness-boost"[^>]*aria-label="Wellness Boost"[^>]*class="nav-btn"/);
+  assert.match(bottomNav, />Wellness<\/button>/);
   assert.match(indexHtml, /id="wellness-boostView" class="view"/);
   assert.match(app, /moduleRegistry\.get\('wellness-boost'\)/);
   assert.match(app, /state\.view === 'wellness-boost'/);
   assert.match(app, /wellnessBoost\?\.renderView/);
   assert.match(indexHtml, /id="quickAddBtn"/);
-  assert.match(indexHtml, /data-view="today"/);
-  assert.match(indexHtml, /data-view="plan"/);
-  assert.match(indexHtml, /data-view="progress"/);
-  assert.match(indexHtml, /data-view="insights"/);
+  assert.doesNotMatch(bottomNav, /data-view="insights"/);
 });
 
 test('Today no longer owns or embeds Wellness Boost content', () => {
