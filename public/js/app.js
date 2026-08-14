@@ -7,8 +7,8 @@ import { frontendModules } from './modules/catalog.js';
 import { createFrontendModuleRegistry } from './platform/module-registry.js';
 import { createEventBus } from './platform/event-bus.js';
 
-const PRIMARY_VIEWS = new Set(['today', 'plan', 'progress', 'insights']);
-const viewTitles = { today: 'Today', plan: 'Plan', progress: 'Progress', insights: 'Insights', journal: 'Journal', settings: 'Settings' };
+const PRIMARY_VIEWS = new Set(['today', 'plan', 'progress', 'insights', 'wellness-boost']);
+const viewTitles = { today: 'Today', plan: 'Plan', progress: 'Progress', insights: 'Insights', 'wellness-boost': 'Wellness Boost', journal: 'Journal', settings: 'Settings' };
 
 const moduleRegistry = createFrontendModuleRegistry(frontendModules);
 const eventBus = createEventBus();
@@ -19,6 +19,7 @@ const journal = moduleRegistry.get('journal');
 const loggerCapability = moduleRegistry.get('logger');
 const progress = moduleRegistry.get('progress');
 const today = moduleRegistry.get('today');
+const wellnessBoost = moduleRegistry.get('wellness-boost');
 let lastPrimaryView = 'today';
 let journalFilters = { query: '', filterDate: '' };
 
@@ -33,10 +34,6 @@ async function renderTodayView() {
   let dailyPlanPanel = '';
   let journalPreviewModel = null;
   let journalPreview = '';
-  const todayBoostPanel = moduleRegistry
-    .forSlot('today-boost')
-    .map((module) => module.renderSlot?.({ slot: 'today-boost', date: state.date }) || '')
-    .join('');
 
   if (dailyPlan) {
     try {
@@ -54,7 +51,7 @@ async function renderTodayView() {
     } catch { journalPreview = ''; }
   }
 
-  await renderToday({ reload: load, openLogger: logger.open, dailyPlanPanel, journalPreview, todayBoostPanel });
+  await renderToday({ reload: load, openLogger: logger.open, dailyPlanPanel, journalPreview });
   if (dailyPlan && dailyPlanModel) dailyPlan.bind({ model: dailyPlanModel, events: eventBus, reload: load });
   if (journal && journalPreviewModel) journal.bindPreview({ model: journalPreviewModel, events: eventBus, reload: load });
 }
@@ -72,6 +69,12 @@ async function renderJournalView(overrides = null) {
   } catch (error) {
     root.innerHTML = `<section class="os-section"><div class="empty">${error?.message || 'Could not load journal.'}</div></section>`;
   }
+}
+
+function renderWellnessBoostView() {
+  const root = $('#wellness-boostView');
+  if (!root) return;
+  root.innerHTML = wellnessBoost?.renderView?.() || '<section class="os-section"><div class="empty">Wellness Boost is unavailable.</div></section>';
 }
 
 async function renderCurrentView() {
@@ -93,6 +96,7 @@ async function renderCurrentView() {
     if (insights) await insights.render();
     else { const root = $('#insightsView'); if (root) root.innerHTML = '<div class="empty">Insights are unavailable.</div>'; }
   }
+  if (state.view === 'wellness-boost') renderWellnessBoostView();
   if (state.view === 'journal') await renderJournalView();
   if (state.view === 'settings') renderSettings({ reload: load });
 }
@@ -111,6 +115,10 @@ async function showView(name) {
   });
   $('#journalBtn')?.classList.toggle('active', name === 'journal');
   $('#journalRailBtn')?.classList.toggle('active', name === 'journal');
+  const wellnessButton = $('#wellnessBoostBtn');
+  wellnessButton?.classList.toggle('active', name === 'wellness-boost');
+  if (name === 'wellness-boost') wellnessButton?.setAttribute('aria-current', 'page');
+  else wellnessButton?.removeAttribute('aria-current');
   $('#pageTitle').textContent = viewTitles[name];
   await renderCurrentView();
 }
@@ -125,5 +133,6 @@ $('#settingsBtn')?.addEventListener('click', toggleSettings);
 $('#settingsRailBtn')?.addEventListener('click', toggleSettings);
 $('#journalBtn')?.addEventListener('click', () => void showView('journal'));
 $('#journalRailBtn')?.addEventListener('click', () => void showView('journal'));
+$('#wellnessBoostBtn')?.addEventListener('click', () => void showView('wellness-boost'));
 
 void load();
