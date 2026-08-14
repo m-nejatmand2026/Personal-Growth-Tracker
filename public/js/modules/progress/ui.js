@@ -3,6 +3,7 @@ import { $, $$, escapeHtml } from '../../core/dom.js';
 import { formatMinutes } from '../../core/format.js';
 import { state } from '../../core/state.js';
 import { toast } from '../../core/toast.js';
+import { renderThresholdTrack } from '../../platform/charts.js';
 
 function addDays(dateText, amount) {
   const date = new Date(`${dateText}T12:00:00Z`);
@@ -38,17 +39,24 @@ function goalRows(items) {
     const actual = Math.max(0, Number(item.actual_minutes) || 0);
     const minimum = Math.max(0, Number(item.minimum_minutes) || 0);
     const target = Math.max(0, Number(item.target_minutes) || 0);
+    const name = item.name || item.key;
 
     if (!target && !minimum) {
-      return `<div class="amt-row"><div class="amt-name"><strong>${escapeHtml(item.name || item.key)}</strong><span class="amt-status good">Recorded</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>Not set</strong></div><div><span>Target</span><strong>Not set</strong></div></div></div>`;
+      return `<div class="amt-row"><div class="amt-name"><strong>${escapeHtml(name)}</strong><span class="amt-status good">Recorded</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>Not set</strong></div><div><span>Target</span><strong>Not set</strong></div></div></div>`;
     }
 
-    const safeTarget = Math.max(1, target);
-    const pct = Math.min(100, Math.round((actual / safeTarget) * 100));
-    const minimumPct = Math.min(100, Math.round((minimum / safeTarget) * 100));
     const status = actual >= target && target > 0 ? 'Target reached' : actual >= minimum ? 'Good-enough' : 'Building';
+    const track = renderThresholdTrack({
+      label: name,
+      actual,
+      minimum,
+      target,
+      actualText: formatMinutes(actual),
+      minimumText: formatMinutes(minimum),
+      targetText: target ? formatMinutes(target) : 'Not set'
+    });
 
-    return `<div class="amt-row"><div class="amt-name"><strong>${escapeHtml(item.name || item.key)}</strong><span class="amt-status ${actual >= minimum ? 'good' : ''}">${status}</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>${formatMinutes(minimum)}</strong></div><div><span>Target</span><strong>${formatMinutes(target)}</strong></div></div><div class="amt-track" aria-label="${escapeHtml(item.name || item.key)} ${pct}% of target"><span style="width:${pct}%"></span><i style="left:${minimumPct}%" title="Minimum"></i></div></div>`;
+    return `<div class="amt-row"><div class="amt-name"><strong>${escapeHtml(name)}</strong><span class="amt-status ${actual >= minimum ? 'good' : ''}">${status}</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>${formatMinutes(minimum)}</strong></div><div><span>Target</span><strong>${target ? formatMinutes(target) : 'Not set'}</strong></div></div>${track}</div>`;
   }).join('');
 }
 
