@@ -45,6 +45,7 @@ Use these for real environment changes or incidents:
 - [`DEVELOPMENT_WORKFLOW.md`](DEVELOPMENT_WORKFLOW.md) — normal device-independent Quality → Preview workflow.
 - [`D1_MIGRATION_RUNBOOK.md`](D1_MIGRATION_RUNBOOK.md) — all remote D1 migration/recovery procedures.
 - [`OPERATIONS_RUNBOOK.md`](OPERATIONS_RUNBOOK.md) — Worker incidents, logs, versions, rollback and health checks.
+- [`RELEASE_RUNBOOK.md`](RELEASE_RUNBOOK.md) — explicit accepted-Preview → production release procedure.
 - [`PRIVATE_BETA_ACCESS.md`](PRIVATE_BETA_ACCESS.md) — owner-only Cloudflare Access perimeter.
 
 Operational runbooks override old README/manual command snippets when they disagree.
