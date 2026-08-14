@@ -33,6 +33,10 @@ async function renderTodayView() {
   let dailyPlanPanel = '';
   let journalPreviewModel = null;
   let journalPreview = '';
+  const todayBoostPanel = moduleRegistry
+    .forSlot('today-boost')
+    .map((module) => module.renderSlot?.({ slot: 'today-boost', date: state.date }) || '')
+    .join('');
 
   if (dailyPlan) {
     try {
@@ -50,7 +54,7 @@ async function renderTodayView() {
     } catch { journalPreview = ''; }
   }
 
-  await renderToday({ reload: load, openLogger: logger.open, dailyPlanPanel, journalPreview });
+  await renderToday({ reload: load, openLogger: logger.open, dailyPlanPanel, journalPreview, todayBoostPanel });
   if (dailyPlan && dailyPlanModel) dailyPlan.bind({ model: dailyPlanModel, events: eventBus, reload: load });
   if (journal && journalPreviewModel) journal.bindPreview({ model: journalPreviewModel, events: eventBus, reload: load });
 }

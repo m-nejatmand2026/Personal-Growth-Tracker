@@ -1,0 +1,13 @@
+.wellness-boost-section{background:linear-gradient(145deg,var(--gc-surface) 0%,#f4fbf8 100%)}
+.wellness-boost-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gc-space-3)}
+.wellness-boost-card{min-width:0;padding:var(--gc-space-4);border:1px solid var(--gc-border);border-radius:var(--gc-radius-md);background:var(--gc-surface)}
+.wellness-boost-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--gc-space-3)}
+.wellness-boost-card h3{margin:4px 0 0;font-size:var(--gc-text-lg)}
+.wellness-boost-card p{margin:var(--gc-space-2) 0;color:var(--gc-text-muted);font-size:var(--gc-text-sm);line-height:1.5}
+.wellness-boost-category{color:var(--gc-brand-strong);font-size:var(--gc-text-xs);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.wellness-boost-duration{flex:none;padding:5px 9px;border-radius:var(--gc-radius-pill);background:var(--gc-brand-soft);color:var(--gc-brand-strong);font-size:var(--gc-text-xs);font-weight:800}
+.wellness-boost-audio-kind{margin-top:var(--gc-space-3);color:var(--gc-text);font-size:var(--gc-text-sm);font-weight:750}
+.wellness-boost-track{display:grid;gap:6px;margin-top:var(--gc-space-2)}
+.wellness-boost-track>span,.wellness-boost-coming{font-size:var(--gc-text-xs)!important;color:var(--gc-text-muted)}
+.wellness-boost-track audio{display:block;width:100%;min-height:var(--gc-target-min)}
+@media(max-width:650px){.wellness-boost-grid{grid-template-columns:1fr}.wellness-boost-card{padding:var(--gc-space-3)}}

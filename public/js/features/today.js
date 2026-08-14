@@ -77,7 +77,7 @@ export function focusTodayActivities() {
   document.querySelector('[data-today-widget="progress.direction"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-export async function renderToday({ reload, openLogger, dailyPlanPanel = '', journalPreview = '' } = {}) {
+export async function renderToday({ reload, openLogger, dailyPlanPanel = '', journalPreview = '', todayBoostPanel = '' } = {}) {
   const root = $('#todayView');
   if (!root) return;
   const date = state.date;
@@ -114,6 +114,7 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
     ${wellbeingState}
     ${renderModel(capacityModel)}
     ${dailyPlanPanel}
+    ${todayBoostPanel}
     ${renderModel(directionModel)}
     ${renderModel(recentModel)}
     ${journalPreview}
