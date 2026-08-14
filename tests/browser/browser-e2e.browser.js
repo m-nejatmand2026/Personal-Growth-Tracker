@@ -51,22 +51,52 @@ async function selectView(page, view, expectedTitle, selectorPrefix = '.rail-nav
   await page.locator('#pageTitle').filter({ hasText: expectedTitle }).waitFor();
   const target = page.locator(`#${view}View`);
   await target.waitFor({ state: 'visible' });
+  await page.waitForFunction((id) => !document.querySelector(id)?.hasAttribute('aria-busy'), `#${view}View`);
   assert.equal(await target.getAttribute('hidden'), null);
   assert.equal(await page.title(), `${expectedTitle} — Growth Compass`);
 }
 
-async function openInsightsFromTopbar(page) {
+async function openTopMore(page, browserName) {
+  const more = page.locator('#topMore');
+  const summary = more.locator('summary');
+  await summary.waitFor({ state: 'visible' });
+  const box = await summary.boundingBox();
+  assert.ok(box && box.width >= 44 && box.height >= 44, `${browserName}: More control should meet the 44px touch target`);
+  if ((await more.getAttribute('open')) === null) {
+    await summary.click();
+    await page.waitForFunction(() => document.querySelector('#topMore')?.open === true);
+  }
+  await more.locator('.top-more-menu').waitFor({ state: 'visible' });
+}
+
+async function openInsightsFromMore(page, browserName) {
+  await openTopMore(page, browserName);
   await page.locator('#insightsBtn').click();
   await page.locator('#pageTitle').filter({ hasText: 'Insights' }).waitFor();
   await page.locator('#insightsView').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => !document.querySelector('#insightsView')?.hasAttribute('aria-busy'));
   assert.equal(await page.title(), 'Insights — Growth Compass');
+  assert.equal(await page.locator('#topMore').getAttribute('open'), null, `${browserName}: More should close after navigation`);
 }
 
-async function openJournalFromTopbar(page) {
-  await page.locator('#journalBtn').click();
+async function openJournalNavigation(page, browserName) {
+  const rail = page.locator('#journalRailBtn');
+  if (await rail.isVisible()) {
+    await rail.click();
+  } else {
+    await openTopMore(page, browserName);
+    await page.locator('#journalBtn').click();
+    assert.equal(await page.locator('#topMore').getAttribute('open'), null, `${browserName}: More should close after navigation`);
+  }
   await page.locator('#pageTitle').filter({ hasText: 'Journal' }).waitFor();
   await page.locator('#journalView').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => !document.querySelector('#journalView')?.hasAttribute('aria-busy'));
   assert.equal(await page.title(), 'Journal — Growth Compass');
+}
+
+async function waitForPlanReady(page) {
+  await page.locator('#plan-module-goals').waitFor({ state: 'attached' });
+  await page.locator('.plan-overview-grid').waitFor({ state: 'visible' });
 }
 
 async function validatePlanDisclosure(page, browserName) {
@@ -97,7 +127,7 @@ async function validateInsightsDisclosure(page, browserName) {
 }
 
 async function validateJournalWritingFirst(page, browserName, viewport) {
-  await openJournalFromTopbar(page);
+  await openJournalNavigation(page, browserName);
   await assertNoHorizontalOverflow(page, `${browserName} Journal`);
   await capture(page, browserName, viewport, 'journal');
   const opener = page.locator('.journal-new');
@@ -137,6 +167,7 @@ async function exerciseDesktop(browserType, browserName) {
 
     assert.equal(await page.locator('#pageTitle').textContent(), 'Today');
     assert.equal(await page.title(), 'Today — Growth Compass');
+    assert.equal(await page.locator('.top-actions').isVisible(), false, `${browserName}: desktop rail should own navigation and actions`);
     await assertNoHorizontalOverflow(page, `${browserName} desktop Today`);
     await capture(page, browserName, 'desktop', 'today');
 
@@ -154,6 +185,7 @@ async function exerciseDesktop(browserType, browserName) {
     ]) {
       await selectView(page, view, title);
       await assertNoHorizontalOverflow(page, `${browserName} desktop ${title}`);
+      if (view === 'plan') await waitForPlanReady(page);
       await capture(page, browserName, 'desktop', view);
       if (view === 'plan') await validatePlanDisclosure(page, `${browserName} desktop`);
       if (view === 'progress') await validateProgressDisclosure(page, `${browserName} desktop`);
@@ -191,6 +223,11 @@ async function exerciseMobile(browserType, browserName) {
     const page = await context.newPage();
     await openApp(page);
     await assertNoHorizontalOverflow(page, `${browserName} 375px Today`);
+
+    const moreSummary = page.locator('#topMore > summary');
+    await moreSummary.waitFor({ state: 'visible' });
+    const moreBox = await moreSummary.boundingBox();
+    assert.ok(moreBox && moreBox.width >= 44 && moreBox.height >= 44, 'mobile More must meet the 44px touch target');
     await capture(page, browserName, 'mobile', 'today');
 
     const bottomNav = page.locator('.bottom-nav');
@@ -205,13 +242,14 @@ async function exerciseMobile(browserType, browserName) {
 
     await selectView(page, 'plan', 'Plan', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Plan`);
+    await waitForPlanReady(page);
     await capture(page, browserName, 'mobile', 'plan');
     await validatePlanDisclosure(page, `${browserName} 375px`);
     await selectView(page, 'progress', 'Progress', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Progress`);
     await capture(page, browserName, 'mobile', 'progress');
     await validateProgressDisclosure(page, `${browserName} 375px`);
-    await openInsightsFromTopbar(page);
+    await openInsightsFromMore(page, `${browserName} 375px`);
     await assertNoHorizontalOverflow(page, `${browserName} 375px Insights`);
     await capture(page, browserName, 'mobile', 'insights');
     await validateInsightsDisclosure(page, `${browserName} 375px`);
@@ -244,7 +282,7 @@ for (const [browserName, browserType] of BROWSERS) {
     await exerciseDesktop(browserType, browserName);
   });
 
-  test(`${browserName} 375px validates touch navigation Journal Logger fit disclosures and reflow`, async () => {
+  test(`${browserName} 375px validates compact More navigation Journal Logger fit disclosures and reflow`, async () => {
     await exerciseMobile(browserType, browserName);
   });
 }
