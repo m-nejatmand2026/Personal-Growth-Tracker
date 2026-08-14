@@ -13,6 +13,7 @@ const todayUi = await readFile(new URL('../public/js/features/today.js', import.
 const app = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 const moduleJs = await readFile(new URL('../public/js/modules/wellness-boost/module.js', import.meta.url), 'utf8');
 const css = await readFile(new URL('../public/css/modules/wellness-boost.css', import.meta.url), 'utf8');
+const frameworkCss = await readFile(new URL('../public/css/experience-framework.css', import.meta.url), 'utf8');
 
 test('Wellness Boost owns an independent dependency-free capability', () => {
   const worker = createModuleRegistry(platformModules).get('wellness-boost');
@@ -41,32 +42,33 @@ test('Meditation starter library owns concise choice copy plus original guided c
   assert.ok(boostContent.every((item) => item.cues.every((cue) => cue.text && cue.atSeconds < item.durationMinutes * 60)));
 });
 
-test('Meditation library feels like a calm destination instead of a dashboard grid', () => {
+test('Meditation landing page defers copy and secondary decisions', () => {
   const html = wellnessBoostModule.renderView();
   assert.match(html, /data-module="wellness-boost"/);
-  assert.match(html, /class="wellness-boost-view wellness-boost-library-view"/);
-  assert.match(html, /<span class="section-kicker">Meditation<\/span>/);
-  assert.match(html, /Take a few minutes for yourself\./);
-  assert.match(html, /Featured meditation · Calm/);
-  assert.match(html, /class="wellness-boost-featured wellness-boost-tone-calm"[^>]*data-wb-open="meditation-steadier-breath"/);
+  assert.match(html, /wellness-boost-library-view gc-page-frame gc-page-flow/);
+  assert.match(html, /class="gc-section-label"[^>]*>Meditation</);
+  assert.doesNotMatch(html, /Take a few minutes for yourself\./);
+  assert.match(html, /Featured · Calm/);
+  assert.match(html, /class="wellness-boost-featured gc-feature-card gc-tone--calm"[^>]*data-wb-open="meditation-steadier-breath"/);
   assert.match(html, />A steadier breath</);
   assert.match(html, /More meditations/);
   assert.equal((html.match(/data-wb-open=/g) || []).length, 4);
-  assert.equal((html.match(/class="wellness-boost-row wellness-boost-tone-/g) || []).length, 3);
+  assert.equal((html.match(/class="wellness-boost-row gc-choice-row gc-tone--/g) || []).length, 3);
   assert.doesNotMatch(html, /wellness-boost-grid|class="os-section wellness-boost-type"/);
   assert.doesNotMatch(html, /data-wb-duration=|wellness-boost-filter|Open practice/);
   assert.doesNotMatch(html, /Guided voice · Ambient · Both|How would you like to listen\?|data-wb-mode=/);
 });
 
-test('Wellness Boost uses restrained category tones and a narrower content column', () => {
-  assert.match(css, /\.wellness-boost-library-view\{[^}]*width:min\(100%,860px\)[^}]*margin:0 auto/s);
+test('Wellness Boost landing presentation comes from the shared framework', () => {
+  assert.match(indexHtml, /\/css\/experience-framework\.css/);
+  assert.match(frameworkCss, /\.gc-page-frame\{/);
+  assert.match(frameworkCss, /\.gc-feature-card\{/);
+  assert.match(frameworkCss, /\.gc-choice-row\{/);
   for (const tone of ['reset', 'calm', 'focus', 'restore']) {
-    assert.match(css, new RegExp(`\\.wellness-boost-tone-${tone}\\{`));
+    assert.match(frameworkCss, new RegExp(`\\.gc-tone--${tone}\\{`));
   }
-  assert.match(css, /\.wellness-boost-featured\{[^}]*min-height:210px[^}]*background:linear-gradient/s);
-  assert.match(css, /\.wellness-boost-more-list\{display:grid\}/);
-  assert.match(css, /\.wellness-boost-row\{[^}]*min-height:78px[^}]*border-top:1px solid var\(--gc-border\)/s);
-  assert.doesNotMatch(css, /\.wellness-boost-grid\{/);
+  assert.doesNotMatch(css, /wellness-boost-tone-|wellness-boost-featured-copy|wellness-boost-row-copy/);
+  assert.doesNotMatch(css, /Take a few minutes/);
 });
 
 test('Meditation player asks listening style only after a practice is chosen and then becomes minimal', () => {
@@ -134,10 +136,12 @@ test('module removal leaves unrelated capabilities available', () => {
 });
 
 test('Wellness Boost destination and player remain phone-first accessible', () => {
+  assert.match(frameworkCss, /\.gc-feature-card\{[^}]*cursor:pointer/s);
+  assert.match(frameworkCss, /\.gc-choice-row\{[^}]*min-height:72px/s);
+  assert.match(frameworkCss, /@media\(max-width:760px\)/);
+  assert.match(frameworkCss, /\.gc-choice-row\{min-height:68px/s);
   assert.match(css, /min-height:var\(--gc-target-min\)/);
   assert.match(css, /@media\(max-width:650px\)/);
-  assert.match(css, /\.wellness-boost-featured\{[^}]*min-height:176px/s);
-  assert.match(css, /\.wellness-boost-row\{[^}]*min-height:72px/s);
   assert.match(css, /\.wellness-boost-mode-picker\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(moduleJs, /role="status" aria-live="polite"/);
