@@ -78,7 +78,8 @@
 
 #todayView .os-section-head .section-kicker,
 #todayView .time-reality-head .section-kicker,
-#todayView .daily-plan-head .section-kicker {
+#todayView .daily-plan-head .section-kicker,
+#todayView .journal-preview .section-kicker {
   display: none;
 }
 
@@ -91,8 +92,7 @@
 
 #todayView .today-state-section .os-section-head > small,
 #todayView .state-card small,
-#todayView .daily-plan-empty span,
-#todayView .journal-preview .section-kicker {
+#todayView .daily-plan-empty span {
   display: none;
 }
 
@@ -105,7 +105,8 @@
 #todayView .state-card,
 #todayView .today-goal-card,
 #todayView .time-reality-stats > *,
-#todayView .activity-feed-row {
+#todayView .activity-feed-row,
+#todayView .daily-plan-item {
   box-shadow: none;
 }
 
@@ -127,11 +128,14 @@
 
 #todayView .daily-plan-item {
   border-radius: 16px;
-  box-shadow: none;
+}
+
+#todayView .daily-plan-actions button,
+#todayView .today-period-switch button {
+  min-height: var(--gc-target-min);
 }
 
 #todayView .daily-plan-actions button {
-  min-height: 36px;
   padding-inline: 9px;
 }
 
@@ -140,7 +144,6 @@
 }
 
 #todayView .today-period-switch button {
-  min-height: 34px;
   padding: 5px 9px;
 }
 
@@ -217,7 +220,7 @@
 .plan-section-nav button {
   flex: 1 0 auto;
   min-width: max-content;
-  min-height: 40px;
+  min-height: var(--gc-target-min);
   display: block;
   padding: 8px 13px;
   border-radius: var(--gc-radius-pill);
@@ -370,7 +373,8 @@
   border-radius: 14px;
 }
 
-.logger-activity-field > label > span {
+.logger-activity-field > label > span,
+.duration-field > span {
   font-size: 0.72rem;
 }
 
@@ -380,15 +384,13 @@
   font-size: 1rem;
 }
 
-.duration-field > span {
-  font-size: 0.72rem;
-}
-
 .duration-presets {
   gap: 5px;
 }
 
-.duration-presets button {
+.duration-presets button,
+.repeat-chip {
+  min-height: var(--gc-target-min);
   border-color: transparent;
   background: var(--gc-surface-subtle);
 }
@@ -403,9 +405,7 @@
 }
 
 .repeat-chip {
-  border-color: transparent;
   border-radius: 14px;
-  background: var(--gc-surface-subtle);
 }
 
 .logger-advanced {
@@ -414,6 +414,7 @@
 }
 
 .logger-advanced > summary {
+  min-height: var(--gc-target-min);
   padding-inline: 13px;
 }
 
@@ -427,7 +428,6 @@
   box-shadow: none;
 }
 
-/* Navigation: reduce chrome and keep the primary action consistent. */
 .rail-log-btn,
 .top-log-btn,
 .nav-add {
