@@ -52,12 +52,26 @@ function goalRows(items) {
       minimum,
       target,
       actualText: formatMinutes(actual),
-      minimumText: formatMinutes(minimum),
+      minimumText: minimum ? formatMinutes(minimum) : 'Not set',
       targetText: target ? formatMinutes(target) : 'Not set'
     });
 
-    return `<div class="amt-row"><div class="amt-name"><strong>${escapeHtml(name)}</strong><span class="amt-status ${actual >= minimum ? 'good' : ''}">${status}</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>${formatMinutes(minimum)}</strong></div><div><span>Target</span><strong>${target ? formatMinutes(target) : 'Not set'}</strong></div></div>${track}</div>`;
+    return `<div class="amt-row"><div class="amt-name"><strong>${escapeHtml(name)}</strong><span class="amt-status ${minimum > 0 && actual >= minimum ? 'good' : ''}">${status}</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>${minimum ? formatMinutes(minimum) : 'Not set'}</strong></div><div><span>Target</span><strong>${target ? formatMinutes(target) : 'Not set'}</strong></div></div>${track}</div>`;
   }).join('');
+}
+
+function factValue(item) {
+  if (item.minutes != null) return formatMinutes(item.minutes);
+  if (item.quantity != null) return String(item.quantity);
+  if (item.boolean_value != null) return item.boolean_value ? 'Yes' : 'No';
+  return 'Recorded';
+}
+
+function factType(item) {
+  if (item.minutes != null) return 'Time';
+  if (item.quantity != null) return 'Quantity';
+  if (item.boolean_value != null) return 'Yes / No';
+  return 'Fact';
 }
 
 function recentRows(items) {
@@ -65,7 +79,7 @@ function recentRows(items) {
 
   return items.slice(0, 20).map((item) => {
     const canonical = item.record_kind === 'progress';
-    return `<div class="progress-history-row"><span class="history-date">${escapeHtml(item.occurred_on)}</span><div><strong>${escapeHtml(item.activity_name || item.activity_key || 'Activity')}</strong>${item.subtype ? `<small>${escapeHtml(item.subtype)}</small>` : ''}</div><span>${item.minutes == null ? 'Recorded' : formatMinutes(item.minutes)}</span>${canonical ? `<button type="button" class="history-delete" data-delete-progress="${item.id}" aria-label="Delete ${escapeHtml(item.activity_name || item.activity_key || 'progress record')}">Delete</button>` : '<small class="history-legacy">Beta history</small>'}</div>`;
+    return `<div class="progress-history-row"><span class="history-date">${escapeHtml(item.occurred_on)}</span><div><strong>${escapeHtml(item.activity_name || item.activity_key || 'Activity')}</strong><small>${escapeHtml(item.subtype || factType(item))}</small></div><span class="history-value">${escapeHtml(factValue(item))}</span>${canonical ? `<button type="button" class="history-delete" data-delete-progress="${item.id}" aria-label="Delete ${escapeHtml(item.activity_name || item.activity_key || 'progress record')}">Delete</button>` : '<small class="history-legacy">Beta history</small>'}</div>`;
   }).join('');
 }
 
@@ -92,7 +106,7 @@ export async function renderProgress({ reload } = {}) {
     energy = [];
   }
 
-  root.innerHTML = `<section class="progress-dashboard"><div class="progress-dashboard-head"><div><p class="eyebrow">Progress</p><h2>Actual, minimum, target</h2><p>Enough counts. Targets guide direction; they do not create debt.</p></div><span class="week-status">${escapeHtml(week.status)}</span></div><div class="progress-stat-grid"><div><span>Overall target progress</span><strong>${week.targetProgress}%</strong></div><div><span>Minimums reached</span><strong>${week.minimumReached}/${week.measurableCount}</strong></div><div><span>Actual time</span><strong>${formatMinutes(week.actualTotal)}</strong></div><div><span>Target time</span><strong>${week.targetTotal ? formatMinutes(week.targetTotal) : 'Not set'}</strong></div></div></section><section class="os-section progress-goals-section"><div class="os-section-head"><div><span class="section-kicker">This week</span><h2>Goal progress</h2></div><small>Minimum and target are guidance, not debt</small></div><div class="amt-list">${goalRows(week.items)}</div></section><section class="os-section"><div class="os-section-head"><div><span class="section-kicker">History</span><h2>Recent activity</h2></div><small>Legacy Beta history stays visible</small></div><div class="progress-history-list">${recentRows(history)}</div></section><details class="energy-drawer progress-energy-history"><summary><span><strong>Energy history</strong><small>Daily observations</small></span><span>Open</span></summary><div class="energy-drawer-body">${energy.length ? energy.slice(0, 30).map((item) => `<div class="progress-history-row"><span class="history-date">${escapeHtml(item.occurred_on)}</span><strong>${escapeHtml(item.label)}</strong><span>E ${item.energy_score > 0 ? '+' : ''}${item.energy_score}</span></div>`).join('') : '<div class="empty">No saved energy check-ins yet.</div>'}</div></details>`;
+  root.innerHTML = `<section class="progress-dashboard"><div class="progress-dashboard-head"><div><p class="eyebrow">Progress</p><h2>Actual, minimum, target</h2><p>Enough counts. Targets guide direction; they do not create debt.</p></div><span class="week-status">${escapeHtml(week.status)}</span></div><div class="progress-stat-grid"><div><span>Target coverage</span><strong>${week.targetTotal ? `${week.targetProgress}%` : 'Not set'}</strong><small>capped at each target</small></div><div><span>Minimums reached</span><strong>${week.measurableCount ? `${week.minimumReached}/${week.measurableCount}` : 'Not set'}</strong><small>only goals with guidance</small></div><div><span>Actual time</span><strong>${formatMinutes(week.actualTotal)}</strong><small>facts recorded this week</small></div><div><span>Target time</span><strong>${week.targetTotal ? formatMinutes(week.targetTotal) : 'Not set'}</strong><small>time-allocation goals only</small></div></div></section><section class="os-section progress-goals-section"><div class="os-section-head"><div><span class="section-kicker">This week</span><h2>Goal progress</h2></div><small>Minimum and target are guidance, not debt</small></div><div class="amt-list">${goalRows(week.items)}</div></section><section class="os-section progress-history-section"><div class="os-section-head"><div><span class="section-kicker">History</span><h2>Recent factual records</h2></div><small>Time, quantity and yes/no facts stay distinct</small></div><div class="progress-history-list">${recentRows(history)}</div></section><details class="energy-drawer progress-energy-history"><summary><span><strong>Energy history</strong><small>Daily observations</small></span><span>Open</span></summary><div class="energy-drawer-body">${energy.length ? energy.slice(0, 30).map((item) => `<div class="progress-history-row"><span class="history-date">${escapeHtml(item.occurred_on)}</span><strong>${escapeHtml(item.label)}</strong><span>E ${item.energy_score > 0 ? '+' : ''}${item.energy_score}</span></div>`).join('') : '<div class="empty">No saved energy check-ins yet.</div>'}</div></details>`;
 
   $$('[data-delete-progress]').forEach((button) => {
     button.addEventListener('click', async () => {
