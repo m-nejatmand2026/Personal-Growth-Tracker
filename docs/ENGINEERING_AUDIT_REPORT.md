@@ -337,4 +337,171 @@ No production Worker or production D1 deployment occurred during these correctio
 
 ## Phase 3 — Automated tests
 
+### Overall status: CONCERN
+
+The suite is fast and unusually strong at domain invariants, architecture boundaries and regression contracts. It is not yet a complete production-confidence test pyramid: a large share of tests inspect source/static structure, there is no local D1-backed HTTP integration layer, and there is no automated browser end-to-end layer.
+
+### T1 — Pure domain and architecture tests provide strong fast feedback
+
+**Status:** PASS  
+**Severity:** —  
+**Release impact:** none
+
+Evidence:
+
+- pure domain behavior is executed directly for dates, Capacity math, Goal semantics, Daily Plan validation/lifecycle, Journal validation, Wellbeing validation and related rules;
+- module registries are executed directly and verify dependency cascades, cycles, ownership and event constraints;
+- architecture scanners enforce private-import and private-table boundaries;
+- UI/source contracts protect important product semantics such as no catch-up debt, factual Progress, association-only Insights, touch targets and navigation ownership.
+
+Assessment:
+
+These tests are valuable release gates. They catch architecture drift that ordinary endpoint tests would often miss and should remain even after deeper integration testing is added.
+
+### T2 — Many contract tests prove source shape, not runtime behavior
+
+**Status:** CONCERN  
+**Severity:** MEDIUM  
+**Release impact:** not a private-Beta blocker; must be complemented before public release
+
+Representative evidence:
+
+- Progress contract tests inspect SQL/import/API strings in source files;
+- Plans contract tests inspect persistence source for table names and dependency imports;
+- Journal tests inspect migration/UI/route source while executing only domain normalizers;
+- accessibility tests inspect CSS/JS source for expected focus/touch/modal constructs.
+
+Risk:
+
+A source pattern can exist while runtime wiring, SQL syntax, binding behavior, HTTP status handling or browser behavior is still wrong. Static architecture gates should therefore be described as **contract/static tests**, not as endpoint or database integration tests.
+
+Recommendation:
+
+Keep the current gates, but classify the suite explicitly and add runtime layers rather than replacing the static checks.
+
+### T3 — Real Worker fetch/router coverage was missing
+
+**Status:** PASS after partial remediation  
+**Severity before remediation:** MEDIUM  
+**Release impact:** basic Worker routing gap resolved
+
+Remediation completed during audit:
+
+`tests/worker-runtime.test.js` now executes the actual Worker default export and verifies:
+
+- unknown API requests pass through the real router and return controlled 404 JSON;
+- a retired compatibility mutation returns its real 410 response through Worker routing;
+- non-API requests delegate to the Assets binding;
+- missing Assets produce a controlled 404.
+
+Verified checkpoint:
+
+- feature SHA `bd20bc10a7b3528d5d88618dfaaaa266af9cea63`
+- Quality run #292
+- **264 / 264 passing**
+
+This is intentionally a small runtime layer; it does not mock D1 and therefore does not claim database coverage.
+
+### T4 — No local Worker + D1 integration test layer
+
+**Status:** CONCERN  
+**Severity:** HIGH  
+**Release impact:** public-launch blocker; important before risky migration/data work
+
+Evidence:
+
+- no current tests execute module persistence SQL against an isolated D1 database;
+- no current test applies the migration chain and then exercises Version 1 HTTP CRUD against that resulting schema;
+- contract tests inspect SQL ownership and migration text but do not prove SQL execution;
+- the post-deploy `/api/v1/areas` smoke test proves only a thin read path against preview.
+
+Current Cloudflare guidance provides first-party options for this gap:
+
+- Workers Vitest integration can run tests in the Workers runtime with direct bindings and isolated storage;
+- D1 migrations can be read/applied to isolated test D1 storage;
+- Cloudflare's `createTestHarness()` is recommended for whole-Worker HTTP integration testing and can work with a Node test ecosystem.
+
+Recommended remediation sequence:
+
+1. first resolve C6 by committing a reviewed lockfile;
+2. introduce a dedicated integration test job, separate from the current dependency-free fast Quality suite if needed;
+3. apply the real migration chain to isolated local D1 storage;
+4. exercise at least Area → Goal → Activity → Progress CRUD plus Daily Plan, Journal and Wellbeing write/read paths over HTTP;
+5. verify profile isolation, foreign-key/uniqueness behavior, archived references and representative invalid requests;
+6. reset storage between tests;
+7. keep preview smoke tests as an operational layer, not a substitute for local integration tests.
+
+Do not build a handwritten fake D1 implementation that merely mirrors assumptions in application code.
+
+### T5 — No automated browser end-to-end layer
+
+**Status:** CONCERN  
+**Severity:** MEDIUM  
+**Release impact:** add before public/global release; human acceptance remains mandatory regardless
+
+Evidence:
+
+- UI tests mainly inspect HTML/CSS/JS source;
+- there is no browser automation proving navigation, dialogs, Logger flows, Plan editing, Progress deletion, Journal interaction or Wellness player state transitions;
+- device screenshots and manual preview walkthroughs currently provide the real interaction validation.
+
+Risk:
+
+DOM event wiring, focus movement, responsive behavior, browser APIs and state transitions can regress while source-text assertions remain green.
+
+Recommended remediation:
+
+After dependency reproducibility is solved, add a small critical-path browser suite rather than attempting exhaustive visual automation. Prioritize:
+
+- first load/navigation;
+- Logger Plan vs Start now vs Done semantics;
+- create/edit Life Area and Goal;
+- Daily Plan changed-plan recovery;
+- Progress factual write/delete;
+- Journal create/edit/delete;
+- Wellness select/start/pause/end;
+- modal keyboard/focus behavior;
+- 375px mobile viewport and one desktop viewport.
+
+Visual approval should still remain a human product gate because automated screenshots cannot decide whether the experience feels calm or comprehensible.
+
+### T6 — No coverage metric or mutation-testing signal
+
+**Status:** CONCERN  
+**Severity:** LOW  
+**Release impact:** informational; do not add an arbitrary percentage gate now
+
+The current test output reports pass/fail counts only. There is no statement/branch coverage or mutation-testing signal.
+
+Assessment:
+
+A raw coverage percentage would be particularly misleading here because many source-contract tests read files without executing their runtime branches. Coverage can be useful later as a diagnostic, but it should not become a vanity threshold.
+
+Recommendation:
+
+Once Worker-runtime integration exists, collect coverage for executable domain/Worker code and use it to find untested branches. Establish thresholds only after a baseline is understood.
+
+### T7 — Post-deploy smoke is valuable but intentionally narrow
+
+**Status:** PASS with scope limitation  
+**Severity:** —
+
+The hardened automatic Preview pipeline proves on every successful feature change that:
+
+- the exact tested SHA can be built by Wrangler;
+- preview D1 has no pending migrations;
+- the intended preview Worker deploys;
+- the root application responds;
+- a real read-only Version 1 Areas API call succeeds against preview D1.
+
+This is a useful operational test and should stay small, deterministic and non-mutating.
+
+### Phase 3 decision
+
+**Keep the current fast suite and add depth, not breadth-by-count.** The immediate architecture/domain gates are strong. The next major testing investment should be a first-party Cloudflare Worker + D1 integration layer after dependency/lockfile reproducibility is established. Browser E2E follows that, focused on critical user journeys.
+
+---
+
+## Phase 4 — D1, data, migrations and integrity
+
 Status: **NEXT**.
