@@ -16,6 +16,9 @@ body{min-width:320px;overflow-x:clip}
 .top-actions button,.icon-btn,.top-journal-btn,.top-log-btn{min-width:var(--gc-target-min);min-height:var(--gc-target-min)}
 .top-log-btn{border-radius:var(--gc-radius-md);padding-inline:14px;background:var(--gc-brand);box-shadow:var(--gc-shadow-sm)}
 .top-log-btn:hover{background:var(--gc-brand-strong)}
+.top-wellness-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;padding-inline:10px;border-radius:var(--gc-radius-md);font-size:12px;font-weight:800;white-space:nowrap}
+.top-wellness-btn>span{font-size:17px;line-height:1}
+.top-wellness-label{font:inherit}
 .top-wellness-btn.active,.top-wellness-btn[aria-current="page"]{background:var(--gc-brand-soft);color:var(--gc-brand-strong);border-color:color-mix(in srgb,var(--gc-brand) 35%,var(--gc-border))}
 
 .bottom-nav{position:fixed;z-index:70;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,780px);min-height:74px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:2px;padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));background:color-mix(in srgb,var(--gc-surface) 96%,transparent);border-top:1px solid var(--gc-border);box-shadow:0 -12px 32px rgba(13,27,42,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
@@ -34,6 +37,10 @@ body{min-width:320px;overflow-x:clip}
 
 .app-rail{display:none}
 
+@media (max-width:760px){
+  .top-log-btn{display:none}
+}
+
 @media (max-width:420px){
   .os-shell{padding-inline:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
   .nav-btn{font-size:10px}
@@ -41,7 +48,7 @@ body{min-width:320px;overflow-x:clip}
   .nav-add{width:60px;height:60px;min-height:60px;margin-top:-24px}
   .nav-add>b{top:63px}
   .top-actions{gap:5px}
-  .top-log-btn{padding-inline:11px}
+  .top-wellness-btn{padding-inline:8px;font-size:11px}
 }
 
 @media (min-width:900px){
@@ -51,6 +58,7 @@ body{min-width:320px;overflow-x:clip}
   .mobile-brand-mark{display:none}
   .workspace{min-width:0}
   .topbar{top:0;padding-top:10px}
+  .top-wellness-btn{display:none}
 
   .app-rail{position:sticky;top:20px;display:flex;flex-direction:column;align-self:start;height:calc(100dvh - 40px);min-height:620px;padding:18px 14px;background:var(--gc-surface);border:1px solid var(--gc-border);border-radius:var(--gc-radius-xl);box-shadow:var(--gc-shadow-sm)}
   .rail-brand{display:flex;align-items:center;gap:11px;padding:4px 6px 18px;border-bottom:1px solid var(--gc-border)}
