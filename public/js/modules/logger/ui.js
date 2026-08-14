@@ -100,6 +100,11 @@ function modeCopy(mode, date) {
   };
 }
 
+function timeFromStartedAt(value = '') {
+  const match = String(value || '').match(/T(\d{2}:\d{2})/);
+  return match?.[1] || '';
+}
+
 async function savePlanIntent(input) {
   const response = await api('/api/v1/daily-plan', {
     method: 'POST',
@@ -169,7 +174,8 @@ export function createLogger({ onSaved } = {}) {
     if ($('#loggerActivity')) $('#loggerActivity').value = item.activity_key || '';
     if ($('#loggerSubtype')) $('#loggerSubtype').value = item.subtype || '';
     if ($('#loggerDuration')) $('#loggerDuration').value = Number(item.minutes || item.duration || 25);
-    if ($('#loggerDate')) $('#loggerDate').value = item.occurred_on || state.date;
+    if ($('#loggerDate')) $('#loggerDate').value = item.occurred_on || item.date || state.date;
+    if ($('#loggerStartTime')) $('#loggerStartTime').value = item.planned_time || timeFromStartedAt(item.started_at);
     if ($('#loggerNote')) $('#loggerNote').value = item.note || '';
     updateSubtypeHint();
     updateModeUi();
@@ -191,24 +197,27 @@ export function createLogger({ onSaved } = {}) {
       ? prefill.entryMode
       : 'done';
     const date = prefill.date || prefill.occurred_on || state.date;
+    const advancedOpen = Boolean(prefill.subtype || prefill.note || prefill.started_at || prefill.planned_time || date !== state.date);
 
     host.innerHTML = `
       <div class="logger-backdrop" data-logger-close></div>
       <section class="logger-panel" role="dialog" aria-modal="true" aria-labelledby="loggerTitle" tabindex="-1">
-        <div class="logger-head">
+        <header class="logger-head">
           <div>
             <p class="eyebrow">Universal logger</p>
-            <h2 id="loggerTitle">Plan it, do it, or finish it</h2>
-            <p>One activity can become a short-term plan, something in progress, or confirmed completed progress.</p>
+            <h2 id="loggerTitle">Plan it, start it, or log it</h2>
+            <p>Choose what this Activity means right now. Only Done becomes factual Progress.</p>
           </div>
           <button class="logger-close" type="button" data-logger-close aria-label="Close logger">×</button>
-        </div>
+        </header>
+
         <section class="logger-repeats" aria-labelledby="recentRepeatsTitle">
           <div class="logger-section-head"><h3 id="recentRepeatsTitle">Recent repeats</h3><span>Tap to prefill</span></div>
           <div class="repeat-row" id="loggerRecentRepeats">${repeatButtons(repeats)}</div>
         </section>
+
         <form id="loggerForm" class="logger-form">
-          <fieldset class="logger-mode-fieldset">
+          <fieldset class="logger-mode-fieldset" aria-describedby="loggerModeHint">
             <legend>What does this mean right now?</legend>
             <div class="logger-mode-grid">
               <label class="logger-mode-choice"><input type="radio" name="loggerEntryMode" value="planned" ${mode === 'planned' ? 'checked' : ''}><span>Plan</span></label>
@@ -217,15 +226,26 @@ export function createLogger({ onSaved } = {}) {
             </div>
             <p id="loggerModeHint" class="logger-mode-hint">${escapeHtml(modeCopy(mode, date).hint)}</p>
           </fieldset>
-          <label class="logger-field"><span>Activity</span><select id="loggerActivity" required>${activityOptions(prefill.activityKey || prefill.activity_key || '')}</select></label>
-          <label class="logger-field"><span>Subtype / focus <small>optional</small></span><input id="loggerSubtype" maxlength="80" placeholder="${escapeHtml(subtypePlaceholder())}"></label>
-          <div class="logger-field duration-field">
-            <span>Duration</span>
-            <div class="duration-input-wrap"><input id="loggerDuration" type="number" min="1" max="1440" step="1" inputmode="numeric" value="${Number(prefill.minutes || prefill.duration || 25)}" required><strong>minutes</strong></div>
-            <div class="duration-presets" aria-label="Duration presets">${PRESETS.map((minutes) => `<button type="button" data-duration-preset="${minutes}">${minutes}m</button>`).join('')}</div>
+
+          <div class="logger-primary-grid">
+            <label class="logger-field logger-activity-field"><span>Activity</span><select id="loggerActivity" required>${activityOptions(prefill.activityKey || prefill.activity_key || '')}</select></label>
+            <div class="logger-field duration-field">
+              <span>Duration</span>
+              <div class="duration-input-wrap"><input id="loggerDuration" type="number" min="1" max="1440" step="1" inputmode="numeric" value="${Number(prefill.minutes || prefill.duration || 25)}" required aria-label="Duration in minutes"><strong>minutes</strong></div>
+              <div class="duration-presets" aria-label="Duration presets">${PRESETS.map((minutes) => `<button type="button" data-duration-preset="${minutes}">${minutes}m</button>`).join('')}</div>
+            </div>
           </div>
-          <label class="logger-field"><span>Date</span><input id="loggerDate" type="date" value="${escapeHtml(date)}" required></label>
-          <label class="logger-field"><span>Note <small>optional</small></span><textarea id="loggerNote" maxlength="500" placeholder="Anything worth remembering?"></textarea></label>
+
+          <details class="logger-advanced" ${advancedOpen ? 'open' : ''}>
+            <summary>More details <span>optional</span></summary>
+            <div class="logger-advanced-grid">
+              <label class="logger-field logger-full"><span>Subtype / focus <small>optional</small></span><input id="loggerSubtype" maxlength="80" placeholder="${escapeHtml(subtypePlaceholder())}"></label>
+              <label class="logger-field"><span>Date</span><input id="loggerDate" type="date" value="${escapeHtml(date)}" required></label>
+              <label class="logger-field"><span>Start time <small>optional</small></span><input id="loggerStartTime" type="time"></label>
+              <label class="logger-field logger-full"><span>Note <small>optional</small></span><textarea id="loggerNote" maxlength="500" placeholder="Anything worth remembering?"></textarea></label>
+            </div>
+          </details>
+
           <button class="logger-save" id="loggerSaveButton" type="submit">${escapeHtml(modeCopy(mode, date).button)}</button>
         </form>
       </section>`;
@@ -236,6 +256,8 @@ export function createLogger({ onSaved } = {}) {
       subtype: prefill.subtype || '',
       minutes: prefill.minutes || prefill.duration || 25,
       occurred_on: date,
+      started_at: prefill.started_at || '',
+      planned_time: prefill.planned_time || '',
       note: prefill.note || ''
     });
 
@@ -257,6 +279,7 @@ export function createLogger({ onSaved } = {}) {
       const activityLabel = select.selectedOptions[0]?.textContent?.trim() || activityKey;
       const minutes = Math.round(Number($('#loggerDuration').value || 0));
       const occurredOn = $('#loggerDate').value;
+      const startTime = $('#loggerStartTime').value || null;
       const subtype = $('#loggerSubtype').value.trim() || null;
       const note = $('#loggerNote').value.trim() || null;
       const entryMode = currentMode();
@@ -270,6 +293,7 @@ export function createLogger({ onSaved } = {}) {
         if (entryMode === 'planned' || entryMode === 'in_progress') {
           await savePlanIntent({
             planned_for: occurredOn,
+            planned_time: startTime,
             title: subtype || activityLabel,
             activity_key: activityKey,
             activity_label: activityLabel,
@@ -289,6 +313,7 @@ export function createLogger({ onSaved } = {}) {
           method: 'POST',
           body: JSON.stringify({
             occurred_on: occurredOn,
+            started_at: startTime ? `${occurredOn}T${startTime}:00` : null,
             activity_key: activityKey,
             minutes,
             subtype,
