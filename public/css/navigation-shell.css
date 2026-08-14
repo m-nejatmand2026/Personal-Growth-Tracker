@@ -1,0 +1,79 @@
+/* Growth Compass — Version 1 Beta
+ * Revision A responsive application shell.
+ * This file owns navigation presentation only. Business-module presentation
+ * remains with the module that owns it.
+ */
+
+html{background:var(--gc-bg);overflow-x:clip}
+body{min-width:320px;overflow-x:clip}
+.os-shell{width:min(100%,1280px);max-width:none;margin:0 auto;padding:14px max(14px,env(safe-area-inset-right)) calc(98px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.workspace{width:100%;min-width:0}
+
+.topbar{top:0;margin:0 0 18px;padding:max(10px,env(safe-area-inset-top)) 0 12px;background:color-mix(in srgb,var(--gc-bg) 94%,transparent)}
+.topbar-title{min-width:0}
+.topbar-title h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top-actions{flex:0 0 auto}
+.top-actions button,.icon-btn,.top-journal-btn,.top-log-btn{min-width:var(--gc-target-min);min-height:var(--gc-target-min)}
+.top-log-btn{border-radius:var(--gc-radius-md);padding-inline:14px;background:var(--gc-brand);box-shadow:var(--gc-shadow-sm)}
+.top-log-btn:hover{background:var(--gc-brand-strong)}
+
+.bottom-nav{position:fixed;z-index:70;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,780px);min-height:74px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:2px;padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));background:color-mix(in srgb,var(--gc-surface) 96%,transparent);border-top:1px solid var(--gc-border);box-shadow:0 -12px 32px rgba(13,27,42,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.nav-btn{position:relative;min-width:0;min-height:var(--gc-target-min);display:grid;place-items:center;align-content:center;gap:2px;border:0;border-radius:var(--gc-radius-md);padding:6px 2px;background:transparent;color:var(--gc-text-muted);font:inherit;font-size:11px;font-weight:700;line-height:1.1;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nav-btn>span{font-size:20px;line-height:1}
+.nav-btn.active:not(.nav-add),.nav-btn[aria-current="page"]:not(.nav-add){background:var(--gc-brand-soft);color:var(--gc-brand-strong)}
+.nav-btn:not(.nav-add):hover{background:var(--gc-surface-subtle);color:var(--gc-text)}
+
+.nav-add{justify-self:center;align-self:start;width:64px;height:64px;min-height:64px;margin-top:-27px;border-radius:999px;background:var(--gc-brand);color:#fff;box-shadow:0 12px 26px rgba(15,119,117,.28);border:5px solid var(--gc-bg);padding:0;gap:0}
+.nav-add>span{font-size:30px;font-weight:500;line-height:.9;transform:translateY(1px)}
+.nav-add>b{position:absolute;top:67px;color:var(--gc-text);font-size:10px;font-weight:800;letter-spacing:.01em}
+.nav-add:hover{background:var(--gc-brand-strong);transform:translateY(-1px)}
+.nav-add:active{transform:translateY(1px)}
+
+.app-rail{display:none}
+
+@media (max-width:420px){
+  .os-shell{padding-inline:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+  .nav-btn{font-size:10px}
+  .nav-btn>span{font-size:19px}
+  .nav-add{width:60px;height:60px;min-height:60px;margin-top:-24px}
+  .nav-add>b{top:63px}
+  .top-actions{gap:5px}
+  .top-log-btn{padding-inline:11px}
+}
+
+@media (min-width:900px){
+  body{overflow-x:hidden}
+  .os-shell{display:grid;grid-template-columns:238px minmax(0,1fr);gap:28px;width:min(100%,1280px);padding:20px 24px 42px}
+  .bottom-nav{display:none}
+  .mobile-brand-mark{display:none}
+  .workspace{min-width:0}
+  .topbar{top:0;padding-top:10px}
+
+  .app-rail{position:sticky;top:20px;display:flex;flex-direction:column;align-self:start;height:calc(100dvh - 40px);min-height:620px;padding:18px 14px;background:var(--gc-surface);border:1px solid var(--gc-border);border-radius:var(--gc-radius-xl);box-shadow:var(--gc-shadow-sm)}
+  .rail-brand{display:flex;align-items:center;gap:11px;padding:4px 6px 18px;border-bottom:1px solid var(--gc-border)}
+  .brand-mark{display:grid;place-items:center;width:42px;height:42px;flex:0 0 auto;border-radius:14px;background:var(--gc-brand);color:#fff;font-size:11px;font-weight:850;letter-spacing:.04em}
+  .rail-brand strong,.rail-brand small{display:block}
+  .rail-brand strong{color:var(--gc-text);font-size:14px}
+  .rail-brand small{margin-top:2px;color:var(--gc-text-muted);font-size:10px}
+
+  .rail-nav{display:grid;gap:5px;margin-top:16px}
+  .rail-nav-btn,.rail-secondary,.rail-settings,.rail-log-btn{width:100%;min-height:var(--gc-target-min);border:0;border-radius:var(--gc-radius-md);font:inherit;cursor:pointer}
+  .rail-nav-btn{display:flex;align-items:center;gap:11px;padding:10px 12px;background:transparent;color:var(--gc-text-muted);text-align:left}
+  .rail-nav-btn>span{width:22px;text-align:center;font-size:18px}
+  .rail-nav-btn>b{font-size:13px}
+  .rail-nav-btn:hover{background:var(--gc-surface-subtle);color:var(--gc-text)}
+  .rail-nav-btn.active,.rail-nav-btn[aria-current="page"]{background:var(--gc-brand-soft);color:var(--gc-brand-strong)}
+
+  .rail-secondary,.rail-settings{display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;color:var(--gc-text-muted);text-align:left;font-size:12px;font-weight:750}
+  .rail-secondary{margin-top:14px}
+  .rail-secondary:hover,.rail-settings:hover{background:var(--gc-surface-subtle);color:var(--gc-text)}
+  .rail-secondary.active{background:var(--gc-brand-soft);color:var(--gc-brand-strong)}
+  .rail-log-btn{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:auto;padding:11px 12px;background:var(--gc-brand);color:#fff;font-size:12px;font-weight:850;box-shadow:var(--gc-shadow-sm)}
+  .rail-log-btn:hover{background:var(--gc-brand-strong)}
+  .rail-log-btn>span{font-size:19px;line-height:1}
+  .rail-settings{margin-top:7px}
+}
+
+@media (min-width:1180px){
+  .os-shell{grid-template-columns:252px minmax(0,1fr);gap:34px;padding-inline:30px}
+}
