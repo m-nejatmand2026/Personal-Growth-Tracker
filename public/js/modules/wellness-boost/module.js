@@ -226,39 +226,36 @@ function toneFor(item) {
 }
 
 function renderFeaturedPractice(item) {
-  return `<button type="button" class="wellness-boost-featured wellness-boost-tone-${toneFor(item)}" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
-    <span class="wellness-boost-featured-copy">
-      <span class="wellness-boost-featured-kicker">Featured meditation · ${escapeHtml(item.category)}</span>
-      <strong>${escapeHtml(item.title)}</strong>
-      <span class="wellness-boost-featured-summary">${escapeHtml(item.summary)}</span>
-      <span class="wellness-boost-featured-meta">${item.durationMinutes} min <span aria-hidden="true">→</span></span>
+  return `<button type="button" class="wellness-boost-featured gc-feature-card gc-tone--${toneFor(item)}" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
+    <span class="gc-feature-card__copy">
+      <span class="gc-feature-card__meta">Featured · ${escapeHtml(item.category)}</span>
+      <strong class="gc-feature-card__title">${escapeHtml(item.title)}</strong>
+      <span class="gc-feature-card__summary">${escapeHtml(item.summary)}</span>
+      <span class="gc-feature-card__action">${item.durationMinutes} min <span aria-hidden="true">→</span></span>
     </span>
-    <span class="wellness-boost-featured-art" aria-hidden="true">${escapeHtml(item.icon)}</span>
+    <span class="gc-feature-card__visual" aria-hidden="true">${escapeHtml(item.icon)}</span>
   </button>`;
 }
 
 function renderPracticeRow(item) {
-  return `<button type="button" class="wellness-boost-row wellness-boost-tone-${toneFor(item)}" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
-    <span class="wellness-boost-row-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
-    <span class="wellness-boost-row-copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.category)} · ${item.durationMinutes} min</span></span>
-    <span class="wellness-boost-row-arrow" aria-hidden="true">→</span>
+  return `<button type="button" class="wellness-boost-row gc-choice-row gc-tone--${toneFor(item)}" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
+    <span class="gc-choice-row__icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+    <span class="gc-choice-row__copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.category)} · ${item.durationMinutes} min</span></span>
+    <span class="gc-choice-row__arrow" aria-hidden="true">→</span>
   </button>`;
 }
 
 function renderLibrary() {
   const featured = boostContent.find((item) => item.id === FEATURED_PRACTICE_ID) || boostContent[0];
   const more = boostContent.filter((item) => item.id !== featured.id);
-  return `<div class="wellness-boost-view wellness-boost-library-view" data-module="wellness-boost" aria-label="Wellness Boost">
-    <section class="wellness-boost-intro" aria-labelledby="wellnessBoostIntroTitle">
-      <span class="section-kicker">Meditation</span>
-      <h2 id="wellnessBoostIntroTitle">Take a few minutes for yourself.</h2>
-    </section>
-    <section class="wellness-boost-featured-section" aria-label="Featured meditation">
+  return `<div class="wellness-boost-view wellness-boost-library-view gc-page-frame gc-page-flow" data-module="wellness-boost" aria-label="Wellness Boost">
+    <section class="wellness-boost-featured-section" aria-labelledby="wellnessBoostMeditationTitle">
+      <div class="gc-section-label" id="wellnessBoostMeditationTitle">Meditation</div>
       ${renderFeaturedPractice(featured)}
     </section>
     <section class="wellness-boost-more" aria-labelledby="wellnessBoostMoreTitle">
-      <h3 id="wellnessBoostMoreTitle">More meditations</h3>
-      <div class="wellness-boost-more-list">${more.map(renderPracticeRow).join('')}</div>
+      <h2 class="gc-section-heading" id="wellnessBoostMoreTitle">More meditations</h2>
+      <div class="gc-choice-list">${more.map(renderPracticeRow).join('')}</div>
     </section>
   </div>`;
 }
@@ -270,7 +267,7 @@ function renderModePicker(item) {
 }
 
 function renderPlayer(item) {
-  return `<div class="wellness-boost-view wellness-boost-player-view" data-module="wellness-boost" aria-label="Wellness Boost">
+  return `<div class="wellness-boost-view wellness-boost-player-view gc-page-frame" data-module="wellness-boost" aria-label="Wellness Boost">
     <button type="button" class="wellness-boost-back" data-wb-back>← Meditation</button>
     <section class="wellness-boost-player" aria-labelledby="wellnessBoostPlayerTitle">
       <div class="wellness-boost-player-copy"><span class="wellness-boost-category">${escapeHtml(item.category)}</span><div class="wellness-boost-player-title"><h2 id="wellnessBoostPlayerTitle">${escapeHtml(item.title)}</h2><span class="wellness-boost-duration">${item.durationMinutes} min</span></div><p>${escapeHtml(item.description)}</p></div>
