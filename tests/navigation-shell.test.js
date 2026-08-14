@@ -36,6 +36,15 @@ test('mobile navigation preserves Today Plan plus Progress Insights order with L
   assert.match(nav, /aria-label="Log progress"/);
 });
 
+test('mobile header exposes Wellness Boost as a labeled section without duplicating the primary Log action', () => {
+  assert.match(indexHtml, /id="wellnessBoostBtn"[^>]*aria-label="Open Wellness Boost"[^>]*>[\s\S]*?<b class="top-wellness-label">Wellness<\/b>/);
+  assert.match(shellCss, /\.top-wellness-btn\{[^}]*display:inline-flex[^}]*min-width|\.top-wellness-btn\{[^}]*display:inline-flex/s);
+  assert.match(shellCss, /@media \(max-width:760px\)\{\s*\.top-log-btn\{display:none\}/s);
+  assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*?\.top-wellness-btn\{display:none\}/);
+  assert.match(appJs, /wellnessBoostBtn/);
+  assert.match(appJs, /showView\('wellness-boost'\)/);
+});
+
 test('navigation shell is phone-first safe-area aware and keeps frequent controls at touch size', () => {
   assert.match(shellCss, /grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
   assert.match(shellCss, /env\(safe-area-inset-bottom\)/);
@@ -52,7 +61,7 @@ test('desktop presentation replaces bottom navigation with the persistent rail w
   assert.match(shellCss, /grid-template-columns:238px minmax\(0,1fr\)/);
 
   const rail = between(indexHtml, '<nav class="rail-nav"', '</nav>');
-  for (const view of ['today', 'plan', 'progress', 'insights']) {
+  for (const view of ['today', 'plan', 'progress', 'insights', 'wellness-boost']) {
     assert.match(rail, new RegExp(`data-view="${view}"`));
   }
 });
@@ -69,7 +78,7 @@ test('decorative navigation symbols stay out of accessible names', () => {
   const bottomNav = between(indexHtml, '<nav class="bottom-nav"', '</nav>');
   const railNav = between(indexHtml, '<nav class="rail-nav"', '</nav>');
   assert.doesNotMatch(bottomNav, /<span>(?:⌂|◎|＋|↗|✦)<\/span>/);
-  assert.doesNotMatch(railNav, /<span>(?:⌂|◎|↗|✦)<\/span>/);
+  assert.doesNotMatch(railNav, /<span>(?:⌂|◎|↗|✦|☼)<\/span>/);
   assert.match(bottomNav, /aria-hidden="true"/);
   assert.match(railNav, /aria-hidden="true"/);
 });
