@@ -264,6 +264,25 @@ export function createModuleRegistry(modules) {
   }
 
   for (const module of modulesById.values()) {
+    for (const event of module.subscribes) {
+      const publisher = publishedEventOwners.get(event);
+
+      if (!publisher) {
+        throw new Error(
+          `Module ${module.id} subscribes to unpublished event ${event}.`
+        );
+      }
+
+      if (
+        publisher !== module.id
+        && !module.dependsOn.includes(publisher)
+      ) {
+        throw new Error(
+          `Module ${module.id} subscribes to ${event} without depending on ${publisher}.`
+        );
+      }
+    }
+
     for (
       const table
       of module.compatibilityTables
