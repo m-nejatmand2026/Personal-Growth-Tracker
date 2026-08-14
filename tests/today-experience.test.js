@@ -5,6 +5,7 @@ import { progressModule } from '../public/js/modules/progress/manifest.js';
 
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 const todayJs = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
+const todayModuleJs = await readFile(new URL('../public/js/modules/today/manifest.js', import.meta.url), 'utf8');
 const wellbeingJs = await readFile(new URL('../public/js/modules/wellbeing/module.js', import.meta.url), 'utf8');
 const capacityJs = await readFile(new URL('../public/js/modules/capacity/module.js', import.meta.url), 'utf8');
 const todayCss = await readFile(new URL('../public/css/today.css', import.meta.url), 'utf8');
@@ -32,17 +33,25 @@ test('Today remains a composition surface and uses the platform threshold primit
   assert.doesNotMatch(todayJs, /\/api\/v1\/capacity|\/api\/v1\/progress|\/api\/v1\/wellbeing/);
 });
 
-test('targetless weekly direction never claims a zero minimum was reached', () => {
+test('Revision B Today exposes Day Week Month Year through the Today capability', () => {
+  assert.match(todayJs, /data-direction-period/);
+  for (const period of ['day', 'week', 'month', 'year']) assert.match(todayJs, new RegExp(`'${period}'`));
+  assert.match(todayJs, /today\.loadSummary\(\{ date, period: directionPeriod \}\)/);
+  assert.match(todayModuleJs, /period=\$\{encodeURIComponent\(selectedPeriod\)\}/);
+  assert.match(progressCss, /today-period-switch/);
+  assert.match(progressCss, /min-height:var\(--gc-target-min\)/);
+});
+
+test('targetless direction shows Actual without inventing zero guidance', () => {
   const model = progressModule.todayDirection({
+    period: 'month',
     items: [{ key: 'writing', name: 'Writing', actual_minutes: 30, minimum_minutes: 0, target_minutes: 0 }]
   });
-  assert.equal(model.cards[0].status, 'Facts recorded');
-  assert.deepEqual(model.cards[0].threshold, { actual: 30, minimum: 0, target: 0 });
-
-  const empty = progressModule.todayDirection({
-    items: [{ key: 'writing', name: 'Writing', actual_minutes: 0, minimum_minutes: 0, target_minutes: 0 }]
-  });
-  assert.equal(empty.cards[0].status, 'No target set');
+  assert.equal(model.title, 'Progress direction');
+  assert.equal(model.period, 'month');
+  assert.equal(model.cards[0].status, 'No target set for this period');
+  assert.equal(model.cards[0].threshold, null);
+  assert.deepEqual(model.cards[0].metrics, [{ label: 'Actual', minutes: 30 }]);
 });
 
 test('Today capacity describes physical time rather than productivity performance', () => {
