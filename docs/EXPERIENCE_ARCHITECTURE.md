@@ -51,13 +51,17 @@ Targets remain:
 
 ## Primary navigation
 
+The five-position mobile bottom navigation remains:
+
 ```text
 Today | Plan | + | Progress | Insights
 ```
 
 The center `+` opens Logger directly and must be optically centered, visually distinct and reachable with a comfortable touch target.
 
-Journal and Settings remain secondary. Mobile uses bottom navigation; desktop may use a persistent rail. They are responsive presentations of the same navigation contract.
+**Wellness Boost is a first-class app section.** It has its own dedicated view rather than rendering its full practice library inside Today. On desktop it appears in the persistent rail alongside the primary destinations. On mobile it is reachable from a dedicated top navigation action, preserving the five-position bottom bar and the centered Logger action.
+
+Journal and Settings remain separate sections/actions. Responsive navigation may present destinations differently by screen size, but every destination must open its own owned view rather than leaking business UI into the shell.
 
 ## Human-language rule
 
@@ -202,6 +206,8 @@ Required conceptual order:
 8. Energy detail progressively disclosed;
 9. future Guide slot only when a Guide module actually exists.
 
+Wellness Boost does not embed its full library into Today. It remains a dedicated destination so Today stays focused on state, time, intention and facts.
+
 ### Progress direction period switcher
 
 Replace the fixed `Your weekly direction` concept with a clear perspective control:
@@ -224,6 +230,30 @@ Wellbeing independently owns profile-scoped Energy, Sleep and Day Context
 observations. Canonical writes use `/api/v1/wellbeing/energy`,
 `/api/v1/wellbeing/sleep` and `/api/v1/wellbeing/context`. These remain optional
 observations, not performance scores or evidence of causation.
+
+## Wellness Boost
+
+Wellness Boost is an independent, optional practice-library capability. It is **not** a Wellbeing observation, Progress record, Goal, Daily Plan item or Insights signal unless a future explicit contract says otherwise.
+
+The user-facing destination is named **Wellness Boost**. Content types live inside the module. The first content type is:
+
+```text
+Meditation
+```
+
+Meditation content may support:
+
+- guided voice;
+- music / ambient audio;
+- voice + ambient together;
+- different durations and purposes;
+- title, description, category and accessible playback controls.
+
+The module is designed so future content types such as Breathing, Focus, Reset, Stretch or Sleep can be added without changing platform/core or Today.
+
+Audio distributed by Growth Compass must be owned by the product or explicitly licensed for distribution. Placeholder audio may be used during development, but third-party copyrighted recordings must not be added without rights.
+
+Removing or disabling Wellness Boost must leave Today, Plan, Progress, Insights, Journal and Wellbeing functional.
 
 ## Capacity - ordinary language
 
@@ -406,7 +436,7 @@ Preserve existing install behavior:
 
 The car-parts rule remains mandatory for every experience component.
 
-Changing Logger must not change Capacity. Changing Today must not change Progress persistence. Replacing Daily Plan must leave manual completed logging available. Replacing Journal must not change Goals, Progress or Insights beyond its explicit slot disappearing. Replacing one Wellbeing observation type must not mutate unrelated observation modules.
+Changing Logger must not change Capacity. Changing Today must not change Progress persistence. Replacing Daily Plan must leave manual completed logging available. Replacing Journal must not change Goals, Progress or Insights beyond its explicit slot disappearing. Replacing one Wellbeing observation type must not mutate unrelated observation modules. Replacing or removing Wellness Boost must not alter Today, Wellbeing observations, Progress or Insights.
 
 Private implementations may not read another module's private tables, import private implementation files, or reach into another module's DOM.
 
@@ -449,6 +479,9 @@ Implemented design system, responsive shell, Today, Logger, Plan, Progress, Insi
 ### Revision B - simplicity / human-language UX
 Triggered by real preview walkthrough on 14 August 2026. Revision A remains the architectural/presentation foundation, but its human interaction model is not accepted as final. Revision B is now the active UX/UI direction.
 
+### Revision B - Wellness Boost section
+Wellness Boost is a first-class optional app destination. Meditation is the first module-owned practice type. The full practice library does not render inside Today, and the mobile five-position Logger navigation remains stable.
+
 ## Revision B acceptance gate
 
 Revision B is successful only if a normal user can operate the product without learning its data model.
@@ -463,6 +496,8 @@ Release-blocking UX checks include:
 - Capacity uses concrete time language;
 - Life Areas are visibly user-owned and creatable in context;
 - Goal measurement setup uses plain language and examples;
+- Wellness Boost opens as its own section and Meditation remains content inside it;
+- disabling Wellness Boost leaves unrelated sections operational;
 - 375px layout has no horizontal overflow;
 - keyboard/modal/reduced-motion/chart-text-equivalent/PWA behavior remains intact;
 - architecture boundary tests remain green;
