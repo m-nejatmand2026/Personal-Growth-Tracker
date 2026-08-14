@@ -8,19 +8,29 @@ const progressCss = await readFile(new URL('../public/css/modules/progress.css',
 const insightsCss = await readFile(new URL('../public/css/modules/insights.css', import.meta.url), 'utf8');
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
-test('Progress keeps Actual Minimum Target explicit and denominator-safe', () => {
-  assert.match(progressJs, /Target coverage/);
-  assert.match(progressJs, /Minimums reached/);
-  assert.match(progressJs, /week\.measurableCount \?/);
-  assert.match(progressJs, /time-allocation goals only/);
-  assert.match(progressJs, /Below minimum — no catch-up required/);
+test('Progress keeps Actual Minimum Target explicit and denominator-safe in human language', () => {
+  assert.match(progressJs, /Toward your targets/);
+  assert.match(progressJs, /Good-enough minimums met/);
+  assert.match(progressJs, /week\.minimumCount \?/);
+  assert.match(progressJs, /only goals using time targets/);
+  assert.match(progressJs, /Some minimums are still ahead — no catch-up needed/);
+  assert.match(progressJs, /shows progress up to each target, never above 100%/);
+  assert.doesNotMatch(progressJs, /Target coverage|capped at each target|Minimums reached/);
 });
 
-test('Progress history preserves mixed measurement facts', () => {
+test('Progress minimum summary counts only Goals that actually have a minimum', () => {
+  assert.match(progressJs, /Number\(item\.minimum_minutes \|\| 0\) > 0 && Number\(item\.actual_minutes \|\| 0\) >= Number\(item\.minimum_minutes \|\| 0\)/);
+  assert.match(progressJs, /itemsWithMinimum = measurableItems\.filter\(\(item\) => Number\(item\.minimum_minutes \|\| 0\) > 0\)\.length/);
+  assert.match(progressJs, /minimumCount: itemsWithMinimum/);
+});
+
+test('Progress history preserves mixed measurement facts in plain language', () => {
   assert.match(progressJs, /item\.minutes != null/);
   assert.match(progressJs, /item\.quantity != null/);
   assert.match(progressJs, /item\.boolean_value != null/);
-  assert.match(progressJs, /Time, quantity and yes\/no facts stay distinct/);
+  assert.match(progressJs, /Time, quantity and yes\/no progress remain separate/);
+  assert.match(progressJs, /Earlier Beta history/);
+  assert.match(progressJs, /Read-only history from the earlier Beta version/);
 });
 
 test('Progress does not pull Wellbeing through a legacy or undeclared history path', () => {
@@ -28,12 +38,14 @@ test('Progress does not pull Wellbeing through a legacy or undeclared history pa
   assert.match(progressJs, /\/api\/v1\/progress/);
 });
 
-test('Insights keeps evidence thresholds sample size and association-only language', () => {
-  for (const threshold of ['0–6','7–20','21–41','42+']) assert.match(insightsJs, new RegExp(threshold.replace('+','\\+')));
+test('Insights keeps evidence thresholds sample size and association-only language without analytics jargon', () => {
+  for (const threshold of ['0–6 days','7–20 days','21–41 days','42+ days']) assert.match(insightsJs, new RegExp(threshold.replace('+','\\+')));
   assert.match(insightsJs, /tracked days/);
-  assert.match(insightsJs, /N=\$\{energy\.length\}/);
+  assert.match(insightsJs, /\$\{energy\.length\} check-ins/);
+  assert.match(insightsJs, /how many observations support it/);
   assert.match(insightsJs, /associated with/);
-  assert.match(insightsJs, /never causation/);
+  assert.match(insightsJs, /does not prove cause/);
+  assert.doesNotMatch(insightsJs, /N=|Evidence guardrail|Descriptive stage|paired wellbeing data/i);
   assert.doesNotMatch(insightsJs, /causes higher|causes lower|because of sleep/i);
 });
 
