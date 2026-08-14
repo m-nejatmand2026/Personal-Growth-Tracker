@@ -6,7 +6,7 @@ import { frontendModules } from '../modules/catalog.js';
 import { bindLegacyPlan, legacyPlanHtml } from './plan/legacy.js';
 
 const registry = createFrontendModuleRegistry(frontendModules);
-const EXPERIENCE_ORDER = Object.freeze({ areas: 10, goals: 20, plans: 30, capacity: 40 });
+const EXPERIENCE_ORDER = Object.freeze({ goals: 10, areas: 20, plans: 30, capacity: 40 });
 
 function slotOrder(module, slotName) {
   return EXPERIENCE_ORDER[module.id] ?? module.slots.find((slot) => slot.name === slotName)?.order ?? 100;
@@ -38,7 +38,7 @@ function planOverview(models) {
     <div class="plan-overview-copy">
       <span class="section-kicker">Plan at a glance</span>
       <h2>Make ambition fit the life you actually have</h2>
-      <p>Goals define direction. Capacity protects sleep, work and real commitments before more time is promised.</p>
+      <p>Choose direction first, then check the time reality before committing more.</p>
     </div>
     <div class="plan-overview-grid">
       <div><span>Active goals</span><strong>${goals.length}</strong><small>${areas.length} life areas</small></div>
@@ -51,10 +51,10 @@ function planOverview(models) {
 
 function planNavigation() {
   return `<nav class="plan-section-nav" aria-label="Plan sections">
-    <button type="button" data-plan-scroll="plan-module-areas"><span>01</span>Goals</button>
-    <button type="button" data-plan-scroll="plan-module-capacity"><span>02</span>Capacity</button>
-    <button type="button" data-plan-scroll="plan-module-capacity"><span>03</span>Schedule</button>
-    <button type="button" data-plan-scroll="compassSection"><span>04</span>Compass</button>
+    <button type="button" data-plan-scroll="plan-module-goals"><span>01</span><b>Goals</b><small>Direction</small></button>
+    <button type="button" data-plan-scroll="capacitySummary"><span>02</span><b>Capacity</b><small>Time fit</small></button>
+    <button type="button" data-plan-scroll="capacitySchedule"><span>03</span><b>Schedule</b><small>Commitments</small></button>
+    <button type="button" data-plan-scroll="compassSection"><span>04</span><b>Compass</b><small>Long term</small></button>
   </nav>`;
 }
 
