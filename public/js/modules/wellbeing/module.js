@@ -29,9 +29,10 @@ function energyClass(row, column) {
 function energyMap(selected) {
   return `<div class="energy-axis high">↑ High Energy</div>
     <div class="valence"><span>← Negative Feeling</span><span>Positive Feeling →</span></div>
-    <div class="energy-grid">${ENERGY.flatMap((row, rowIndex) => row.map((label, columnIndex) => `
-      <button type="button" class="energy-cell ${energyClass(rowIndex, columnIndex)} ${selected?.row_idx === rowIndex && selected?.col_idx === columnIndex ? 'selected' : ''}"
-        data-wellbeing-energy-cell data-energy-r="${rowIndex}" data-energy-c="${columnIndex}">${escapeHtml(label)}</button>`)).join('')}</div>
+    <div class="energy-grid" role="group" aria-label="Energy and feeling map">${ENERGY.flatMap((row, rowIndex) => row.map((label, columnIndex) => {
+      const isSelected = selected?.row_idx === rowIndex && selected?.col_idx === columnIndex;
+      return `<button type="button" class="energy-cell ${energyClass(rowIndex, columnIndex)} ${isSelected ? 'selected' : ''}" aria-pressed="${isSelected ? 'true' : 'false'}" data-wellbeing-energy-cell data-energy-r="${rowIndex}" data-energy-c="${columnIndex}">${escapeHtml(label)}</button>`;
+    })).join('')}</div>
     <div class="energy-axis low">↓ Low Energy</div>`;
 }
 
@@ -75,25 +76,28 @@ export const wellbeingModule = Object.freeze({
     const energy = model?.energy || null;
     const sleep = model?.sleep || null;
     const context = model?.context || null;
-    return `<section class="daily-state-grid" data-wellbeing-state aria-label="Daily state">
-      <button class="state-card energy-state" type="button" data-open-wellbeing-energy>
-        <span class="state-icon" aria-hidden="true">✦</span>
-        <div><span>Energy</span><strong>${energy ? escapeHtml(energy.label) : 'Check in'}</strong><small>${energy ? 'Tap to update' : 'How do you feel?'}</small></div>
-      </button>
-      <div class="state-card"><span class="state-icon sleep-icon" aria-hidden="true">◐</span><div><span>Sleep actual</span><strong>${sleep ? formatMinutes(sleep.minutes) : 'Not logged'}</strong><small>${sleep?.quality ? `Quality ${Number(sleep.quality)}/5` : 'Optional wellbeing observation'}</small></div></div>
-      <div class="state-card"><span class="state-icon context-icon" aria-hidden="true">◇</span><div><span>Day context</span><strong>${escapeHtml(contextLabel(context))}</strong><small>${context?.note ? escapeHtml(context.note) : 'Travel, social, recovery and more'}</small></div></div>
+    return `<section class="today-state-section os-section" data-wellbeing-state aria-labelledby="todayStateTitle">
+      <div class="os-section-head"><div><span class="section-kicker">Daily state</span><h2 id="todayStateTitle">How today feels</h2></div><small>Observations, not performance scores</small></div>
+      <div class="daily-state-grid">
+        <button class="state-card energy-state" type="button" data-open-wellbeing-energy>
+          <span class="state-icon" aria-hidden="true">✦</span>
+          <div><span>Energy</span><strong>${energy ? escapeHtml(energy.label) : 'Check in'}</strong><small>${energy ? 'Tap to update' : 'How do you feel?'}</small></div>
+        </button>
+        <div class="state-card"><span class="state-icon sleep-icon" aria-hidden="true">◐</span><div><span>Sleep actual</span><strong>${sleep ? formatMinutes(sleep.minutes) : 'Not logged'}</strong><small>${sleep?.quality ? `Quality ${Number(sleep.quality)}/5` : 'Optional wellbeing observation'}</small></div></div>
+        <div class="state-card"><span class="state-icon context-icon" aria-hidden="true">◇</span><div><span>Day context</span><strong>${escapeHtml(contextLabel(context))}</strong><small>${context?.note ? escapeHtml(context.note) : 'Travel, social, recovery and more'}</small></div></div>
+      </div>
     </section>`;
   },
 
   renderTodayDetails({ model, date } = {}) {
     const selected = model?.energy || null;
     return `<details class="energy-drawer" data-wellbeing-details>
-      <summary><span><strong>Energy check-in</strong><small>${selected ? `Current: ${escapeHtml(selected.label)}` : 'Optional daily observation'}</small></span><span>Open map</span></summary>
+      <summary><span><strong>Energy map</strong><small>${selected ? `Current: ${escapeHtml(selected.label)}` : 'Optional daily observation'}</small></span><span>Open check-in</span></summary>
       <div class="energy-drawer-body">
         <p class="muted energy-help">Choose the state that best matches how you feel. Energy and valence are observations, not performance scores.</p>
         ${energyMap(selected)}
         <div class="energy-result" data-wellbeing-energy-result>${selected ? `<div><span class="small muted">Selected</span><br><strong>${escapeHtml(selected.label)}</strong></div>` : '<span class="muted">Choose one state from the map.</span>'}</div>
-        <div class="actions"><input data-wellbeing-energy-note class="note-input" maxlength="500" placeholder="Optional note" value="${escapeHtml(selected?.note || '')}"><button data-wellbeing-energy-save class="btn primary" ${selected ? '' : 'disabled'}>Save check-in</button></div>
+        <div class="actions"><input data-wellbeing-energy-note class="note-input" maxlength="500" placeholder="Optional note" value="${escapeHtml(selected?.note || '')}"><button type="button" data-wellbeing-energy-save class="btn primary" ${selected ? '' : 'disabled'}>Save check-in</button></div>
       </div>
       <input type="hidden" data-wellbeing-date value="${escapeHtml(date || model?.date || '')}">
     </details>`;
@@ -127,7 +131,11 @@ export const wellbeingModule = Object.freeze({
           valence_score: valenceScore(column),
           note: note?.value || ''
         };
-        details.querySelectorAll('[data-wellbeing-energy-cell]').forEach((cell) => cell.classList.toggle('selected', cell === button));
+        details.querySelectorAll('[data-wellbeing-energy-cell]').forEach((cell) => {
+          const isSelected = cell === button;
+          cell.classList.toggle('selected', isSelected);
+          cell.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+        });
         if (result) result.innerHTML = `<div><span class="small muted">Selected</span><br><strong>${escapeHtml(draft.label)}</strong></div>`;
         if (save) save.disabled = false;
       });
