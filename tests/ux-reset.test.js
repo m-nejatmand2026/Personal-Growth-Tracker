@@ -5,7 +5,11 @@ import { readFile } from 'node:fs/promises';
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 const today = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
 const plan = await readFile(new URL('../public/js/features/plan.js', import.meta.url), 'utf8');
+const progress = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
+const insights = await readFile(new URL('../public/js/modules/insights/ui.js', import.meta.url), 'utf8');
 const resetCss = await readFile(new URL('../public/css/ux-reset.css', import.meta.url), 'utf8');
+const progressCss = await readFile(new URL('../public/css/modules/progress.css', import.meta.url), 'utf8');
+const insightsCss = await readFile(new URL('../public/css/modules/insights.css', import.meta.url), 'utf8');
 const accessibilityCss = await readFile(new URL('../public/css/accessibility-regression.css', import.meta.url), 'utf8');
 
 test('Revision C presentation layer loads after shared experience styling and before accessibility safeguards', () => {
@@ -28,6 +32,22 @@ test('Plan uses progressive disclosure while preserving module-owned rendering a
   assert.match(plan, /module\.render\(/);
   assert.match(plan, /module\.bind\(/);
   assert.doesNotMatch(plan, /\/api\/v1\//);
+});
+
+test('Progress foregrounds recent facts and moves goal guidance behind progressive disclosure', () => {
+  assert.match(progress, /<h2>This week<\/h2>/);
+  assert.match(progress, /<h2>Recent<\/h2>/);
+  assert.match(progress, /<details class="progress-goals-section progress-detail-disclosure os-section">/);
+  assert.match(progressCss, /\.progress-detail-disclosure>summary\{[^}]*min-height:56px/);
+  assert.doesNotMatch(progress, /What actually happened|Recently recorded progress/);
+});
+
+test('Insights shows current evidence state first and keeps methodology on demand', () => {
+  assert.match(insights, /<h2>\$\{escapeHtml\(stage\.label\)\}<\/h2>/);
+  assert.match(insights, /No matched patterns yet/);
+  assert.match(insights, /<details class="insight-method-disclosure os-section">/);
+  assert.match(insightsCss, /\.insight-method-disclosure>summary\{[^}]*min-height:56px/);
+  assert.doesNotMatch(insights, /Patterns, when the evidence is ready|What becomes useful with more history/);
 });
 
 test('Revision C reduces explanatory chrome while preserving minimum touch targets', () => {

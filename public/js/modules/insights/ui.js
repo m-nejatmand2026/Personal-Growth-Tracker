@@ -34,14 +34,7 @@ function thresholdHtml(count) {
 }
 
 function unavailableHtml() {
-  return `
-    <section class="insights-hero gc-page-header">
-      <div>
-        <p class="eyebrow">Insights</p>
-        <h2>Evidence is unavailable</h2>
-        <p>No summaries were generated. Try again later.</p>
-      </div>
-    </section>`;
+  return `<section class="insights-hero gc-page-header"><div><h2>Insights unavailable</h2><p>Try again later.</p></div></section>`;
 }
 
 export async function renderInsights() {
@@ -80,28 +73,23 @@ export async function renderInsights() {
 
   root.innerHTML = `
     <section class="insights-hero gc-page-header gc-page-header--aside">
-      <div>
-        <p class="eyebrow">Insights</p>
-        <h2>Patterns, when the evidence is ready</h2>
-        <p>History supports the insight; association never means cause.</p>
-      </div>
+      <div><h2>${escapeHtml(stage.label)}</h2><p class="gc-sr-only">${escapeHtml(stage.detail)} Association never means cause.</p></div>
       <div class="insight-readiness-ring" role="img" style="--readiness:${readinessPct}" aria-label="${readinessPct}% toward 21 tracked days"><strong>${trackedDays}</strong><span>tracked days</span></div>
     </section>
     <div class="insight-summary-grid">
-      <article class="insight-summary-card"><span>What we can say now</span><strong>${escapeHtml(stage.label)}</strong><small>${escapeHtml(stage.detail)}</small></article>
-      <article class="insight-summary-card"><span>Energy check-ins</span><strong>${energy.length}</strong><small>${energyAverage == null ? 'No average yet' : `Average recorded energy ${energyAverage.toFixed(1)} · ${energy.length} check-ins`}</small></article>
-      <article class="insight-summary-card"><span>Days with activity</span><strong>${activityDays}</strong><small>${progress.length} completed progress records</small></article>
+      <article class="insight-summary-card"><span>Evidence</span><strong>${escapeHtml(stage.label)}</strong><small class="gc-sr-only">${escapeHtml(stage.detail)}</small></article>
+      <article class="insight-summary-card"><span>Energy</span><strong>${energy.length}</strong><small class="gc-sr-only">${energyAverage == null ? 'No average yet' : `Average recorded energy ${energyAverage.toFixed(1)} across ${energy.length} check-ins.`}</small></article>
+      <article class="insight-summary-card"><span>Active days</span><strong>${activityDays}</strong><small class="gc-sr-only">${progress.length} completed progress records.</small></article>
     </div>
-    <section class="os-section insight-readiness-section">
-      <div class="os-section-head"><div><span class="section-kicker">Evidence level</span><h2>What becomes useful with more history</h2></div><small>${trackedDays} tracked days so far</small></div>
-      <div class="insight-stage-grid">${thresholdHtml(trackedDays)}</div>
-    </section>
     <section class="association-waiting">
       <div class="association-icon" aria-hidden="true">↔</div>
-      <div>
-        <span class="section-kicker">Patterns</span>
-        <h2>Not enough matching wellbeing data yet</h2>
-        <p>Growth Compass only compares observations that can be meaningfully matched. Sleep and day-context records are not connected to pattern cards yet, so the app will not invent a relationship. When matching observations exist, each pattern will show how many observations support it and use language such as “associated with” or “tends to coincide with”.</p>
+      <div><h2>No matched patterns yet</h2><p>Keep logging. Patterns appear only when matching observations are strong enough.</p></div>
+    </section>
+    <details class="insight-method-disclosure os-section">
+      <summary><strong>How insights work</strong><span>${trackedDays} days</span></summary>
+      <div class="insight-method-content">
+        <p>Only observations that can be meaningfully matched are compared. More history can strengthen an association; it never proves cause.</p>
+        <div class="insight-stage-grid">${thresholdHtml(trackedDays)}</div>
       </div>
-    </section>`;
+    </details>`;
 }

@@ -39,6 +39,13 @@ async function selectView(page, view, expectedTitle, selectorPrefix = '.rail-nav
   assert.equal(await page.title(), `${expectedTitle} — Growth Compass`);
 }
 
+async function openInsightsFromTopbar(page) {
+  await page.locator('#insightsBtn').click();
+  await page.locator('#pageTitle').filter({ hasText: 'Insights' }).waitFor();
+  await page.locator('#insightsView').waitFor({ state: 'visible' });
+  assert.equal(await page.title(), 'Insights — Growth Compass');
+}
+
 async function validatePlanDisclosure(page, browserName) {
   const capacity = page.locator('#plan-module-capacity');
   await capacity.waitFor({ state: 'attached' });
@@ -46,6 +53,24 @@ async function validatePlanDisclosure(page, browserName) {
   await page.locator('[data-plan-scroll="capacityPanel"]').click();
   await page.waitForFunction(() => document.querySelector('#plan-module-capacity')?.open === true);
   await page.locator('#capacityPanel').waitFor({ state: 'visible' });
+}
+
+async function validateProgressDisclosure(page, browserName) {
+  const details = page.locator('.progress-detail-disclosure');
+  await details.waitFor({ state: 'attached' });
+  assert.equal(await details.getAttribute('open'), null, `${browserName}: goal detail should not crowd the default Progress view`);
+  await details.locator('summary').click();
+  await page.waitForFunction(() => document.querySelector('.progress-detail-disclosure')?.open === true);
+  await details.locator('.amt-list').waitFor({ state: 'visible' });
+}
+
+async function validateInsightsDisclosure(page, browserName) {
+  const details = page.locator('.insight-method-disclosure');
+  await details.waitFor({ state: 'attached' });
+  assert.equal(await details.getAttribute('open'), null, `${browserName}: methodology should stay secondary by default`);
+  await details.locator('summary').click();
+  await page.waitForFunction(() => document.querySelector('.insight-method-disclosure')?.open === true);
+  await details.locator('.insight-stage-grid').waitFor({ state: 'visible' });
 }
 
 async function exerciseDesktop(browserType, browserName) {
@@ -74,6 +99,8 @@ async function exerciseDesktop(browserType, browserName) {
       await selectView(page, view, title);
       await assertNoHorizontalOverflow(page, `${browserName} desktop ${title}`);
       if (view === 'plan') await validatePlanDisclosure(page, `${browserName} desktop`);
+      if (view === 'progress') await validateProgressDisclosure(page, `${browserName} desktop`);
+      if (view === 'insights') await validateInsightsDisclosure(page, `${browserName} desktop`);
     }
 
     const opener = page.locator('[data-open-logger]:visible').first();
@@ -120,6 +147,10 @@ async function exerciseMobile(browserType, browserName) {
     await validatePlanDisclosure(page, `${browserName} 375px`);
     await selectView(page, 'progress', 'Progress', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Progress`);
+    await validateProgressDisclosure(page, `${browserName} 375px`);
+    await openInsightsFromTopbar(page);
+    await assertNoHorizontalOverflow(page, `${browserName} 375px Insights`);
+    await validateInsightsDisclosure(page, `${browserName} 375px`);
     await selectView(page, 'wellness-boost', 'Wellness Boost', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Wellness Boost`);
 
@@ -141,11 +172,11 @@ async function exerciseMobile(browserType, browserName) {
 }
 
 for (const [browserName, browserType] of BROWSERS) {
-  test(`${browserName} desktop validates navigation keyboard modal disclosure and reflow contracts`, async () => {
+  test(`${browserName} desktop validates simplified navigation modal disclosures and reflow contracts`, async () => {
     await exerciseDesktop(browserType, browserName);
   });
 
-  test(`${browserName} 375px validates touch navigation Logger disclosure fit and reflow contracts`, async () => {
+  test(`${browserName} 375px validates touch navigation simplified disclosures Logger fit and reflow`, async () => {
     await exerciseMobile(browserType, browserName);
   });
 }
