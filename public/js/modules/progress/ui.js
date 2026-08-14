@@ -14,7 +14,6 @@ function addDays(dateText, amount) {
 function weeklySummary() {
   const items = state.data.week || [];
   const targetTotal = items.reduce((sum, item) => sum + Math.max(0, Number(item.target_minutes) || 0), 0);
-  const minimumTotal = items.reduce((sum, item) => sum + Math.max(0, Number(item.minimum_minutes) || 0), 0);
   const actualTotal = items.reduce((sum, item) => sum + Math.max(0, Number(item.actual_minutes) || 0), 0);
   const cappedActual = items.reduce((sum, item) => sum + Math.min(Math.max(0, Number(item.actual_minutes) || 0), Math.max(0, Number(item.target_minutes) || 0)), 0);
   const targetProgress = targetTotal ? Math.round((cappedActual / targetTotal) * 100) : 0;
@@ -29,7 +28,7 @@ function weeklySummary() {
         ? 'Below minimum — no catch-up required'
         : 'Facts recorded — targets are optional';
 
-  return { items, targetTotal, minimumTotal, actualTotal, targetProgress, minimumReached, measurableCount: measurableItems.length, status };
+  return { items, targetTotal, actualTotal, targetProgress, minimumReached, measurableCount: measurableItems.length, status };
 }
 
 function goalRows(items) {
@@ -45,7 +44,7 @@ function goalRows(items) {
       return `<div class="amt-row"><div class="amt-name"><strong>${escapeHtml(name)}</strong><span class="amt-status good">Recorded</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>Not set</strong></div><div><span>Target</span><strong>Not set</strong></div></div></div>`;
     }
 
-    const status = actual >= target && target > 0 ? 'Target reached' : actual >= minimum ? 'Good-enough' : 'Building';
+    const status = actual >= target && target > 0 ? 'Target reached' : minimum > 0 && actual >= minimum ? 'Good-enough' : 'Building';
     const track = renderThresholdTrack({
       label: name,
       actual,
@@ -90,7 +89,6 @@ export async function renderProgress({ reload } = {}) {
   const week = weeklySummary();
   const from = addDays(state.date, -29);
   let history = [];
-  let energy = [];
 
   try {
     const response = await api(`/api/v1/progress?from=${from}&to=${state.date}&limit=100`);
@@ -99,14 +97,7 @@ export async function renderProgress({ reload } = {}) {
     history = state.data.sessions || [];
   }
 
-  try {
-    const legacyHistory = await api(`/api/history?from=${from}&to=${state.date}`);
-    energy = legacyHistory.energy || [];
-  } catch {
-    energy = [];
-  }
-
-  root.innerHTML = `<section class="progress-dashboard"><div class="progress-dashboard-head"><div><p class="eyebrow">Progress</p><h2>Actual, minimum, target</h2><p>Enough counts. Targets guide direction; they do not create debt.</p></div><span class="week-status">${escapeHtml(week.status)}</span></div><div class="progress-stat-grid"><div><span>Target coverage</span><strong>${week.targetTotal ? `${week.targetProgress}%` : 'Not set'}</strong><small>capped at each target</small></div><div><span>Minimums reached</span><strong>${week.measurableCount ? `${week.minimumReached}/${week.measurableCount}` : 'Not set'}</strong><small>only goals with guidance</small></div><div><span>Actual time</span><strong>${formatMinutes(week.actualTotal)}</strong><small>facts recorded this week</small></div><div><span>Target time</span><strong>${week.targetTotal ? formatMinutes(week.targetTotal) : 'Not set'}</strong><small>time-allocation goals only</small></div></div></section><section class="os-section progress-goals-section"><div class="os-section-head"><div><span class="section-kicker">This week</span><h2>Goal progress</h2></div><small>Minimum and target are guidance, not debt</small></div><div class="amt-list">${goalRows(week.items)}</div></section><section class="os-section progress-history-section"><div class="os-section-head"><div><span class="section-kicker">History</span><h2>Recent factual records</h2></div><small>Time, quantity and yes/no facts stay distinct</small></div><div class="progress-history-list">${recentRows(history)}</div></section><details class="energy-drawer progress-energy-history"><summary><span><strong>Energy history</strong><small>Daily observations</small></span><span>Open</span></summary><div class="energy-drawer-body">${energy.length ? energy.slice(0, 30).map((item) => `<div class="progress-history-row"><span class="history-date">${escapeHtml(item.occurred_on)}</span><strong>${escapeHtml(item.label)}</strong><span>E ${item.energy_score > 0 ? '+' : ''}${item.energy_score}</span></div>`).join('') : '<div class="empty">No saved energy check-ins yet.</div>'}</div></details>`;
+  root.innerHTML = `<section class="progress-dashboard"><div class="progress-dashboard-head"><div><p class="eyebrow">Progress</p><h2>Actual, minimum, target</h2><p>Enough counts. Targets guide direction; they do not create debt.</p></div><span class="week-status">${escapeHtml(week.status)}</span></div><div class="progress-stat-grid"><div><span>Target coverage</span><strong>${week.targetTotal ? `${week.targetProgress}%` : 'Not set'}</strong><small>capped at each target</small></div><div><span>Minimums reached</span><strong>${week.measurableCount ? `${week.minimumReached}/${week.measurableCount}` : 'Not set'}</strong><small>only goals with guidance</small></div><div><span>Actual time</span><strong>${formatMinutes(week.actualTotal)}</strong><small>facts recorded this week</small></div><div><span>Target time</span><strong>${week.targetTotal ? formatMinutes(week.targetTotal) : 'Not set'}</strong><small>time-allocation goals only</small></div></div></section><section class="os-section progress-goals-section"><div class="os-section-head"><div><span class="section-kicker">This week</span><h2>Goal progress</h2></div><small>Minimum and target are guidance, not debt</small></div><div class="amt-list">${goalRows(week.items)}</div></section><section class="os-section progress-history-section"><div class="os-section-head"><div><span class="section-kicker">History</span><h2>Recent factual records</h2></div><small>Time, quantity and yes/no facts stay distinct</small></div><div class="progress-history-list">${recentRows(history)}</div></section>`;
 
   $$('[data-delete-progress]').forEach((button) => {
     button.addEventListener('click', async () => {
