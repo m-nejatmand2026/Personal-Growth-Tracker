@@ -20,6 +20,7 @@
   --gc-tone-restore-border:#eadfce;
 }
 
+#progressView,#insightsView,#journalView,#wellness-boostView{width:min(100%,62rem);margin-inline:auto;min-width:0}
 .gc-page-frame{width:min(100%,var(--gc-reading-max));margin-inline:auto;min-width:0}
 .gc-page-flow{display:grid;gap:var(--gc-page-gap);min-width:0}
 .gc-page-header{display:grid;gap:10px;margin:0 0 var(--gc-space-4);padding:4px 2px 8px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--gc-text)}
@@ -64,9 +65,14 @@
 .gc-choice-row__copy span{display:block;margin-top:3px;color:var(--gc-text-muted);font-size:var(--gc-text-xs);font-weight:700}
 .gc-choice-row__arrow{color:var(--gc-text-muted);font-size:20px}
 
-/* Major views opt into the same calm header language rather than owning
- * unrelated hero systems. Existing module internals remain module-owned. */
-.gc-page-header.today-command,.gc-page-header.plan-overview,.gc-page-header.progress-dashboard,.gc-page-header.insights-hero,.gc-page-header.journal-hero{padding:4px 2px 8px;border:0;background:transparent;box-shadow:none;color:var(--gc-text)}
+/* Major views share one calm header language instead of separate hero systems.
+ * Existing business content below each header remains module-owned. */
+.gc-page-header.today-command,.gc-page-header.plan-overview,.gc-page-header.progress-dashboard,.gc-page-header.insights-hero,.journal-hero{padding:4px 2px 8px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--gc-text)}
+.journal-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--gc-space-4);align-items:end;margin-bottom:var(--gc-space-4)}
+.journal-hero .eyebrow{margin:0;color:var(--gc-brand-strong);font-size:var(--gc-text-xs);font-weight:850;letter-spacing:.11em;text-transform:uppercase}
+.journal-hero h2{max-width:22ch;margin:0;color:var(--gc-text);font-size:clamp(1.45rem,3vw,2rem);line-height:1.06;letter-spacing:-.03em}
+.journal-hero p:not(.eyebrow){max-width:var(--gc-copy-max);margin:0;color:var(--gc-text-muted);font-size:var(--gc-text-sm);line-height:1.5}
+.journal-hero .journal-new{background:var(--gc-brand);color:#fff}
 .gc-page-header.progress-dashboard .progress-dashboard-head p:not(.eyebrow){color:var(--gc-text-muted)}
 .gc-page-header.progress-dashboard .week-status{background:var(--gc-brand-soft);color:var(--gc-brand-strong)}
 .gc-stat-grid.progress-stat-grid>div{border-color:var(--gc-border);background:var(--gc-surface-subtle)}
@@ -74,15 +80,15 @@
 .gc-stat-grid.progress-stat-grid strong{color:var(--gc-text)}
 .gc-stat-grid.plan-overview-grid>div{background:var(--gc-surface-subtle);border-color:var(--gc-border)}
 .gc-page-header.insights-hero .insight-readiness-ring{box-shadow:none}
-.gc-page-header.journal-hero .journal-new{background:var(--gc-brand);color:#fff}
 
 @media(max-width:760px){
   .topbar{margin-bottom:12px;padding-bottom:8px}
   .topbar-title .eyebrow{font-size:.62rem;letter-spacing:.1em}
   .topbar-title h1{font-size:clamp(1.55rem,7vw,1.9rem);line-height:1.02;letter-spacing:-.035em}
   .gc-page-header{margin-bottom:12px;padding:2px 0 6px}
-  .gc-page-header--action,.gc-page-header--aside{grid-template-columns:1fr;align-items:start;gap:12px}
-  .gc-page-header h2,.gc-page-title{font-size:1.45rem}
+  .gc-page-header--action,.gc-page-header--aside,.journal-hero{grid-template-columns:1fr;align-items:start;gap:12px}
+  .gc-page-header h2,.gc-page-title,.journal-hero h2{font-size:1.45rem}
+  .journal-hero p:not(.eyebrow){font-size:var(--gc-text-xs)}
   .gc-stat-grid{grid-template-columns:1fr 1fr}
   .gc-feature-card{grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:18px}
   .gc-feature-card__title{font-size:1.45rem}
