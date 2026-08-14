@@ -28,6 +28,12 @@ The same rule applies recursively inside a module. A module is not allowed to be
 16. Every normal user-facing capability must have an easy/default path. Advanced configuration is progressively disclosed rather than forced into the common flow.
 17. Easy and advanced modes must use the same domain rules and public contracts. Do not create two separate implementations whose behavior can drift.
 18. Internal subcomponents follow the same isolation principle as top-level modules: changing a replaceable subcomponent should affect only that subcomponent and explicit internal consumers.
+19. Commercial packaging and entitlement decisions are platform concerns. Business modules must not hard-code subscription names, pricing tiers, prices, SKUs, payment-provider concepts, or billing workflows.
+20. Independently gateable functionality uses stable capability identifiers owned by the product architecture, not commercial package names. A capability may move between Free, paid tiers, trials, bundles, add-ons, organizations, promotions, or future commercial models without changing its business implementation.
+21. Entitlement resolution maps an authorized profile/account context to capability decisions. Business modules consume a neutral availability/authorization decision; they do not consume payment-provider customer objects, price IDs, checkout sessions, invoices, or subscription-provider internals.
+22. Protected capabilities are enforced authoritatively at the Worker/API boundary. Frontend hiding, lock states, or upgrade messaging are presentation behavior and must never be the only access control.
+23. Effective capability availability is resolved centrally from installed modules, declared dependencies, rollout/feature flags, entitlement, and the user's own enable/disable preference. Individual business modules must not invent independent pricing or availability logic.
+24. Authentication providers and billing providers are replaceable platform adapters. Replacing Google/Apple/email authentication or a future billing provider must not require rewriting Goals, Journal, Progress, Wellness, Insights, or other unrelated business modules.
 
 ## Progressive disclosure contract
 Growth Compass must support both users who want a fast, low-friction experience and users who want detailed control.
@@ -52,6 +58,7 @@ Growth Compass Core / Platform
 ├── module registry
 ├── event dispatcher
 ├── identity/profile context
+├── capability/entitlement resolver (future; neutral during owner-only Beta)
 ├── navigation/slot registry
 ├── design system
 ├── API transport
@@ -71,6 +78,72 @@ Modules
 ├── ai-planner
 └── future modules
 ```
+
+## Commercial packaging and entitlement boundary
+The architecture must assume from the beginning that an entire module or a smaller capability inside a module may later be free, paid, bundled, trial-only, organization-provided, or sold as an optional add-on.
+
+The intended direction is:
+
+```text
+Authenticated principal
+        ↓
+Authorized profile
+        ↓
+Commercial state / purchases
+        ↓
+Platform entitlement resolver
+        ↓
+Stable capability decisions
+        ↓
+Module registry + Worker routes + navigation + composition
+        ↓
+Business modules
+```
+
+Commercial products package capabilities; they do not define the capabilities themselves.
+
+Good:
+```text
+insights.basic
+insights.advanced
+wellness.meditation
+wellness.premium-audio
+planning.advanced
+ai.guidance
+```
+
+A future commercial catalog may map those stable capabilities into any package:
+
+```text
+Free        -> insights.basic
+Plus        -> planning.advanced
+Premium     -> insights.advanced + wellness.meditation
+Add-on      -> wellness.premium-audio
+```
+
+Changing those mappings must not require changing Insights, Wellness, Planning, or AI business logic.
+
+Module-level and feature-level access are separate from user preference. For a future multi-user product, effective availability should conceptually be resolved as:
+
+```text
+installed
+AND dependency-resolved
+AND rollout-enabled
+AND entitled
+AND user-enabled
+```
+
+Some capabilities may be mandatory platform capabilities and therefore not user-disableable. That exception must be explicit rather than hidden inside module code.
+
+The owner-only Beta does not implement accounts, paid subscriptions, billing, or persisted entitlement state. Until that future workstream exists, no fake pricing checks or hard-coded Beta plan tiers should be introduced merely to simulate the final system. The architecture boundary is established now so the real identity + profile + entitlement system can be added later without rewriting business modules.
+
+When entitlements are implemented, tests must prove at minimum:
+- backend denial cannot be bypassed by calling an API directly;
+- frontend navigation/composition and backend authorization derive from the same resolved capability set;
+- changing commercial package mappings does not require business-module changes;
+- a billing-provider adapter can be replaced without changing business modules;
+- disabled/unentitled optional modules do not break unrelated capabilities;
+- declared module dependencies remain enforced after entitlement filtering.
 
 ## Required module manifest
 Every module exposes one manifest. The exact runtime representation can evolve, but these semantics are mandatory:
@@ -105,6 +178,8 @@ module A -> module B private files
 module A -> module B private database tables
 module A -> module B DOM nodes
 module A -> module B undocumented events
+business module -> billing/payment-provider internals
+business module -> hard-coded commercial tier logic
 ```
 
 ## UI isolation
@@ -170,6 +245,8 @@ ai_*
 
 Cross-module reporting is built from explicit read models or service functions. Direct cross-module SQL is prohibited except in a documented migration/compatibility adapter with an expiry plan.
 
+Future billing/customer/subscription provider identifiers and entitlement state belong to bounded platform/commerce storage, not business-module tables. Business records may reference the authorized profile and stable capability identifiers where needed, but they must not duplicate provider-specific commercial state.
+
 ## Replaceability test
 A module is sufficiently isolated only if all are true:
 1. It can be disabled without the application failing.
@@ -180,15 +257,19 @@ A module is sufficiently isolated only if all are true:
 6. Tests identify all legitimate consumers of its public contract.
 7. Its optional advanced UI can be removed without breaking the easy/default workflow.
 8. A replaceable internal subcomponent can change without requiring unrelated sibling internals to change.
+9. Its commercial packaging can change without changing the module's business implementation.
+10. A payment/authentication provider can change without changing the module.
 
 ## Global product requirements
 - Multi-user isolation is mandatory before public launch.
 - Authentication/authorization is platform-level, not implemented independently by every module.
+- Entitlement and commercial packaging are platform-level; business modules expose stable capabilities and remain unaware of pricing/package names.
 - Localization, accessibility, observability, privacy controls, exports, and auditability are cross-cutting platform services.
 - AI providers are adapters behind a provider-neutral AI planning contract.
 - Feature flags/module enablement allow gradual rollout and rollback.
 - Module contracts must support backwards-compatible migrations so rolling deployments do not require all components to change simultaneously.
 - Easy/default workflows and advanced/custom workflows are two presentations over the same validated domain contract, not separate product forks.
+- Frontend availability and backend authorization must converge on one resolved capability set once accounts/entitlements exist.
 
 ## Architecture enforcement
 The test suite must validate at minimum:
@@ -200,6 +281,8 @@ The test suite must validate at minimum:
 - platform/core importing business modules outside a composition root;
 - invalid event identifiers;
 - invalid module manifests.
+
+When commercial entitlements are implemented, the release-blocking suite must additionally prevent direct billing/payment-provider coupling inside business modules and prove API authorization cannot be bypassed through frontend-only gating.
 
 A PR that violates a boundary test does not merge.
 
@@ -223,4 +306,5 @@ A new module is not complete until it has:
 - documented events;
 - easy/default workflow where the capability is user-facing;
 - advanced controls through progressive disclosure when advanced configuration exists;
+- stable capability identifiers for independently gateable sub-features where applicable, without embedding commercial plan names or payment-provider logic;
 - preview acceptance test.
