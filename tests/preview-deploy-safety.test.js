@@ -8,16 +8,21 @@ const wrangler = await readFile(new URL('../wrangler.jsonc', import.meta.url), '
 
 const CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803';
 const SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38';
+const UPLOAD_ARTIFACT_SHA = '043fb46d1a93c77aae656e7c1c64a875d1fc6a0a';
 
 test('Quality tests the exact PR head SHA later supplied by workflow_run', () => {
   assert.match(quality, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
   assert.match(quality, /persist-credentials: false/);
   assert.match(quality, new RegExp(`actions/checkout@${CHECKOUT_SHA}`));
   assert.match(quality, new RegExp(`actions/setup-node@${SETUP_NODE_SHA}`));
+  assert.match(quality, new RegExp(`actions/upload-artifact@${UPLOAD_ARTIFACT_SHA}`));
+  assert.doesNotMatch(quality, /actions\/(?:checkout|setup-node|upload-artifact)@v\d/);
   assert.doesNotMatch(quality, /npm ci/);
   assert.equal((quality.match(/npm install/g) || []).length, 1);
   assert.match(quality, /run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4\.123\.0 playwright@1\.62\.0/);
   assert.match(quality, /run: npm test/);
+  assert.match(quality, /GC_E2E_SCREENSHOT_DIR: \.artifacts\/ui/);
+  assert.match(quality, /retention-days: 7/);
 });
 
 test('preview deployment is privileged only after successful Quality on the trusted feature branch', () => {
