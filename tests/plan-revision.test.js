@@ -21,7 +21,7 @@ test('Revision A Plan exposes Goals Capacity Schedule Compass in that order', ()
 
 test('Goals render before supporting Areas and time-budget modules', () => {
   assert.match(planJs, /EXPERIENCE_ORDER = Object\.freeze\(\{ goals: 10, areas: 20, plans: 30, capacity: 40 \}\)/);
-  assert.match(planJs, /Choose direction first, then see what time is actually available/);
+  assert.match(planJs, /Set direction, then fit it to your time\./);
 });
 
 test('Goal creation uses human questions before optional expert controls', () => {
