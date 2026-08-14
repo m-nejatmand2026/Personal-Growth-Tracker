@@ -12,9 +12,9 @@ test('Progress keeps Actual Minimum Target explicit and denominator-safe in huma
   assert.match(progressJs, /Toward your targets/);
   assert.match(progressJs, /Good-enough minimums met/);
   assert.match(progressJs, /week\.minimumCount \?/);
-  assert.match(progressJs, /only goals using time targets/);
+  assert.match(progressJs, /Only goals using time targets/);
   assert.match(progressJs, /Some minimums are still ahead — no catch-up needed/);
-  assert.match(progressJs, /shows progress up to each target, never above 100%/);
+  assert.match(progressJs, /Shows progress up to each target, never above 100%/);
   assert.doesNotMatch(progressJs, /Target coverage|capped at each target|Minimums reached/);
 });
 
@@ -68,13 +68,13 @@ test('Insights distinguishes unavailable evidence from an honest empty sample', 
   assert.ok(failureGuard >= 0 && failureGuard < trackedDays, 'failure state must return before evidence-count rendering');
 });
 
-test('Progress and Insights presentation remains module-owned and responsive', () => {
+test('Progress and Insights presentation remains module-owned responsive and touch-safe', () => {
   assert.match(indexHtml, /\/css\/modules\/progress\.css/);
   assert.match(indexHtml, /\/css\/modules\/insights\.css/);
   assert.match(progressCss, /@media\(max-width:520px\)/);
   assert.match(progressCss, /@media\(min-width:760px\)/);
   assert.match(insightsCss, /@media\(min-width:700px\)/);
   assert.match(insightsCss, /\.insights-hero\{[^}]*color:var\(--gc-text\)/);
-  assert.match(insightsCss, /\.insights-hero \.eyebrow\{color:var\(--gc-brand\)\}/);
+  assert.match(insightsCss, /\.insight-method-disclosure>summary\{[^}]*min-height:56px/);
   assert.match(progressCss, /var\(--gc-target-min\)/);
 });
