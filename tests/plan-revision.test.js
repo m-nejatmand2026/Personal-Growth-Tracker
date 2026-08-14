@@ -21,7 +21,7 @@ test('Revision A Plan exposes Goals Capacity Schedule Compass in that order', ()
 
 test('Goals render before supporting Areas and time-budget modules', () => {
   assert.match(planJs, /EXPERIENCE_ORDER = Object\.freeze\(\{ goals: 10, areas: 20, plans: 30, capacity: 40 \}\)/);
-  assert.match(planJs, /Choose direction first, then check the time reality/);
+  assert.match(planJs, /Choose direction first, then see what time is actually available/);
 });
 
 test('Goal creation keeps name and area on the easy path and progressively discloses measurement details', () => {
@@ -35,10 +35,14 @@ test('Goal creation keeps name and area on the easy path and progressively discl
   assert.match(goalsUi, /You can create a useful goal without a numeric target/);
 });
 
-test('Plan overview treats capacity as real-life time fit rather than performance', () => {
-  assert.match(planJs, /Flexible this week/);
-  assert.match(planJs, /How full\?/);
-  assert.match(planJs, /after recurring time/);
+test('Plan overview uses concrete available planned and still-flexible time language', () => {
+  assert.match(planJs, /Available this week/);
+  assert.match(planJs, /Planned this week/);
+  assert.match(planJs, /Still flexible/);
+  assert.match(planJs, /after recurring commitments/);
+  assert.match(planJs, /Plan over by/);
+  assert.match(planJs, /Schedule over by/);
+  assert.doesNotMatch(planJs, /Spacious|Balanced|Very full|How full\?|Current plan/i);
   assert.doesNotMatch(planJs, /productivity score|performance score/i);
 });
 
