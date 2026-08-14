@@ -1,0 +1,12 @@
+/* Areas-owned Plan presentation. */
+.area-manage-row{align-items:center}
+.area-row-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px}
+.area-row-actions .text-action{min-width:var(--gc-target-min);min-height:var(--gc-target-min);display:inline-grid;place-items:center}
+.area-row-actions .text-action[disabled]{opacity:.35;cursor:not-allowed}
+#areaEditor>summary{min-height:var(--gc-target-min);display:flex;align-items:center}
+#addAreaForm input,#addAreaForm select{min-height:var(--gc-target-min)}
+
+@media(max-width:560px){
+  .area-manage-row{align-items:flex-start}
+  .area-row-actions{width:100%;justify-content:flex-start}
+}
