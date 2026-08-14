@@ -13,38 +13,39 @@ function goalTargetText(goal) {
 }
 
 export function goalsPanelHtml(model, areas) {
-  const rows = model.goals.length
-    ? model.goals.map((goal) => `<div class="manage-row">
+  const activeGoals = model.goals.filter((goal) => goal.status !== 'archived');
+  const rows = activeGoals.length
+    ? activeGoals.map((goal) => `<div class="manage-row goal-manage-row">
         <div class="manage-main"><div>
           <strong>${escapeHtml(goal.name)}</strong>
           <div class="small muted">${escapeHtml(goal.area_name || 'No area')} · ${goalTargetText(goal)} · ${escapeHtml(goal.status)}</div>
         </div></div>
         <div class="row-actions"><button class="text-action" data-edit-goal="${goal.id}">Edit</button><button class="text-action danger-text" data-archive-goal="${goal.id}">Archive</button></div>
       </div>`).join('')
-    : '<div class="empty">No goals yet.</div>';
+    : '<div class="empty">No goals yet. Add one direction that matters now.</div>';
 
   const areaOptions = areas.map((area) => `<option value="${area.id}">${escapeHtml(area.name)}</option>`).join('');
 
-  return `<div class="card" id="goalsPanel">
-    <div class="section-head"><div><h2>Goals</h2><p>Goals belong to an area and can use time, counts, milestones, yes/no, or another number.</p></div><span class="badge">${model.goals.length}</span></div>
+  return `<div class="card plan-goals-card" id="goalsPanel">
+    <div class="section-head"><div><span class="section-kicker">Goals</span><h2>Choose your direction</h2><p>Start simple: name the goal and place it in a life area. Add measurement details only when they help.</p></div><span class="badge">${activeGoals.length} active</span></div>
     <div class="manage-list">${rows}</div>
-    <details class="inline-editor" id="goalEditor"><summary id="goalEditorSummary">+ Add goal</summary>
+    <details class="inline-editor goal-editor" id="goalEditor"><summary id="goalEditorSummary">＋ Add goal</summary>
       <form id="goalForm" class="stack-form" data-goal-id="">
-        <label><span>Name</span><input id="goalName" maxlength="120" required placeholder="e.g. Finish German B1"></label>
-        <label><span>Area</span><select id="goalArea"><option value="">No area</option>${areaOptions}</select></label>
-        <div class="form-grid-2">
-          <label><span>Measure by</span><select id="goalMeasurement"><option value="time">Time</option><option value="count">Count</option><option value="milestone">Milestone</option><option value="boolean">Yes / No</option><option value="number">Number</option></select></label>
-          <label><span>Period</span><select id="goalPeriod"><option value="daily">Daily</option><option value="weekly" selected>Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="custom">Custom</option><option value="none">No repeating period</option></select></label>
-        </div>
-        <div class="form-grid-2">
-          <label><span>Target value</span><input id="goalTarget" type="number" step="any" placeholder="Optional"></label>
-          <label><span>Unit</span><input id="goalUnit" maxlength="40" placeholder="minutes, lessons, books..."></label>
-        </div>
-        <div class="form-grid-2">
-          <label><span>Priority</span><select id="goalPriority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label>
-          <label><span>Status</span><select id="goalStatus"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select></label>
-        </div>
-        <label><span>Description</span><textarea id="goalDescription" maxlength="1000" placeholder="What does success mean?"></textarea></label>
+        <label><span>Goal name</span><input id="goalName" maxlength="120" required placeholder="e.g. Build a photography portfolio"></label>
+        <label><span>Life area <small>optional</small></span><select id="goalArea"><option value="">No area</option>${areaOptions}</select></label>
+        <details class="advanced-options goal-advanced" id="goalAdvancedOptions">
+          <summary>Measurement and other details</summary>
+          <div class="advanced-options-body goal-advanced-body">
+            <label><span>Measure by</span><select id="goalMeasurement"><option value="time">Time</option><option value="count">Count</option><option value="milestone">Milestone</option><option value="boolean">Yes / No</option><option value="number">Number</option></select></label>
+            <label><span>Period</span><select id="goalPeriod"><option value="daily">Daily</option><option value="weekly" selected>Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="custom">Custom</option><option value="none">No repeating period</option></select></label>
+            <label><span>Target value</span><input id="goalTarget" type="number" step="any" placeholder="Optional"></label>
+            <label><span>Unit</span><input id="goalUnit" maxlength="40" placeholder="minutes, lessons, books..."></label>
+            <label><span>Priority</span><select id="goalPriority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label>
+            <label><span>Status</span><select id="goalStatus"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select></label>
+            <label class="full"><span>Description</span><textarea id="goalDescription" maxlength="1000" placeholder="What would meaningful progress look like?"></textarea></label>
+          </div>
+        </details>
+        <p class="small muted goal-editor-note">You can create a useful goal without a numeric target. Time budgets are managed separately below.</p>
         <div class="actions"><button class="btn primary" type="submit" id="saveGoalButton">Add goal</button><button class="btn soft" type="button" id="cancelGoalEdit">Clear</button></div>
       </form>
     </details>
@@ -56,7 +57,8 @@ function resetGoalEditor() {
   if (!form) return;
   form.dataset.goalId = '';
   form.reset();
-  $('#goalEditorSummary').textContent = '+ Add goal';
+  $('#goalAdvancedOptions').open = false;
+  $('#goalEditorSummary').textContent = '＋ Add goal';
   $('#saveGoalButton').textContent = 'Add goal';
 }
 
@@ -76,6 +78,7 @@ function populateGoalEditor(goal) {
   $('#goalEditorSummary').textContent = `Edit: ${goal.name}`;
   $('#saveGoalButton').textContent = 'Save changes';
   $('#goalEditor').open = true;
+  $('#goalAdvancedOptions').open = true;
   $('#goalName').focus();
 }
 
