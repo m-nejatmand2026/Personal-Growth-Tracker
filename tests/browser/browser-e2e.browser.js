@@ -1,12 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
 import { chromium, webkit } from 'playwright';
 
 const BASE_URL = process.env.GC_E2E_BASE_URL || 'http://127.0.0.1:8787';
+const SCREENSHOT_DIR = process.env.GC_E2E_SCREENSHOT_DIR || '';
 const BROWSERS = [
   ['Chromium', chromium],
   ['WebKit', webkit]
 ];
+
+function screenshotName(browserName, viewport, view) {
+  return `${browserName.toLowerCase()}-${viewport}-${view}`.replace(/[^a-z0-9-]+/g, '-');
+}
+
+async function capture(page, browserName, viewport, view) {
+  if (!SCREENSHOT_DIR) return;
+  await mkdir(SCREENSHOT_DIR, { recursive: true });
+  await page.screenshot({
+    path: `${SCREENSHOT_DIR}/${screenshotName(browserName, viewport, view)}.png`,
+    fullPage: false,
+    animations: 'disabled'
+  });
+}
 
 async function openApp(page) {
   const started = Date.now();
@@ -80,14 +96,16 @@ async function validateInsightsDisclosure(page, browserName) {
   await details.locator('.insight-stage-grid').waitFor({ state: 'visible' });
 }
 
-async function validateJournalWritingFirst(page, browserName) {
+async function validateJournalWritingFirst(page, browserName, viewport) {
   await openJournalFromTopbar(page);
   await assertNoHorizontalOverflow(page, `${browserName} Journal`);
+  await capture(page, browserName, viewport, 'journal');
   const opener = page.locator('.journal-new');
   await opener.click();
   const dialog = page.getByRole('dialog', { name: 'Write a journal entry' });
   await dialog.waitFor({ state: 'visible' });
   await page.waitForFunction(() => document.activeElement?.id === 'journalBody');
+  await capture(page, browserName, viewport, 'journal-editor');
 
   const promptDetails = dialog.locator('.journal-prompt-disclosure');
   const metaDetails = dialog.locator('.journal-meta-disclosure');
@@ -104,8 +122,8 @@ async function validateJournalWritingFirst(page, browserName) {
   await dialog.locator('#journalDate').waitFor({ state: 'visible' });
 
   const box = await dialog.boundingBox();
-  const viewport = page.viewportSize();
-  assert.ok(box && viewport && box.x >= -1 && box.x + box.width <= viewport.width + 1, `${browserName}: Journal editor must fit viewport width`);
+  const viewportSize = page.viewportSize();
+  assert.ok(box && viewportSize && box.x >= -1 && box.x + box.width <= viewportSize.width + 1, `${browserName}: Journal editor must fit viewport width`);
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'detached' });
 }
@@ -120,6 +138,7 @@ async function exerciseDesktop(browserType, browserName) {
     assert.equal(await page.locator('#pageTitle').textContent(), 'Today');
     assert.equal(await page.title(), 'Today — Growth Compass');
     await assertNoHorizontalOverflow(page, `${browserName} desktop Today`);
+    await capture(page, browserName, 'desktop', 'today');
 
     await page.keyboard.press('Tab');
     const focused = page.locator(':focus');
@@ -135,12 +154,13 @@ async function exerciseDesktop(browserType, browserName) {
     ]) {
       await selectView(page, view, title);
       await assertNoHorizontalOverflow(page, `${browserName} desktop ${title}`);
+      await capture(page, browserName, 'desktop', view);
       if (view === 'plan') await validatePlanDisclosure(page, `${browserName} desktop`);
       if (view === 'progress') await validateProgressDisclosure(page, `${browserName} desktop`);
       if (view === 'insights') await validateInsightsDisclosure(page, `${browserName} desktop`);
     }
 
-    await validateJournalWritingFirst(page, `${browserName} desktop`);
+    await validateJournalWritingFirst(page, `${browserName} desktop`, 'desktop');
 
     const opener = page.locator('[data-open-logger]:visible').first();
     await opener.focus();
@@ -148,6 +168,7 @@ async function exerciseDesktop(browserType, browserName) {
     const dialog = page.getByRole('dialog', { name: 'What do you want to do?' });
     await dialog.waitFor({ state: 'visible' });
     await page.waitForFunction(() => document.activeElement?.id === 'loggerActivityQuery');
+    await capture(page, browserName, 'desktop', 'logger');
     assert.equal(await dialog.getAttribute('aria-modal'), 'true');
     await page.keyboard.press('Escape');
     await dialog.waitFor({ state: 'detached' });
@@ -170,6 +191,7 @@ async function exerciseMobile(browserType, browserName) {
     const page = await context.newPage();
     await openApp(page);
     await assertNoHorizontalOverflow(page, `${browserName} 375px Today`);
+    await capture(page, browserName, 'mobile', 'today');
 
     const bottomNav = page.locator('.bottom-nav');
     await bottomNav.waitFor({ state: 'visible' });
@@ -183,16 +205,20 @@ async function exerciseMobile(browserType, browserName) {
 
     await selectView(page, 'plan', 'Plan', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Plan`);
+    await capture(page, browserName, 'mobile', 'plan');
     await validatePlanDisclosure(page, `${browserName} 375px`);
     await selectView(page, 'progress', 'Progress', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Progress`);
+    await capture(page, browserName, 'mobile', 'progress');
     await validateProgressDisclosure(page, `${browserName} 375px`);
     await openInsightsFromTopbar(page);
     await assertNoHorizontalOverflow(page, `${browserName} 375px Insights`);
+    await capture(page, browserName, 'mobile', 'insights');
     await validateInsightsDisclosure(page, `${browserName} 375px`);
     await selectView(page, 'wellness-boost', 'Wellness Boost', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Wellness Boost`);
-    await validateJournalWritingFirst(page, `${browserName} 375px`);
+    await capture(page, browserName, 'mobile', 'wellness-boost');
+    await validateJournalWritingFirst(page, `${browserName} 375px`, 'mobile');
     await assertNoHorizontalOverflow(page, `${browserName} 375px after Journal`);
 
     const quickAdd = page.locator('#quickAddBtn');
@@ -202,6 +228,7 @@ async function exerciseMobile(browserType, browserName) {
     const dialogBox = await dialog.boundingBox();
     assert.ok(dialogBox && dialogBox.x >= -1 && dialogBox.x + dialogBox.width <= 376, 'mobile Logger must fit the 375px viewport');
     await page.waitForFunction(() => document.activeElement?.id === 'loggerActivityQuery');
+    await capture(page, browserName, 'mobile', 'logger');
     await page.keyboard.press('Escape');
     await dialog.waitFor({ state: 'detached' });
     await assertNoHorizontalOverflow(page, `${browserName} 375px after Logger`);
