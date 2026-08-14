@@ -32,7 +32,15 @@ export function goalsPanelHtml(model, areas) {
     <details class="inline-editor goal-editor" id="goalEditor"><summary id="goalEditorSummary">＋ Add goal</summary>
       <form id="goalForm" class="stack-form" data-goal-id="">
         <label><span>Goal name</span><input id="goalName" maxlength="120" required placeholder="e.g. Build a photography portfolio"></label>
-        <label><span>Life area <small>optional</small></span><select id="goalArea"><option value="">No area</option>${areaOptions}</select></label>
+        <div class="goal-area-field">
+          <label><span>Life area <small>optional</small></span><select id="goalArea"><option value="">No area</option>${areaOptions}</select></label>
+          <button type="button" class="goal-new-area-toggle" id="goalNewAreaToggle" aria-expanded="false" aria-controls="goalNewAreaPanel">＋ New life area</button>
+          <div class="goal-new-area-panel" id="goalNewAreaPanel" hidden>
+            <label><span>New life area name</span><input id="goalNewAreaName" maxlength="80" placeholder="e.g. Relationships, Creativity, Home"></label>
+            <p class="small muted">Create it here without leaving this Goal. You can rename or reorder it later.</p>
+            <button type="button" class="btn soft" id="goalNewAreaConfirm">Create life area</button>
+          </div>
+        </div>
         <details class="advanced-options goal-advanced" id="goalAdvancedOptions">
           <summary>Measurement and other details</summary>
           <div class="advanced-options-body goal-advanced-body">
@@ -52,11 +60,20 @@ export function goalsPanelHtml(model, areas) {
   </div>`;
 }
 
+function closeNewAreaPanel() {
+  const panel = $('#goalNewAreaPanel');
+  const toggle = $('#goalNewAreaToggle');
+  if (panel) panel.hidden = true;
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  if ($('#goalNewAreaName')) $('#goalNewAreaName').value = '';
+}
+
 function resetGoalEditor() {
   const form = $('#goalForm');
   if (!form) return;
   form.dataset.goalId = '';
   form.reset();
+  closeNewAreaPanel();
   $('#goalAdvancedOptions').open = false;
   $('#goalEditorSummary').textContent = '＋ Add goal';
   $('#saveGoalButton').textContent = 'Add goal';
@@ -75,6 +92,7 @@ function populateGoalEditor(goal) {
   $('#goalPriority').value = goal.priority || 'medium';
   $('#goalStatus').value = goal.status === 'archived' ? 'active' : (goal.status || 'active');
   $('#goalDescription').value = goal.description || '';
+  closeNewAreaPanel();
   $('#goalEditorSummary').textContent = `Edit: ${goal.name}`;
   $('#saveGoalButton').textContent = 'Save changes';
   $('#goalEditor').open = true;
@@ -82,13 +100,47 @@ function populateGoalEditor(goal) {
   $('#goalName').focus();
 }
 
-export function bindGoalsPanel(model, { reloadPlatform }) {
+export function bindGoalsPanel(model, { reloadPlatform, areasCapability = null }) {
   $$('[data-edit-goal]').forEach((button) => button.addEventListener('click', () => {
     const goal = model.goals.find((item) => item.id === Number(button.dataset.editGoal));
     if (goal) populateGoalEditor(goal);
   }));
 
   $('#cancelGoalEdit')?.addEventListener('click', resetGoalEditor);
+
+  $('#goalNewAreaToggle')?.addEventListener('click', () => {
+    const panel = $('#goalNewAreaPanel');
+    const toggle = $('#goalNewAreaToggle');
+    if (!panel || !toggle) return;
+    panel.hidden = !panel.hidden;
+    toggle.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+    if (!panel.hidden) $('#goalNewAreaName')?.focus();
+  });
+
+  $('#goalNewAreaConfirm')?.addEventListener('click', async () => {
+    const name = $('#goalNewAreaName')?.value.trim() || '';
+    if (!name) return toast('Add a life area name');
+    if (!areasCapability?.create) return toast('Life area creation is temporarily unavailable');
+
+    try {
+      const created = await areasCapability.create({
+        name,
+        template_key: null,
+        sort_order: 100
+      });
+      const select = $('#goalArea');
+      if (select && created?.id) {
+        const existing = [...select.options].find((option) => option.value === String(created.id));
+        if (!existing) select.add(new Option(created.name || name, String(created.id)));
+        select.value = String(created.id);
+      }
+      closeNewAreaPanel();
+      toast('Life area created');
+      $('#goalName')?.focus();
+    } catch (error) {
+      toast(error.message || 'Could not create life area');
+    }
+  });
 
   $('#goalForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
