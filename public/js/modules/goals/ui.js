@@ -23,10 +23,18 @@ function periodLabel(period) {
 
 function goalTargetText(goal) {
   const method = measurementLabel(goal.measurement_type);
-  if (goal.target_value == null) return `${escapeHtml(method)} · no numeric target`;
+  if (goal.target_value == null) return escapeHtml(method);
   const unit = goal.unit ? ` ${escapeHtml(goal.unit)}` : '';
-  const period = goal.target_period === 'none' ? '' : ` per ${escapeHtml(periodLabel(goal.target_period))}`;
+  const period = goal.target_period === 'none' ? '' : ` / ${escapeHtml(periodLabel(goal.target_period))}`;
   return `${escapeHtml(method)} · ${escapeHtml(String(goal.target_value))}${unit}${period}`;
+}
+
+function goalContextText(goal) {
+  const parts = [];
+  if (goal.area_name) parts.push(escapeHtml(goal.area_name));
+  parts.push(goalTargetText(goal));
+  if (goal.status && goal.status !== 'active') parts.push(escapeHtml(goal.status));
+  return parts.join(' · ');
 }
 
 function measurementChoices() {
@@ -45,17 +53,23 @@ export function goalsPanelHtml(model, areas) {
     ? activeGoals.map((goal) => `<div class="manage-row goal-manage-row">
         <div class="manage-main"><div>
           <strong>${escapeHtml(goal.name)}</strong>
-          <div class="small muted">${escapeHtml(goal.area_name || 'No area')} · ${goalTargetText(goal)} · ${escapeHtml(goal.status)}</div>
+          <div class="small muted">${goalContextText(goal)}</div>
         </div></div>
-        <div class="row-actions"><button class="text-action" data-edit-goal="${goal.id}">Edit</button><button class="text-action danger-text" data-archive-goal="${goal.id}">Archive</button></div>
+        <details class="goal-row-menu">
+          <summary aria-label="Actions for ${escapeHtml(goal.name)}"><span aria-hidden="true">•••</span></summary>
+          <div class="goal-row-menu-popover">
+            <button class="text-action" type="button" data-edit-goal="${goal.id}">Edit goal</button>
+            <button class="text-action danger-text" type="button" data-archive-goal="${goal.id}">Archive goal</button>
+          </div>
+        </details>
       </div>`).join('')
     : '<div class="empty">No goals yet. Add one direction that matters now.</div>';
 
   const areaOptions = areas.map((area) => `<option value="${area.id}">${escapeHtml(area.name)}</option>`).join('');
 
   return `<div class="card plan-goals-card" id="goalsPanel">
-    <div class="section-head"><div><span class="section-kicker">Goals</span><h2>Choose your direction</h2><p>Name what matters, place it in your life, then choose the simplest way to recognize progress.</p></div><span class="badge">${activeGoals.length} active</span></div>
-    <div class="manage-list">${rows}</div>
+    <p class="gc-sr-only">Choose the goals that matter now. Targets are optional guidance.</p>
+    <div class="manage-list goal-manage-list">${rows}</div>
     <details class="inline-editor goal-editor" id="goalEditor"><summary id="goalEditorSummary">＋ Add goal</summary>
       <form id="goalForm" class="stack-form" data-goal-id="">
         <label><span>What do you want to work toward?</span><input id="goalName" maxlength="120" required placeholder="e.g. Build a photography portfolio"></label>

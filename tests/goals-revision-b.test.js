@@ -63,6 +63,25 @@ test('advanced Goal options preserve supported minimum why priority status and n
   assert.match(goalsRoutes, /why_text/);
 });
 
+test('Revision C keeps the default Goal list about goals rather than administration', () => {
+  assert.doesNotMatch(goalsUi, /Choose your direction/);
+  assert.doesNotMatch(goalsUi, /Name what matters, place it in your life/);
+  assert.doesNotMatch(goalsUi, /no numeric target/);
+  assert.match(goalsUi, /if \(goal\.status && goal\.status !== 'active'\) parts\.push/);
+  assert.match(goalsUi, /class="goal-row-menu"/);
+  assert.match(goalsUi, /aria-label="Actions for \$\{escapeHtml\(goal\.name\)\}"/);
+  assert.match(goalsUi, /data-edit-goal/);
+  assert.match(goalsUi, /data-archive-goal/);
+  assert.match(goalsUi, /Choose the goals that matter now\. Targets are optional guidance\./);
+});
+
+test('Goal row actions remain touch-safe and secondary on desktop and phone', () => {
+  assert.match(goalsCss, /\.goal-row-menu>summary\{[^}]*width:var\(--gc-target-min\);height:var\(--gc-target-min\)/s);
+  assert.match(goalsCss, /\.goal-row-menu-popover button\{[^}]*min-height:var\(--gc-target-min\)/s);
+  assert.match(goalsCss, /@media\(max-width:560px\)[\s\S]*\.goal-row-menu-popover\{position:fixed/);
+  assert.match(goalsCss, /@media\(max-width:560px\)[\s\S]*\.goal-row-menu-popover button\{min-height:48px/);
+});
+
 test('Goal choices remain touch friendly and phone first', () => {
   assert.match(goalsCss, /goal-measure-choice>span\{[^}]*min-height:var\(--gc-target-min\)/s);
   assert.match(goalsCss, /goal-target-sentence input,\.goal-target-sentence select\{[^}]*min-height:var\(--gc-target-min\)/s);
