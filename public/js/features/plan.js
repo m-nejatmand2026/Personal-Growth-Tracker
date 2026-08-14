@@ -12,6 +12,14 @@ function slotOrder(module, slotName) {
   return EXPERIENCE_ORDER[module.id] ?? module.slots.find((slot) => slot.name === slotName)?.order ?? 100;
 }
 
+function dependenciesFor(module) {
+  return Object.freeze(Object.fromEntries(
+    module.dependsOn
+      .map((id) => [id, registry.get(id)])
+      .filter(([, capability]) => Boolean(capability))
+  ));
+}
+
 function moduleErrorHtml(module, message) {
   return `<section class="plan-module-block" data-module="${module.id}"><div class="card module-error"><div class="section-head"><div><h2>This section is temporarily unavailable</h2><p>${message}</p></div></div><p class="small muted">The rest of your Plan is still available.</p></div></section>`;
 }
@@ -76,7 +84,10 @@ export async function renderPlan({ reload }) {
       const models = Object.fromEntries(Object.entries(results)
         .filter(([, result]) => result.status === 'ready')
         .map(([id, result]) => [id, result.model]));
-      results[module.id] = { status: 'ready', model: await module.load({ date: state.date, models }) };
+      results[module.id] = {
+        status: 'ready',
+        model: await module.load({ date: state.date, models, dependencies: dependenciesFor(module) })
+      };
     } catch (error) {
       results[module.id] = { status: 'failed', error: error?.message || 'Could not load this section.' };
     }
@@ -91,7 +102,7 @@ export async function renderPlan({ reload }) {
     const result = results[module.id];
     if (!result || result.status !== 'ready') return moduleErrorHtml(module, result?.error || 'Section unavailable.');
     try {
-      return `<section class="plan-module-block" id="plan-module-${module.id}" data-module="${module.id}">${module.render({ model: result.model, models, date: state.date })}</section>`;
+      return `<section class="plan-module-block" id="plan-module-${module.id}" data-module="${module.id}">${module.render({ model: result.model, models, date: state.date, dependencies: dependenciesFor(module) })}</section>`;
     } catch (error) {
       results[module.id] = { status: 'failed', error: error?.message || 'Could not display this section.' };
       return moduleErrorHtml(module, results[module.id].error);
@@ -118,7 +129,13 @@ export async function renderPlan({ reload }) {
     const result = results[module.id];
     if (result?.status !== 'ready' || typeof module.bind !== 'function') continue;
     try {
-      module.bind({ model: result.model, models, date: state.date, reload: reloadPlatform });
+      module.bind({
+        model: result.model,
+        models,
+        date: state.date,
+        reload: reloadPlatform,
+        dependencies: dependenciesFor(module)
+      });
     } catch (error) {
       console.error(`Failed to bind module ${module.id}`, error);
     }
