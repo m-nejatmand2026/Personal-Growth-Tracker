@@ -20,7 +20,7 @@ test('canonical design system loads after legacy experience variables and before
 test('design system defines canonical tokens accessibility focus touch and reduced motion primitives', () => {
   for (const token of [
     '--gc-bg', '--gc-surface', '--gc-text', '--gc-text-muted', '--gc-border',
-    '--gc-brand', '--gc-brand-strong', '--gc-focus', '--gc-target-min'
+    '--gc-brand', '--gc-brand-strong', '--gc-focus', '--gc-focus-halo', '--gc-target-min'
   ]) assert.match(designCss, new RegExp(token.replace('--', '\\-\\-')));
 
   assert.match(designCss, /--os-teal:\s*var\(--gc-brand\)/);
@@ -29,6 +29,15 @@ test('design system defines canonical tokens accessibility focus touch and reduc
   assert.match(designCss, /--gc-target-min:\s*44px/);
   assert.match(designCss, /prefers-reduced-motion:\s*reduce/);
   assert.match(designCss, /\.gc-sr-only/);
+});
+
+test('Revision B focus styling remains visible but belongs to the Growth Compass palette', () => {
+  assert.match(designCss, /--gc-focus:\s*#0a6664/);
+  assert.match(designCss, /--gc-focus-halo:\s*rgba\(15,\s*119,\s*117,\s*0\.16\)/);
+  assert.match(designCss, /outline:\s*2px solid var\(--gc-focus\)/);
+  assert.match(designCss, /box-shadow:\s*0 0 0 3px var\(--gc-focus-halo\)/);
+  assert.doesNotMatch(designCss, /#0b5fff/i);
+  assert.match(designCss, /@media \(forced-colors: active\)[\s\S]*outline:\s*2px solid Highlight[\s\S]*box-shadow:\s*none/);
 });
 
 test('threshold scale is generic bounded and preserves overshoot instead of inventing a target ceiling', () => {
