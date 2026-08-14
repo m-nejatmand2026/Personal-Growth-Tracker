@@ -68,6 +68,15 @@
 /* Major views share one calm header language instead of separate hero systems.
  * Existing business content below each header remains module-owned. */
 .gc-page-header.today-command,.gc-page-header.plan-overview,.gc-page-header.progress-dashboard,.gc-page-header.insights-hero,.journal-hero{padding:4px 2px 8px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--gc-text)}
+
+/* The persistent shell owns first-class destination identity through #pageTitle.
+ * View-owned eyebrow text is kept only when it adds context rather than
+ * repeating the destination name. This keeps the first viewport quieter
+ * without moving business copy or actions out of their owning modules. */
+.gc-page-header.progress-dashboard .eyebrow,
+.gc-page-header.insights-hero .eyebrow,
+.journal-hero > div > .eyebrow{display:none}
+
 .journal-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--gc-space-4);align-items:end;margin-bottom:var(--gc-space-4)}
 .journal-hero .eyebrow{margin:0;color:var(--gc-brand-strong);font-size:var(--gc-text-xs);font-weight:850;letter-spacing:.11em;text-transform:uppercase}
 .journal-hero h2{max-width:22ch;margin:0;color:var(--gc-text);font-size:clamp(1.45rem,3vw,2rem);line-height:1.06;letter-spacing:-.03em}
