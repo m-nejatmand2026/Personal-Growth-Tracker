@@ -81,7 +81,7 @@ export function goalsPanelHtml(model, areas) {
             <span>Aim for</span>
             <input id="goalTarget" type="number" min="0" step="any" inputmode="decimal" aria-label="Target amount" placeholder="3">
             <input id="goalUnit" maxlength="40" aria-label="Target unit" placeholder="hours, pages, lessons">
-            <span>per</span>
+            <span id="goalTargetConnector">per</span>
             <select id="goalPeriod" aria-label="Target period"><option value="daily">day</option><option value="weekly" selected>week</option><option value="monthly">month</option><option value="yearly">year</option><option value="custom">custom period</option><option value="none">one-time goal</option></select>
           </div>
         </section>
@@ -115,6 +115,11 @@ function presentationMeasurement(type) {
   return HUMAN_MEASUREMENTS.includes(type) ? type : (type === 'number' ? 'count' : 'time');
 }
 
+function syncGoalPeriodUi(period = $('#goalPeriod')?.value) {
+  const connector = $('#goalTargetConnector');
+  if (connector) connector.textContent = period === 'none' ? 'for this' : 'per';
+}
+
 function syncMeasurementUi(type, { userChange = false } = {}) {
   const presentation = presentationMeasurement(type);
   const hidden = $('#goalMeasurement');
@@ -145,6 +150,7 @@ function resetGoalEditor() {
   form.dataset.goalId = '';
   form.reset();
   $('#goalMeasurement').value = 'time';
+  syncGoalPeriodUi();
   closeNewAreaPanel();
   syncMeasurementUi('time');
   $('#goalAdvancedOptions').open = false;
@@ -160,6 +166,7 @@ function populateGoalEditor(goal) {
   $('#goalArea').value = goal.area_id == null ? '' : String(goal.area_id);
   $('#goalMeasurement').value = goal.measurement_type || 'time';
   $('#goalPeriod').value = goal.target_period || 'weekly';
+  syncGoalPeriodUi();
   $('#goalTarget').value = goal.target_value ?? '';
   $('#goalMinimum').value = goal.minimum_value ?? '';
   $('#goalUnit').value = goal.unit || '';
@@ -186,7 +193,10 @@ export function bindGoalsPanel(model, { reloadPlatform }, { areasCapability = nu
 
   $$('input[name="goalMeasureChoice"]').forEach((radio) => radio.addEventListener('change', () => {
     syncMeasurementUi(radio.value, { userChange: true });
+    syncGoalPeriodUi();
   }));
+
+  $('#goalPeriod')?.addEventListener('change', (event) => syncGoalPeriodUi(event.currentTarget.value));
 
   $('#goalNewAreaToggle')?.addEventListener('click', () => {
     const panel = $('#goalNewAreaPanel');

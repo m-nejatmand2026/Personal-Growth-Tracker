@@ -55,6 +55,8 @@ test('Plan overview uses concrete available planned and still-flexible time lang
 
 test('Plan Revision A stylesheet is token based phone first and touch sized', () => {
   assert.match(indexHtml, /\/css\/plan-revision\.css/);
+  assert.match(planCss, /#planView\.active\{display:grid/);
+  assert.doesNotMatch(planCss, /#planView\{[^}]*display:grid/);
   assert.match(planCss, /var\(--gc-target-min\)/);
   assert.match(planCss, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(planCss, /@media\(max-width:680px\)/);

@@ -45,6 +45,9 @@ test('Completed and Milestones do not force meaningless numeric targets', () => 
   assert.match(goalsUi, /goalTargetBuilder'\)\) \$\('#goalTargetBuilder'\)\.hidden = !numeric/);
   assert.match(goalsUi, /goalMinimumField'\)\) \$\('#goalMinimumField'\)\.hidden = !numeric/);
   assert.match(goalsUi, /if \(userChange && !numeric\)[\s\S]*goalTarget'\)\.value = ''[\s\S]*goalPeriod'\)\.value = 'none'/);
+  assert.match(goalsUi, /id="goalTargetConnector">per/);
+  assert.match(goalsUi, /period === 'none' \? 'for this' : 'per'/);
+  assert.match(goalsUi, /goalPeriod'\)\?\.addEventListener\('change'/);
 });
 
 test('advanced Goal options preserve supported minimum why priority status and notes fields', () => {

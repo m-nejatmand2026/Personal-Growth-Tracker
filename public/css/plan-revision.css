@@ -1,4 +1,4 @@
-#planView{display:grid;gap:var(--gc-space-4)}
+#planView.active{display:grid;gap:var(--gc-space-4)}
 .plan-overview{display:grid;gap:var(--gc-space-5);padding:var(--gc-space-5);border:1px solid var(--gc-border);border-radius:var(--gc-radius-xl);background:linear-gradient(135deg,var(--gc-brand-soft) 0%,var(--gc-surface) 68%);box-shadow:var(--gc-shadow-sm)}
 .plan-overview-copy h2{margin:.2rem 0 .45rem;font-size:clamp(1.55rem,5vw,2rem);line-height:1.08;color:var(--gc-text)}
 .plan-overview-copy p{margin:0;color:var(--gc-text-muted);max-width:680px}

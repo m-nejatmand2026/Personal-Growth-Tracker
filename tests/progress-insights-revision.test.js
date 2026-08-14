@@ -66,5 +66,7 @@ test('Progress and Insights presentation remains module-owned and responsive', (
   assert.match(progressCss, /@media\(max-width:520px\)/);
   assert.match(progressCss, /@media\(min-width:760px\)/);
   assert.match(insightsCss, /@media\(min-width:700px\)/);
+  assert.match(insightsCss, /\.insights-hero\{[^}]*color:var\(--gc-text\)/);
+  assert.match(insightsCss, /\.insights-hero \.eyebrow\{color:var\(--gc-brand\)\}/);
   assert.match(progressCss, /var\(--gc-target-min\)/);
 });
