@@ -1,11 +1,20 @@
 import { escapeHtml } from '../../core/dom.js';
-import { boostContent, boostTypes } from './content.js';
+import { boostContent } from './content.js';
 
 const MODES = Object.freeze([
   Object.freeze({ id: 'voice', label: 'Guided' }),
   Object.freeze({ id: 'ambient', label: 'Ambient' }),
   Object.freeze({ id: 'both', label: 'Both' })
 ]);
+
+const TONES = Object.freeze({
+  Reset: 'reset',
+  Calm: 'calm',
+  Focus: 'focus',
+  Restore: 'restore'
+});
+
+const FEATURED_PRACTICE_ID = 'meditation-steadier-breath';
 
 let activePracticeId = null;
 let selectedMode = 'voice';
@@ -212,23 +221,44 @@ function toggleSession(root) {
   }
 }
 
-function renderPracticeCard(item) {
-  return `<button type="button" class="wellness-boost-card" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
-    <span class="wellness-boost-card-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
-    <span class="wellness-boost-card-copy"><span class="wellness-boost-category">${escapeHtml(item.category)}</span><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.summary)}</span></span>
-    <span class="wellness-boost-card-meta"><span class="wellness-boost-duration">${item.durationMinutes} min</span><span class="wellness-boost-card-arrow" aria-hidden="true">→</span></span>
+function toneFor(item) {
+  return TONES[item.category] || 'calm';
+}
+
+function renderFeaturedPractice(item) {
+  return `<button type="button" class="wellness-boost-featured wellness-boost-tone-${toneFor(item)}" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
+    <span class="wellness-boost-featured-copy">
+      <span class="wellness-boost-featured-kicker">Featured meditation · ${escapeHtml(item.category)}</span>
+      <strong>${escapeHtml(item.title)}</strong>
+      <span class="wellness-boost-featured-summary">${escapeHtml(item.summary)}</span>
+      <span class="wellness-boost-featured-meta">${item.durationMinutes} min <span aria-hidden="true">→</span></span>
+    </span>
+    <span class="wellness-boost-featured-art" aria-hidden="true">${escapeHtml(item.icon)}</span>
+  </button>`;
+}
+
+function renderPracticeRow(item) {
+  return `<button type="button" class="wellness-boost-row wellness-boost-tone-${toneFor(item)}" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
+    <span class="wellness-boost-row-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+    <span class="wellness-boost-row-copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.category)} · ${item.durationMinutes} min</span></span>
+    <span class="wellness-boost-row-arrow" aria-hidden="true">→</span>
   </button>`;
 }
 
 function renderLibrary() {
-  const type = boostTypes.meditation;
-  return `<div class="wellness-boost-view" data-module="wellness-boost" aria-label="Wellness Boost">
+  const featured = boostContent.find((item) => item.id === FEATURED_PRACTICE_ID) || boostContent[0];
+  const more = boostContent.filter((item) => item.id !== featured.id);
+  return `<div class="wellness-boost-view wellness-boost-library-view" data-module="wellness-boost" aria-label="Wellness Boost">
     <section class="wellness-boost-intro" aria-labelledby="wellnessBoostIntroTitle">
+      <span class="section-kicker">Meditation</span>
       <h2 id="wellnessBoostIntroTitle">Take a few minutes for yourself.</h2>
     </section>
-    <section class="os-section wellness-boost-type" aria-labelledby="wellnessBoostMeditationTitle">
-      <div class="os-section-head wellness-boost-library-head"><div><h2 id="wellnessBoostMeditationTitle">${escapeHtml(type.label)}</h2><small>${escapeHtml(type.description)}</small></div></div>
-      <div class="wellness-boost-grid">${boostContent.map(renderPracticeCard).join('')}</div>
+    <section class="wellness-boost-featured-section" aria-label="Featured meditation">
+      ${renderFeaturedPractice(featured)}
+    </section>
+    <section class="wellness-boost-more" aria-labelledby="wellnessBoostMoreTitle">
+      <h3 id="wellnessBoostMoreTitle">More meditations</h3>
+      <div class="wellness-boost-more-list">${more.map(renderPracticeRow).join('')}</div>
     </section>
   </div>`;
 }
