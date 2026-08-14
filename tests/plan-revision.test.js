@@ -24,15 +24,22 @@ test('Goals render before supporting Areas and time-budget modules', () => {
   assert.match(planJs, /Choose direction first, then see what time is actually available/);
 });
 
-test('Goal creation keeps name and area on the easy path and progressively discloses measurement details', () => {
+test('Goal creation uses human questions before optional expert controls', () => {
+  const name = goalsUi.indexOf('id="goalName"');
+  const area = goalsUi.indexOf('id="goalArea"');
+  const measurementQuestion = goalsUi.indexOf('How will you know you are making progress?');
+  const target = goalsUi.indexOf('id="goalTargetBuilder"');
   const advanced = goalsUi.indexOf('id="goalAdvancedOptions"');
-  assert.ok(goalsUi.indexOf('id="goalName"') < advanced);
-  assert.ok(goalsUi.indexOf('id="goalArea"') < advanced);
-  for (const id of ['goalMeasurement','goalPeriod','goalTarget','goalUnit','goalPriority','goalStatus','goalDescription']) {
+  assert.ok(name >= 0 && name < area && area < measurementQuestion && measurementQuestion < target && target < advanced);
+  assert.match(goalsUi, /Time spent/);
+  assert.match(goalsUi, /Quantity/);
+  assert.match(goalsUi, /Completed/);
+  assert.match(goalsUi, /Milestones/);
+  assert.match(goalsUi, /Aim for/);
+  assert.match(goalsUi, /Targets are guidance, not debt/);
+  for (const id of ['goalMinimum','goalPriority','goalStatus','goalWhy','goalDescription']) {
     assert.ok(goalsUi.indexOf(`id="${id}"`) > advanced);
   }
-  assert.match(goalsUi, /Measurement and other details/);
-  assert.match(goalsUi, /You can create a useful goal without a numeric target/);
 });
 
 test('Plan overview uses concrete available planned and still-flexible time language', () => {
