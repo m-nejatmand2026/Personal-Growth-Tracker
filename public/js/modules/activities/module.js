@@ -38,6 +38,19 @@ export const activitiesModule = Object.freeze({
     return response.items || [];
   },
 
+  async creationContext() {
+    const response = await api('/api/v1/goals');
+    return {
+      goals: (response.items || [])
+        .filter((goal) => goal.status !== 'archived')
+        .map((goal) => ({
+          id: Number(goal.id),
+          name: goal.name,
+          status: goal.status
+        }))
+    };
+  },
+
   async create(input) {
     const response = await api('/api/v1/activities', {
       method: 'POST',
