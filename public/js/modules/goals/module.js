@@ -18,10 +18,13 @@ export const goalsModule = Object.freeze({
   render({ model, models }) {
     return goalsPanelHtml(model, models.areas?.areas || []);
   },
-  bind({ model, reload }) {
+  bind({ model, reload, dependencies }) {
     bindGoalsPanel(
       model,
-      { reloadPlatform: reload }
+      {
+        reloadPlatform: reload,
+        areasCapability: dependencies?.areas || null
+      }
     );
   }
 });
