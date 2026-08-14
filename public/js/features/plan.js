@@ -40,13 +40,13 @@ function planOverview(models) {
   const goals = (models.goals?.goals || []).filter((goal) => goal.status !== 'archived');
   const fit = models.capacity?.timeFit?.week || null;
 
-  return `<section class="plan-overview">
+  return `<section class="plan-overview gc-page-header gc-page-header--with-stats">
     <div class="plan-overview-copy">
       <span class="section-kicker">Plan at a glance</span>
-      <h2>Make ambition fit the life you actually have</h2>
-      <p>Choose direction first, then see what time is actually available before adding more.</p>
+      <h2>Plan around the life you have</h2>
+      <p>Set direction, then fit it to your time.</p>
     </div>
-    <div class="plan-overview-grid">
+    <div class="plan-overview-grid gc-stat-grid">
       <div><span>Active goals</span><strong>${goals.length}</strong><small>${areas.length} life areas</small></div>
       <div><span>Available this week</span><strong>${fit ? formatMinutes(fit.availableMinutes) : '—'}</strong><small>after recurring commitments</small></div>
       <div><span>Planned this week</span><strong>${fit ? formatMinutes(fit.plannedMinutes) : '—'}</strong><small>goal time currently planned</small></div>
