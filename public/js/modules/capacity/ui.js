@@ -6,6 +6,26 @@ import { toast } from '../../core/toast.js';
 const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const KINDS = ['sleep','work','commute','life','family','recovery','exercise','other'];
 
+export function capacityTimeFit(summary = {}) {
+  const availableMinutes = Math.max(0, Number(summary.flexible_minutes) || 0);
+  const plannedMinutes = Math.max(0, Number(summary.planned_goal_minutes) || 0);
+  const remainingMinutes = Math.max(0, availableMinutes - plannedMinutes);
+  const overByMinutes = Math.max(0, plannedMinutes - availableMinutes);
+  const overcommittedMinutes = Math.max(0, Number(summary.overcommitted_minutes) || 0);
+  const plannedPct = availableMinutes > 0
+    ? Math.round((plannedMinutes / availableMinutes) * 100)
+    : (plannedMinutes > 0 ? null : 0);
+
+  return Object.freeze({
+    availableMinutes,
+    plannedMinutes,
+    remainingMinutes,
+    overByMinutes,
+    overcommittedMinutes,
+    plannedPct
+  });
+}
+
 export async function loadCapacityModel(date) {
   const [day, week, month, commitments] = await Promise.all([
     api(`/api/v1/capacity?date=${date}&period=day`),
@@ -13,7 +33,18 @@ export async function loadCapacityModel(date) {
     api(`/api/v1/capacity?date=${date}&period=month`),
     api(`/api/v1/capacity/commitments?date=${date}`)
   ]);
-  return { day, week, month, commitments: commitments.items || [], selectedDate: date };
+  return {
+    day,
+    week,
+    month,
+    timeFit: Object.freeze({
+      day: capacityTimeFit(day),
+      week: capacityTimeFit(week),
+      month: capacityTimeFit(month)
+    }),
+    commitments: commitments.items || [],
+    selectedDate: date
+  };
 }
 
 function hoursLabel(minutes) {
@@ -21,25 +52,28 @@ function hoursLabel(minutes) {
   return Number.isInteger(hours) ? `${hours}h` : `${hours.toFixed(1)}h`;
 }
 
-function planLoadLabel(summary) {
-  if (summary.impossible_by_minutes) return 'Over capacity';
-  const load = Number(summary.plan_load || 0);
-  if (load <= 0.5) return 'Spacious';
-  if (load <= 0.7) return 'Balanced';
-  if (load <= 0.85) return 'Full';
-  if (load <= 1) return 'Very full';
-  return 'Over capacity';
-}
-
 function periodCard(label, summary) {
-  const loadPct = summary.plan_load == null ? '—' : `${Math.round(Number(summary.plan_load) * 100)}%`;
+  const fit = capacityTimeFit(summary);
+  const headline = fit.overcommittedMinutes > 0
+    ? `${hoursLabel(fit.overcommittedMinutes)} beyond total time`
+    : fit.overByMinutes > 0
+      ? `${hoursLabel(fit.overByMinutes)} over available time`
+      : `${hoursLabel(fit.remainingMinutes)} still flexible`;
+  const context = fit.overcommittedMinutes > 0
+    ? 'Recurring commitments exceed the total time in this period.'
+    : fit.overByMinutes > 0
+      ? 'Planned goal time is higher than the time currently available.'
+      : fit.plannedPct == null
+        ? 'No flexible time is available for this plan.'
+        : `${fit.plannedPct}% of available time is planned.`;
+
   return `<div class="capacity-card">
     <div class="small muted">${escapeHtml(label)}</div>
-    <strong>${hoursLabel(summary.total_minutes)}</strong>
+    <strong>${escapeHtml(headline)}</strong>
+    <div class="capacity-line"><span>Available</span><b>${hoursLabel(fit.availableMinutes)}</b></div>
+    <div class="capacity-line"><span>Planned</span><b>${hoursLabel(fit.plannedMinutes)}</b></div>
     <div class="capacity-line"><span>Committed</span><b>${hoursLabel(summary.committed_minutes)}</b></div>
-    <div class="capacity-line"><span>Flexible</span><b>${hoursLabel(summary.flexible_minutes)}</b></div>
-    <div class="capacity-line"><span>Goals</span><b>${hoursLabel(summary.planned_goal_minutes)}</b></div>
-    <div class="capacity-load"><span>${planLoadLabel(summary)}</span><b>${loadPct}</b></div>
+    <div class="capacity-load"><span>${escapeHtml(context)}</span></div>
   </div>`;
 }
 
@@ -126,13 +160,13 @@ export function capacityPanelHtml(model) {
   const monthName = new Intl.DateTimeFormat('en', { month:'long', year:'numeric', timeZone:'UTC' })
     .format(new Date(`${model.month.start}T12:00:00Z`));
   return `<div class="card" id="capacityPanel">
-    <div class="section-head"><div><h2>Life capacity</h2><p>Time reality before ambition: 24 hours/day, 168 hours/week, and the exact selected calendar month.</p></div><span class="badge">Plan load</span></div>
+    <div class="section-head"><div><h2>Life capacity</h2><p>See what time is already committed, what remains available, and how much of that available time you planned for your goals.</p></div><span class="badge">Time reality</span></div>
     <div class="capacity-grid">
       ${periodCard('Selected day', model.day)}
       ${periodCard('This week', model.week)}
       ${periodCard(`${monthName} · ${model.month.days} days`, model.month)}
     </div>
-    <p class="small muted capacity-note">Flexible time is not automatically productivity time. Plan Load only compares planned goal time with currently unallocated capacity.</p>
+    <p class="small muted capacity-note">Available time means time left after recurring commitments. Planned goal time uses part of that available time; neither number is a productivity score.</p>
     <div class="subsection-head"><div><h3>Recurring commitments</h3><p>Easy by default. Customize individual days only when you need to.</p></div></div>
     <div class="manage-list">${commitmentRows(model.commitments)}</div>
     <details class="inline-editor" id="commitmentEditor"><summary id="commitmentEditorSummary">+ Add commitment</summary>
