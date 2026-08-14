@@ -16,35 +16,33 @@ function moduleErrorHtml(module, message) {
   return `<section class="plan-module-block" data-module="${module.id}"><div class="card module-error"><div class="section-head"><div><h2>This section is temporarily unavailable</h2><p>${message}</p></div></div><p class="small muted">The rest of your Plan is still available.</p></div></section>`;
 }
 
-function loadLabel(summary) {
-  if (!summary) return '—';
-  if (summary.impossible_by_minutes) return 'Over capacity';
-  const load = Number(summary.plan_load || 0);
-  if (load <= 0.5) return 'Spacious';
-  if (load <= 0.7) return 'Balanced';
-  if (load <= 0.85) return 'Full';
-  if (load <= 1) return 'Very full';
-  return 'Over capacity';
+function timeFitCard(fit) {
+  if (!fit) return '<div><span>Still flexible</span><strong>—</strong><small>time fit unavailable</small></div>';
+  if (fit.overcommittedMinutes > 0) {
+    return `<div><span>Schedule over by</span><strong>${formatMinutes(fit.overcommittedMinutes)}</strong><small>recurring commitments exceed total time</small></div>`;
+  }
+  if (fit.overByMinutes > 0) {
+    return `<div><span>Plan over by</span><strong>${formatMinutes(fit.overByMinutes)}</strong><small>planned goal time exceeds available time</small></div>`;
+  }
+  return `<div><span>Still flexible</span><strong>${formatMinutes(fit.remainingMinutes)}</strong><small>not currently assigned to goal time</small></div>`;
 }
 
 function planOverview(models) {
   const areas = models.areas?.areas || [];
   const goals = (models.goals?.goals || []).filter((goal) => goal.status !== 'archived');
-  const week = models.capacity?.week || null;
-  const plan = models.plans || null;
-  const planLoad = week?.plan_load == null ? null : Math.round(Number(week.plan_load) * 100);
+  const fit = models.capacity?.timeFit?.week || null;
 
   return `<section class="plan-overview">
     <div class="plan-overview-copy">
       <span class="section-kicker">Plan at a glance</span>
       <h2>Make ambition fit the life you actually have</h2>
-      <p>Choose direction first, then check the time reality before committing more.</p>
+      <p>Choose direction first, then see what time is actually available before adding more.</p>
     </div>
     <div class="plan-overview-grid">
       <div><span>Active goals</span><strong>${goals.length}</strong><small>${areas.length} life areas</small></div>
-      <div><span>Flexible this week</span><strong>${week ? formatMinutes(week.flexible_minutes) : '—'}</strong><small>after recurring time</small></div>
-      <div><span>How full?</span><strong>${loadLabel(week)}</strong><small>${planLoad == null ? 'No load yet' : `${planLoad}% of flexible time`}</small></div>
-      <div><span>Current plan</span><strong class="plan-version-name">${plan?.version?.label || 'No active plan'}</strong><small>future changes preserve history</small></div>
+      <div><span>Available this week</span><strong>${fit ? formatMinutes(fit.availableMinutes) : '—'}</strong><small>after recurring commitments</small></div>
+      <div><span>Planned this week</span><strong>${fit ? formatMinutes(fit.plannedMinutes) : '—'}</strong><small>goal time currently planned</small></div>
+      ${timeFitCard(fit)}
     </div>
   </section>`;
 }
