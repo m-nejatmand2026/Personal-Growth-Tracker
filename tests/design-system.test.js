@@ -60,8 +60,9 @@ test('threshold renderer carries visible-data equivalents for assistive technolo
 });
 
 test('chart primitive is platform-only and Progress consumes it without private coupling', () => {
-  assert.match(chartsJs, /\.\.\/core\/dom\.js/);
-  assert.doesNotMatch(chartsJs, /modules\/|features\/|progress|goals|activities/i);
+  const imports = [...chartsJs.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((match) => match[1]);
+  assert.deepEqual(imports, ['../core/dom.js']);
+  assert.doesNotMatch(chartsJs, /modules\/|features\//);
   assert.match(progressUi, /platform\/charts\.js/);
   assert.match(progressUi, /renderThresholdTrack/);
   assert.doesNotMatch(progressUi, /class="amt-track"/);
