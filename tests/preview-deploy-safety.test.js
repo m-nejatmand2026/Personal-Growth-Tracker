@@ -97,5 +97,5 @@ test('preview smoke gate proves anonymous API access is blocked and authenticate
   assert.match(workflow, /grep -F 'Growth Compass'/);
   assert.match(workflow, /\/api\/v1\/areas/);
   assert.match(workflow, /Cloudflare Access boundary \+ authenticated Preview smoke tests passed/);
-  assert.doesNotMatch(workflow, /echo .*CF_ACCESS_CLIENT_(?:ID|SECRET)/);
+  assert.doesNotMatch(workflow, /(?:echo|printf)[^\n]*\$(?:\{)?CF_ACCESS_CLIENT_(?:ID|SECRET)/);
 });
