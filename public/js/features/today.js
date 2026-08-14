@@ -109,8 +109,8 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
     items: todayModel?.progress || []
   }) || null;
 
-  root.innerHTML = `<div class="today-layout">
-    <section class="today-command"><div class="today-command-copy"><p class="eyebrow">${formatDateLabel(date)}</p><h2>Your daily command center</h2><p>See what is true, choose what fits, and log only what actually happens.</p></div><button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Log or plan</button></section>
+  root.innerHTML = `<div class="today-layout gc-page-flow">
+    <section class="today-command gc-page-header gc-page-header--action"><div class="today-command-copy"><p class="eyebrow">${formatDateLabel(date)}</p><h2>Choose what fits today</h2><p>Log what actually happens.</p></div><button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Log or plan</button></section>
     ${wellbeingState}
     ${renderModel(capacityModel)}
     ${dailyPlanPanel}
