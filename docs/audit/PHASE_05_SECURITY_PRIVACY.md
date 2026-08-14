@@ -1,52 +1,58 @@
 # Engineering audit — Phase 5: Security and privacy
 
-Status: **COMPLETE — CRITICAL LIVE-BETA FINDING REQUIRES ACTION**
+Status: **COMPLETE — CRITICAL LIVE-BETA EXPOSURE MITIGATED; PUBLIC IDENTITY BLOCKERS REMAIN**
 
 Audit context: Growth Compass — Version 1 Beta. This phase evaluates the current owner-only Beta separately from the future public/multi-user product.
 
 ## Overall assessment
 
-The codebase has several good security foundations: prepared D1 statements, bounded request bodies, strong output escaping in reviewed UI paths, least-privilege CI credentials, no secrets committed at the repository root, explicit privacy separation for Journal/Wellbeing/Wellness, and a newly hardened Worker response boundary.
+The codebase has several good security foundations: prepared D1 statements, bounded request bodies, strong output escaping in reviewed UI paths, least-privilege CI credentials, no secrets committed at the repository root, explicit privacy separation for Journal/Wellbeing/Wellness, and a hardened Worker response boundary.
 
-However, the application itself currently has **no authentication or authorization boundary**. `resolveProfileId()` always returns `default`, and Version 1 plus legacy/export APIs are routed without proving an authenticated principal. The automatic preview smoke test successfully calls `/api/v1/areas` without credentials, proving that preview is reachable without application authentication. The production code baseline has the same identity implementation and export route.
+The application itself still has **no application-level authentication or authorization boundary**. `resolveProfileId()` returns `default`, so the current code is not suitable for multiple independent users or public exposure.
 
-This is a **critical live-Beta privacy/security issue** if the Worker is not already protected by an external Cloudflare Access policy or equivalent edge control. It is also an absolute blocker for multi-user/public release.
+The immediate live-Beta exposure identified by this audit has now been mitigated externally: both stable production and preview Worker URLs are protected by Cloudflare Access for **All traffic**. The owner manually verified that production/preview require authentication. Preview CI has a dedicated service identity and automatically proves anonymous operational access is blocked before its authenticated smoke test succeeds.
+
+This Access perimeter is appropriate for the present owner-only Beta. It does **not** close the future public/multi-user identity requirement.
 
 ---
 
 ## S1 — No application authentication/authorization boundary
 
-**Status:** FAIL  
-**Severity:** CRITICAL  
-**Release impact:** immediate live-Beta protection required; public launch blocked
+**Status:** FAIL for public/multi-user architecture; CURRENT PRIVATE-BETA EXPOSURE MITIGATED BY VERIFIED ACCESS  
+**Severity:** CRITICAL without perimeter protection; HIGH future architecture blocker with the current perimeter in place  
+**Release impact:** current owner-only Beta may continue behind Access; public/multi-user launch blocked
 
-Evidence:
+Evidence in application code:
 
 - `worker/core/profile.js` exports `resolveProfileId()` which unconditionally returns `default`.
-- Worker routing invokes Version 1, legacy compatibility and export handlers without authentication middleware.
-- the feature and `main` code baselines share this identity resolver.
-- automatic Preview smoke testing performs an unauthenticated GET to `/api/v1/areas` and succeeds.
-- normal mutation routes similarly derive the profile from the same unconditional resolver.
+- Worker routing invokes Version 1, legacy compatibility and export handlers without application authentication middleware.
+- the feature and production code baselines share this identity resolver.
+- normal mutation routes derive the profile from the same unconditional resolver.
 
-Impact:
+Impact without edge protection:
 
-Unless an external edge policy is already active, anyone who can reach the Worker URL can act as the `default` profile through the API. This is not merely a future multi-user concern: the default profile is the real personal Beta profile.
+Anyone who could reach the Worker would act as the `default` profile through the API. This is not merely a future multi-user concern: the default profile is the real personal Beta profile.
 
-### Immediate owner-only Beta mitigation
+### Verified owner-only Beta mitigation
 
-Protect both the production and preview Workers with **Cloudflare Access** (or an equivalent verified edge authentication policy) and allow only the owner's identity plus a dedicated CI service identity needed for automated preview smoke tests.
+Both current Workers are protected with Cloudflare Access using **All traffic** rather than Preview-URLs-only protection:
 
-This is a perimeter protection for the current private Beta, not the future public-user authentication architecture.
+- `personal-growth-tracker.m-nejatmand.workers.dev`
+- `personal-growth-tracker-preview.m-nejatmand.workers.dev`
 
-After Access is enabled:
+Verification completed:
 
-- unauthenticated browser/API requests must not reach Growth Compass data routes;
-- automated preview smoke tests must authenticate with a dedicated Access service token stored only as GitHub Actions secrets;
-- the service token must be scoped only to the preview application if practical;
-- the smoke workflow must never log service credentials;
-- Access enforcement must be tested from an unauthenticated request as well as an authenticated request.
+- the owner manually checked production requires authentication;
+- the owner manually checked preview requires authentication;
+- Preview GitHub Actions contains a dedicated `Growth Compass Preview CI` Access service identity stored as repository secrets;
+- the Preview service identity is used for authenticated smoke testing;
+- the deployment gate first attempts an anonymous operational request and fails the release if a 2xx response reaches the Worker;
+- CI credentials remain masked and are never echoed by the workflow;
+- production receives no Preview CI service-token policy/production deployment authority.
 
-Do not solve this by adding a hard-coded password or client-side-only login screen.
+This is perimeter protection for the current private Beta, not the future public-user authentication architecture.
+
+Do not replace the future identity work with a hard-coded password or client-side-only login screen.
 
 ## S2 — Future authenticated principal → profile authorization is not designed yet
 
@@ -54,7 +60,7 @@ Do not solve this by adding a hard-coded password or client-side-only login scre
 **Severity:** HIGH  
 **Release impact:** public/multi-user launch blocker
 
-Cloudflare Access is suitable as an immediate owner-only perimeter, but a public product needs an application identity model.
+Cloudflare Access is suitable as the current owner-only perimeter, but a public product needs an application identity model.
 
 Required architecture before public release:
 
@@ -69,10 +75,12 @@ Required architecture before public release:
 
 This finding is coupled to Architecture A2 and Data D1-2: identity, module preferences and same-profile database constraints should be designed coherently.
 
+The product owner has explicitly deferred external-user onboarding/account creation for now. Do not weaken Access or invite testers into the single-profile runtime until this architecture is intentionally implemented.
+
 ## S3 — `/api/export` exposes the most sensitive aggregate data surface
 
-**Status:** FAIL until S1 is mitigated  
-**Severity:** CRITICAL while unauthenticated; LOW after strong authorization
+**Status:** PASS for current owner-only Beta behind verified Access; HIGH-SENSITIVITY AUTHORIZATION REQUIREMENT FOR PUBLIC USE  
+**Severity:** CRITICAL if anonymously reachable; LOW operationally under current owner-only perimeter
 
 `worker/routes/export.js` composes a full profile export through module public contracts, including:
 
@@ -87,9 +95,9 @@ This finding is coupled to Architecture A2 and Data D1-2: identity, module prefe
 - Wellbeing energy, sleep and day-context observations;
 - legacy Beta compatibility data.
 
-The export composition itself is architecturally good and profile-scoped. The security problem is that it inherits the missing identity boundary.
+The export composition itself is architecturally good and profile-scoped. Cloudflare Access now prevents anonymous requests from reaching the current owner-only Worker.
 
-After authentication is implemented, keep export as a user-data ownership feature, but require the same strong authorization as all private APIs. Consider explicit download headers and audit/confirmation UX later; global `Cache-Control: no-store` is already applied by the Worker.
+When public application authentication is implemented, keep export as a user-data ownership feature but require the same strong principal→profile authorization as all private APIs. Consider explicit download headers and confirmation UX later; global `Cache-Control: no-store` is already applied by the Worker.
 
 ## S4 — Prepared statements and parameter binding are the normal persistence pattern
 
@@ -127,7 +135,7 @@ All JSON responses now include:
 
 `Cache-Control: no-store`
 
-This is especially important for Journal, Wellbeing, Progress and full exports once authentication exists.
+This is especially important for Journal, Wellbeing, Progress and full exports.
 
 ## S7 — Baseline browser security headers
 
@@ -143,7 +151,7 @@ The Worker now adds baseline security headers to both application Assets respons
 - `X-Content-Type-Options: nosniff`;
 - `X-Frame-Options: DENY`.
 
-Quality runtime tests assert these headers, and the automatic preview UI/API smoke passed after deployment.
+Quality runtime tests assert these headers, and automatic Preview smoke checks continue to verify the deployed root UI under Access.
 
 Human browser validation is still required for Meditation speech/audio, install behavior and normal navigation because a successful HTTP smoke test cannot prove every browser feature remains compatible with the CSP.
 
@@ -177,16 +185,16 @@ Audit remediation adds:
 - `.env.*`;
 - exception for `!.env.example`.
 
-GitHub Actions Cloudflare credentials remain stored as repository secrets, not files. The Cloudflare CI token remains intentionally least-privilege: Workers Scripts Write + D1 Read, with no D1 Write.
+GitHub Actions Cloudflare credentials remain stored as repository secrets, not files. The Cloudflare CI token remains intentionally least-privilege: Workers Scripts Write + D1 Read, with no D1 Write. The dedicated Access service identity is stored separately as `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET` and is used only for protected Preview smoke testing.
 
 ## S10 — No abuse/rate-limiting layer
 
 **Status:** CONCERN  
-**Severity:** MEDIUM for public release; lower once private Beta is protected by Access
+**Severity:** MEDIUM for public release; low under the current owner-only Access perimeter
 
 The Worker does not currently implement application rate limiting, and no repository-level Cloudflare rate-limit policy can be proven from the codebase.
 
-Immediate priority is authentication/Access, not arbitrary rate limits. Before public exposure, define rate limits for authentication/recovery, mutations, export and other expensive/sensitive endpoints using Cloudflare/application controls appropriate to the final identity architecture.
+Current priority is not arbitrary rate limiting while the application remains owner-only behind Access. Before public exposure, define rate limits for authentication/recovery, mutations, export and other expensive/sensitive endpoints using Cloudflare/application controls appropriate to the final identity architecture.
 
 Do not apply a single global request limit that breaks legitimate synchronization or future wearable integrations.
 
@@ -214,7 +222,7 @@ Missing public-product governance includes:
 - processor/subprocessor and regional-data decisions as the product becomes public;
 - incident-response and user-notification procedure.
 
-These should be designed before collecting other users' Journal/Wellbeing data.
+These must be designed before collecting other users' Journal/Wellbeing data.
 
 ## S12 — Public source repository is not a security boundary
 
@@ -235,10 +243,16 @@ There is currently no application cookie/session authentication, so conventional
 
 ## Phase 5 decision
 
-**Security is the first audit area with a critical live-Beta blocker.**
+**The critical anonymous live-Beta exposure is mitigated. Security audit concerns remain open for future public/multi-user use.**
 
-Safe code hardening completed on the feature/preview path, but it does not solve S1. The next required operational decision is to protect the current owner-only production and preview Workers with a verified authentication perimeter before treating either URL as private.
+Current owner-only Beta may continue because:
 
-Future public release additionally requires application-level identity/profile authorization, same-profile database defense in depth, real D1 integration tests, privacy/account lifecycle design and abuse controls.
+- both stable Worker URLs are protected by Cloudflare Access for All traffic;
+- the owner manually verified authentication is required;
+- Preview automation proves anonymous operational access is rejected and authenticated CI access works;
+- private API responses are `no-store` and unexpected internal messages are not returned to clients;
+- Preview CI has no D1 Write and no production deployment authority.
 
-Production Worker/D1 were not changed during this phase.
+Do **not** interpret this perimeter as permission to onboard unrelated users into the existing `default` profile. Before that stage, Growth Compass needs application-level identity/profile authorization, cross-profile database defense in depth, real D1 integration tests and privacy/account lifecycle design.
+
+Production Worker **code** and production D1 were not changed during this security remediation. Cloudflare Access configuration at the edge was intentionally changed to protect the existing private Beta.
