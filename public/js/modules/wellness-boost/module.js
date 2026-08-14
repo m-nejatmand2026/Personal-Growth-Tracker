@@ -1,14 +1,12 @@
 import { escapeHtml } from '../../core/dom.js';
 import { boostContent, boostTypes } from './content.js';
 
-const DURATIONS = Object.freeze(['all', 3, 5, 10, 20]);
 const MODES = Object.freeze([
-  Object.freeze({ id: 'voice', label: 'Guided voice', detail: 'Uses your device voice' }),
-  Object.freeze({ id: 'ambient', label: 'Ambient', detail: 'Locally generated tone' }),
-  Object.freeze({ id: 'both', label: 'Both', detail: 'Voice + ambient' })
+  Object.freeze({ id: 'voice', label: 'Guided' }),
+  Object.freeze({ id: 'ambient', label: 'Ambient' }),
+  Object.freeze({ id: 'both', label: 'Both' })
 ]);
 
-let selectedDuration = 'all';
 let activePracticeId = null;
 let selectedMode = 'voice';
 let session = null;
@@ -80,14 +78,25 @@ function setPlayerStatus(root, text) {
   if (status) status.textContent = text;
 }
 
+function setReadyStatus(root, text) {
+  const status = root?.querySelector('[data-wb-ready-status]');
+  if (status) status.textContent = text;
+}
+
+function setPlayerActive(root, active) {
+  root?.querySelector('.wellness-boost-player')?.classList.toggle('is-active', active);
+}
+
 function paintProgress(root, item, elapsedSeconds = 0) {
   const total = item.durationMinutes * 60;
   const safeElapsed = Math.min(total, Math.max(0, elapsedSeconds));
   const percent = total ? (safeElapsed / total) * 100 : 0;
   const progress = root?.querySelector('[data-wb-progress]');
+  const track = root?.querySelector('[data-wb-progress-track]');
   const timer = root?.querySelector('[data-wb-time]');
   if (progress) progress.style.width = `${percent}%`;
-  if (timer) timer.textContent = `${formatClock(safeElapsed)} / ${formatClock(total)}`;
+  if (track) track.setAttribute('aria-valuenow', String(Math.round(percent)));
+  if (timer) timer.textContent = formatClock(total - safeElapsed);
 }
 
 function resetPlayerControls(root) {
@@ -97,6 +106,7 @@ function resetPlayerControls(root) {
   if (start) start.disabled = false;
   if (toggle) { toggle.disabled = true; toggle.textContent = 'Pause'; }
   if (end) end.disabled = true;
+  setPlayerActive(root, false);
 }
 
 function stopSession({ root = null, completed = false, quiet = false } = {}) {
@@ -109,9 +119,7 @@ function stopSession({ root = null, completed = false, quiet = false } = {}) {
   if (item && root) paintProgress(root, item, completed ? item.durationMinutes * 60 : 0);
   resetPlayerControls(root);
   if (!quiet && root) {
-    setPlayerStatus(root, completed
-      ? 'Session complete. Nothing was added to Progress.'
-      : 'Session ended. Nothing was added to Progress.');
+    setReadyStatus(root, completed ? 'Complete. Nothing was logged.' : 'Ended. Nothing was logged.');
   }
 }
 
@@ -135,7 +143,7 @@ function tickSession(root, item) {
 }
 
 function startSession(root, item, mode) {
-  stopSession({ quiet: true });
+  stopSession({ root, quiet: true });
 
   const wantsVoice = mode === 'voice' || mode === 'both';
   const wantsAmbient = mode === 'ambient' || mode === 'both';
@@ -144,15 +152,15 @@ function startSession(root, item, mode) {
   const hasAmbient = !wantsAmbient || Boolean(ambient);
 
   if (!hasVoice && !hasAmbient) {
-    setPlayerStatus(root, 'This device cannot start the selected playback mode. Try another option.');
+    setReadyStatus(root, 'This device cannot start that listening style. Try another option.');
     return;
   }
   if (mode === 'voice' && !hasVoice) {
-    setPlayerStatus(root, 'Guided voice is not available on this device. Choose Ambient instead.');
+    setReadyStatus(root, 'Guided voice is not available on this device. Try Ambient.');
     return;
   }
   if (mode === 'ambient' && !hasAmbient) {
-    setPlayerStatus(root, 'Ambient playback is not available on this device. Choose Guided voice instead.');
+    setReadyStatus(root, 'Ambient sound is not available on this device. Try Guided.');
     return;
   }
 
@@ -173,13 +181,14 @@ function startSession(root, item, mode) {
   if (start) start.disabled = true;
   if (toggle) toggle.disabled = false;
   if (end) end.disabled = false;
+  setPlayerActive(root, true);
 
   const unavailable = [];
   if (wantsVoice && !hasVoice) unavailable.push('guided voice');
   if (wantsAmbient && !hasAmbient) unavailable.push('ambient sound');
   setPlayerStatus(root, unavailable.length
-    ? `Session started without ${unavailable.join(' and ')}.`
-    : 'Session in progress. You can pause or end at any time.');
+    ? `Playing without ${unavailable.join(' and ')}.`
+    : 'In progress.');
 
   tickSession(root, item);
   session.timer = setInterval(() => tickSession(root, item), 250);
@@ -199,68 +208,63 @@ function toggleSession(root) {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.resume();
     void session.ambient?.context.resume?.();
     if (toggle) toggle.textContent = 'Pause';
-    setPlayerStatus(root, 'Session in progress.');
+    setPlayerStatus(root, 'In progress.');
   }
 }
 
-function renderDurationFilters() {
-  return `<div class="wellness-boost-filter" role="group" aria-label="Meditation duration">
-    ${DURATIONS.map((duration) => {
-      const active = String(duration) === String(selectedDuration);
-      const label = duration === 'all' ? 'All' : `${duration} min`;
-      return `<button type="button" data-wb-duration="${escapeHtml(String(duration))}" aria-pressed="${active}">${escapeHtml(label)}</button>`;
-    }).join('')}
-  </div>`;
-}
-
 function renderPracticeCard(item) {
-  return `<article class="wellness-boost-card">
-    <div class="wellness-boost-card-head"><div><span class="wellness-boost-category">${escapeHtml(item.category)}</span><h3>${escapeHtml(item.title)}</h3></div><span class="wellness-boost-duration" aria-label="Duration ${item.durationMinutes} minutes">${item.durationMinutes} min</span></div>
-    <p>${escapeHtml(item.description)}</p>
-    <div class="wellness-boost-modes" aria-label="Playback options">Guided voice · Ambient · Both</div>
-    <button type="button" class="gc-button gc-button--secondary wellness-boost-open" data-wb-open="${escapeHtml(item.id)}">Open practice</button>
-  </article>`;
+  return `<button type="button" class="wellness-boost-card" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
+    <span class="wellness-boost-card-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+    <span class="wellness-boost-card-copy"><span class="wellness-boost-category">${escapeHtml(item.category)}</span><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.summary)}</span></span>
+    <span class="wellness-boost-card-meta"><span class="wellness-boost-duration">${item.durationMinutes} min</span><span class="wellness-boost-card-arrow" aria-hidden="true">→</span></span>
+  </button>`;
 }
 
 function renderLibrary() {
   const type = boostTypes.meditation;
-  const items = boostContent.filter((item) => selectedDuration === 'all' || item.durationMinutes === Number(selectedDuration));
-  return `<div class="wellness-boost-view" data-module="wellness-boost">
-    <section class="wellness-boost-hero" aria-labelledby="wellnessBoostTitle">
-      <p class="eyebrow">Wellness Boost</p>
-      <h2 id="wellnessBoostTitle">Choose a small reset that fits the moment</h2>
-      <p>Meditation is the first practice library. Future Wellness Boost types can live here without changing Progress or wellbeing history.</p>
+  return `<div class="wellness-boost-view" data-module="wellness-boost" aria-label="Wellness Boost">
+    <section class="wellness-boost-intro" aria-labelledby="wellnessBoostIntroTitle">
+      <h2 id="wellnessBoostIntroTitle">Take a few minutes for yourself.</h2>
     </section>
     <section class="os-section wellness-boost-type" aria-labelledby="wellnessBoostMeditationTitle">
-      <div class="os-section-head wellness-boost-library-head"><div><span class="section-kicker">Practice</span><h2 id="wellnessBoostMeditationTitle">${escapeHtml(type.label)}</h2><small>${escapeHtml(type.description)}</small></div>${renderDurationFilters()}</div>
-      <div class="wellness-boost-grid">${items.map(renderPracticeCard).join('')}</div>
+      <div class="os-section-head wellness-boost-library-head"><div><h2 id="wellnessBoostMeditationTitle">${escapeHtml(type.label)}</h2><small>${escapeHtml(type.description)}</small></div></div>
+      <div class="wellness-boost-grid">${boostContent.map(renderPracticeCard).join('')}</div>
     </section>
   </div>`;
 }
 
 function renderModePicker(item) {
   return `<div class="wellness-boost-mode-picker" role="group" aria-label="Playback style">
-    ${MODES.filter((mode) => item.availableModes.includes(mode.id)).map((mode) => `<button type="button" data-wb-mode="${mode.id}" aria-pressed="${mode.id === selectedMode}"><strong>${escapeHtml(mode.label)}</strong><span>${escapeHtml(mode.detail)}</span></button>`).join('')}
+    ${MODES.filter((mode) => item.availableModes.includes(mode.id)).map((mode) => `<button type="button" data-wb-mode="${mode.id}" aria-pressed="${mode.id === selectedMode}"><strong>${escapeHtml(mode.label)}</strong></button>`).join('')}
   </div>`;
 }
 
 function renderPlayer(item) {
-  return `<div class="wellness-boost-view wellness-boost-player-view" data-module="wellness-boost">
-    <button type="button" class="wellness-boost-back" data-wb-back>← Back to Meditation</button>
+  return `<div class="wellness-boost-view wellness-boost-player-view" data-module="wellness-boost" aria-label="Wellness Boost">
+    <button type="button" class="wellness-boost-back" data-wb-back>← Meditation</button>
     <section class="wellness-boost-player" aria-labelledby="wellnessBoostPlayerTitle">
-      <div class="wellness-boost-player-copy"><span class="wellness-boost-category">Meditation · ${escapeHtml(item.category)}</span><h2 id="wellnessBoostPlayerTitle">${escapeHtml(item.title)}</h2><p>${escapeHtml(item.description)}</p></div>
-      <span class="wellness-boost-duration wellness-boost-player-duration">${item.durationMinutes} min</span>
-      ${renderModePicker(item)}
-      <p class="wellness-boost-privacy">Guided voice uses your device’s built-in speech voice. Ambient sound is generated locally in your browser. No meditation recording is uploaded.</p>
-      <div class="wellness-boost-progress" aria-hidden="true"><span data-wb-progress></span></div>
-      <div class="wellness-boost-player-time" data-wb-time>${formatClock(0)} / ${formatClock(item.durationMinutes * 60)}</div>
-      <p class="wellness-boost-player-status" data-wb-status role="status" aria-live="polite">Ready when you are. Nothing here creates Progress or a streak.</p>
-      <div class="wellness-boost-player-controls">
-        <button type="button" class="gc-button gc-button--primary" data-wb-start>Start meditation</button>
-        <button type="button" class="gc-button gc-button--secondary" data-wb-toggle disabled>Pause</button>
-        <button type="button" class="gc-button gc-button--secondary" data-wb-end disabled>End</button>
+      <div class="wellness-boost-player-copy"><span class="wellness-boost-category">${escapeHtml(item.category)}</span><div class="wellness-boost-player-title"><h2 id="wellnessBoostPlayerTitle">${escapeHtml(item.title)}</h2><span class="wellness-boost-duration">${item.durationMinutes} min</span></div><p>${escapeHtml(item.description)}</p></div>
+
+      <div class="wellness-boost-prestart">
+        <h3>How would you like to listen?</h3>
+        ${renderModePicker(item)}
+        <button type="button" class="gc-button gc-button--primary wellness-boost-start" data-wb-start aria-label="Start meditation">Start</button>
+        <p class="wellness-boost-ready-status" data-wb-ready-status role="status" aria-live="polite">Ready when you are.</p>
+        <details class="wellness-boost-audio-note"><summary>About audio</summary><p>Guided uses your device’s built-in speech voice. Ambient sound is generated locally in your browser. No meditation recording is uploaded, and nothing here is added to Progress or Wellbeing.</p></details>
       </div>
-      <details class="wellness-boost-script"><summary>Read the guidance</summary><ol>${item.cues.map((cue) => `<li><span>${formatClock(cue.atSeconds)}</span><p>${escapeHtml(cue.text)}</p></li>`).join('')}</ol></details>
+
+      <div class="wellness-boost-active-player">
+        <div class="wellness-boost-player-time" data-wb-time>${formatClock(item.durationMinutes * 60)}</div>
+        <div class="wellness-boost-time-label">remaining</div>
+        <div class="wellness-boost-progress" data-wb-progress-track role="progressbar" aria-label="Meditation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span data-wb-progress></span></div>
+        <p class="wellness-boost-player-status" data-wb-status role="status" aria-live="polite">In progress.</p>
+        <div class="wellness-boost-player-controls">
+          <button type="button" class="gc-button gc-button--primary" data-wb-toggle disabled>Pause</button>
+          <button type="button" class="gc-button gc-button--secondary" data-wb-end disabled>End</button>
+        </div>
+      </div>
+
+      <details class="wellness-boost-script"><summary>Read guidance</summary><ol>${item.cues.map((cue) => `<li><span>${formatClock(cue.atSeconds)}</span><p>${escapeHtml(cue.text)}</p></li>`).join('')}</ol></details>
     </section>
   </div>`;
 }
@@ -274,12 +278,6 @@ function bindView({ root, rerender } = {}) {
   if (!root) return;
   const item = boostContent.find((entry) => entry.id === activePracticeId);
 
-  root.querySelectorAll('[data-wb-duration]').forEach((button) => {
-    button.addEventListener('click', () => {
-      selectedDuration = button.dataset.wbDuration === 'all' ? 'all' : Number(button.dataset.wbDuration);
-      void rerender?.();
-    });
-  });
   root.querySelectorAll('[data-wb-open]').forEach((button) => {
     button.addEventListener('click', () => {
       activePracticeId = button.dataset.wbOpen;
