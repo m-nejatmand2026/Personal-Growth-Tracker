@@ -27,3 +27,9 @@ jobs:
 
       - name: Run unit, contract and modularity boundary tests
         run: npm test
+
+      - name: Install pinned Worker integration-test runtime
+        run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4.123.0
+
+      - name: Run real Worker and isolated D1 integration tests
+        run: npm run test:integration
