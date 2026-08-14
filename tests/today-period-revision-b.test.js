@@ -31,7 +31,11 @@ test('Progress range aggregate is not capped by history-list limits and keeps le
   assert.match(progressData, /summarizeLegacyMinutesByActivityKey/);
   assert.match(progressData, /profileId !== 'default'/);
   assert.match(progressData, /GROUP BY activity_key/);
-  const aggregateSection = progressData.slice(progressData.indexOf('export async function summarizeProgressMinutesByGoal'), progressData.indexOf('/**\n * Legacy Beta compatibility.'));
+  const aggregateStart = progressData.indexOf('export async function summarizeProgressMinutesByGoal');
+  const aggregateEnd = progressData.indexOf('export async function listLegacySessions', aggregateStart);
+  assert.notEqual(aggregateStart, -1);
+  assert.notEqual(aggregateEnd, -1);
+  const aggregateSection = progressData.slice(aggregateStart, aggregateEnd);
   assert.doesNotMatch(aggregateSection, /LIMIT/);
   assert.match(progressPublic, /async sumMinutesByGoal/);
 });
