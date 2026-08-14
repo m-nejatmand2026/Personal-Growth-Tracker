@@ -11,6 +11,8 @@ Both stable Worker URLs must be protected with Cloudflare Access using the Worke
 - production: `personal-growth-tracker.m-nejatmand.workers.dev`
 - preview: `personal-growth-tracker-preview.m-nejatmand.workers.dev`
 
+`Previews only` is insufficient because it leaves the stable Worker URL public. The private-Beta perimeter requires **All traffic** for both Workers.
+
 For normal human use, the current Beta uses the Cloudflare account authentication policy. Account membership must remain restricted to trusted owner/admin identities.
 
 ## Preview CI service identity
