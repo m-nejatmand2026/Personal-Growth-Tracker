@@ -14,6 +14,7 @@ const data = await readFile(new URL('../worker/modules/progress/data.js', import
 const publicContract = await readFile(new URL('../worker/modules/progress/public.js', import.meta.url), 'utf8');
 const routes = await readFile(new URL('../worker/modules/progress/routes.js', import.meta.url), 'utf8');
 const activitiesPublic = await readFile(new URL('../worker/modules/activities/public.js', import.meta.url), 'utf8');
+const activitiesFrontend = await readFile(new URL('../public/js/modules/activities/module.js', import.meta.url), 'utf8');
 const logger = await readFile(new URL('../public/js/modules/logger/ui.js', import.meta.url), 'utf8');
 const legacySessionRoute = await readFile(new URL('../worker/routes/sessions.js', import.meta.url), 'utf8');
 const todayPublic = await readFile(new URL('../worker/modules/today/public.js', import.meta.url), 'utf8');
@@ -67,8 +68,13 @@ test('Progress API writes and deletes canonical factual records', () => {
   assert.doesNotMatch(routes, /\bINSERT\s+INTO\s+sessions\b/i);
 });
 
-test('Logger Done path uses canonical Activities and Progress APIs', () => {
-  assert.match(logger, /\/api\/v1\/activities/);
+test('Logger Done path consumes Activities capability and canonical Progress API', () => {
+  assert.match(app, /const activities = moduleRegistry\.get\('activities'\)/);
+  assert.match(app, /create\(\{ onSaved: load, activities \}\)/);
+  assert.match(logger, /activityCapability\?\.list/);
+  assert.match(logger, /activityCapability\.create/);
+  assert.doesNotMatch(logger, /\/api\/v1\/activities|\/api\/v1\/goals/);
+  assert.match(activitiesFrontend, /\/api\/v1\/activities/);
   assert.match(logger, /\/api\/v1\/progress/);
   assert.doesNotMatch(logger, /\/api\/session/);
   assert.doesNotMatch(logger, /Back, Abs, Push-ups|Speaking, Grammar, Vocabulary|Chords, Technique, Song practice/);
