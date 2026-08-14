@@ -21,10 +21,8 @@ export const goalsModule = Object.freeze({
   bind({ model, reload, dependencies }) {
     bindGoalsPanel(
       model,
-      {
-        reloadPlatform: reload,
-        areasCapability: dependencies?.areas || null
-      }
+      { reloadPlatform: reload },
+      { areasCapability: dependencies?.areas || null }
     );
   }
 });
