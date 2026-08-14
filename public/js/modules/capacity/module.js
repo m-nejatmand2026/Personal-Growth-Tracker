@@ -1,7 +1,9 @@
 import { api } from '../../core/api.js';
+import { formatMinutes } from '../../core/format.js';
 import {
   bindCapacityPanel,
   capacityPanelHtml,
+  capacityTimeFit,
   loadCapacityModel
 } from './ui.js';
 
@@ -25,19 +27,32 @@ export const capacityModule = Object.freeze({
   bind({ model, reload }) {
     bindCapacityPanel(model, { reloadPlatform: reload });
   },
+  timeFit(summary) {
+    return capacityTimeFit(summary);
+  },
   async loadToday({ date }) {
     const summary = await api(`/api/v1/capacity?date=${encodeURIComponent(date)}&period=day`);
-    const planLoad = summary.plan_load == null ? null : Number(summary.plan_load);
+    const fit = capacityTimeFit(summary);
+    const status = fit.overcommittedMinutes > 0
+      ? `${formatMinutes(fit.overcommittedMinutes)} beyond the time in this day`
+      : fit.overByMinutes > 0
+        ? `${formatMinutes(fit.overByMinutes)} more planned than available`
+        : `${formatMinutes(fit.remainingMinutes)} still flexible today`;
+    const description = fit.overcommittedMinutes > 0
+      ? 'Recurring commitments exceed the total time in this day. Capacity is physical time math, not a productivity score.'
+      : fit.overByMinutes > 0
+        ? `${formatMinutes(fit.plannedMinutes)} planned from ${formatMinutes(fit.availableMinutes)} available after recurring commitments.`
+        : `${formatMinutes(fit.plannedMinutes)} planned from ${formatMinutes(fit.availableMinutes)} available after recurring commitments.`;
+
     return Object.freeze({
       id: 'capacity.today',
-      title: 'Time reality',
-      status: planLoad == null ? 'Plan load unavailable' : `${Math.round(planLoad * 100)}% of flexible time planned`,
-      description: 'Capacity is physical time math, not a productivity score.',
+      title: 'Time today',
+      status,
+      description,
       metrics: Object.freeze([
-        Object.freeze({ label: 'Total day', minutes: Number(summary.total_minutes || 0) }),
-        Object.freeze({ label: 'Committed', minutes: Number(summary.committed_minutes || 0) }),
-        Object.freeze({ label: 'Flexible', minutes: Number(summary.flexible_minutes || 0) }),
-        Object.freeze({ label: 'Goal plan', minutes: Number(summary.planned_goal_minutes || 0) })
+        Object.freeze({ label: 'Available', minutes: fit.availableMinutes }),
+        Object.freeze({ label: 'Planned', minutes: fit.plannedMinutes }),
+        Object.freeze({ label: fit.overByMinutes > 0 ? 'Over by' : 'Still flexible', minutes: fit.overByMinutes || fit.remainingMinutes })
       ])
     });
   }
