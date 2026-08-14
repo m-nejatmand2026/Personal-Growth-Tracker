@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/css/plan.css" />
   <link rel="stylesheet" href="/css/experience.css" />
   <link rel="stylesheet" href="/css/design-system.css" />
+  <link rel="stylesheet" href="/css/navigation-shell.css" />
   <link rel="stylesheet" href="/css/module-sheets.css" />
   <link rel="stylesheet" href="/css/daily-plan.css" />
   <link rel="stylesheet" href="/css/journal.css" />
@@ -26,21 +27,21 @@
     <aside class="app-rail" aria-label="Growth Compass navigation">
       <div class="rail-brand"><span class="brand-mark" aria-hidden="true">GC</span><div><strong>Growth Compass</strong><small>Personal development OS</small></div></div>
       <nav class="rail-nav" aria-label="Primary navigation">
-        <button data-view="today" class="rail-nav-btn active"><span aria-hidden="true">⌂</span><b>Today</b></button>
-        <button data-view="plan" class="rail-nav-btn"><span aria-hidden="true">◎</span><b>Plan</b></button>
-        <button data-view="progress" class="rail-nav-btn"><span aria-hidden="true">↗</span><b>Progress</b></button>
-        <button data-view="insights" class="rail-nav-btn"><span aria-hidden="true">✦</span><b>Insights</b></button>
+        <button type="button" data-view="today" class="rail-nav-btn active" aria-current="page"><span aria-hidden="true">⌂</span><b>Today</b></button>
+        <button type="button" data-view="plan" class="rail-nav-btn"><span aria-hidden="true">◎</span><b>Plan</b></button>
+        <button type="button" data-view="progress" class="rail-nav-btn"><span aria-hidden="true">↗</span><b>Progress</b></button>
+        <button type="button" data-view="insights" class="rail-nav-btn"><span aria-hidden="true">✦</span><b>Insights</b></button>
       </nav>
       <button id="journalRailBtn" class="rail-secondary" type="button"><span aria-hidden="true">✎</span> Journal</button>
-      <button class="rail-log-btn" type="button" data-open-logger><span>＋</span> Log progress</button>
+      <button class="rail-log-btn" type="button" data-open-logger><span aria-hidden="true">＋</span> Log progress</button>
       <button id="settingsRailBtn" class="rail-settings" type="button"><span aria-hidden="true">⚙</span> Settings</button>
     </aside>
     <div class="workspace">
-      <header class="topbar"><div class="topbar-title"><span class="mobile-brand-mark" aria-hidden="true">GC</span><div><p class="eyebrow">Growth Compass</p><h1 id="pageTitle">Today</h1></div></div><div class="top-actions"><button id="journalBtn" class="top-journal-btn" type="button" aria-label="Open journal" title="Journal">✎</button><button class="top-log-btn" type="button" data-open-logger aria-label="Log progress">＋ <span>Log</span></button><button id="settingsBtn" class="icon-btn" aria-label="Open settings" title="Settings">⚙</button></div></header>
+      <header class="topbar"><div class="topbar-title"><span class="mobile-brand-mark" aria-hidden="true">GC</span><div><p class="eyebrow">Growth Compass</p><h1 id="pageTitle">Today</h1></div></div><div class="top-actions"><button id="journalBtn" class="top-journal-btn" type="button" aria-label="Open journal" title="Journal">✎</button><button class="top-log-btn" type="button" data-open-logger aria-label="Log progress">＋ <span>Log</span></button><button id="settingsBtn" class="icon-btn" type="button" aria-label="Open settings" title="Settings">⚙</button></div></header>
       <section id="todayView" class="view active"></section><section id="planView" class="view"></section><section id="progressView" class="view"></section><section id="insightsView" class="view"></section><section id="journalView" class="view"></section><section id="settingsView" class="view"></section>
     </div>
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button data-view="today" class="nav-btn active"><span>⌂</span>Today</button><button data-view="plan" class="nav-btn"><span>◎</span>Plan</button><button id="quickAddBtn" class="nav-btn nav-add" type="button" data-open-logger aria-label="Log progress"><span>＋</span><b>Log</b></button><button data-view="progress" class="nav-btn"><span>↗</span>Progress</button><button data-view="insights" class="nav-btn"><span>✦</span>Insights</button>
+      <button type="button" data-view="today" class="nav-btn active" aria-current="page"><span aria-hidden="true">⌂</span>Today</button><button type="button" data-view="plan" class="nav-btn"><span aria-hidden="true">◎</span>Plan</button><button id="quickAddBtn" class="nav-btn nav-add" type="button" data-open-logger aria-label="Log progress"><span aria-hidden="true">＋</span><b>Log</b></button><button type="button" data-view="progress" class="nav-btn"><span aria-hidden="true">↗</span>Progress</button><button type="button" data-view="insights" class="nav-btn"><span aria-hidden="true">✦</span>Insights</button>
     </nav>
   </main>
   <div id="loggerHost"></div><div id="dailyPlanHost"></div><div id="journalHost"></div><div id="installAppHost"></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
