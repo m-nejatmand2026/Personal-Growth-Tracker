@@ -40,7 +40,7 @@ test('major first-class views share the same calm header contract', () => {
   assert.match(progress, /progress-dashboard gc-page-header gc-page-header--with-stats/);
   assert.match(insights, /insights-hero gc-page-header gc-page-header--aside/);
   assert.match(framework, /\.journal-hero\{display:grid/);
-  assert.match(journal, /class="journal-hero"/);
+  assert.match(journal, /class="journal-hero journal-action-hero"/);
 });
 
 test('Revision C makes primary first-class introductions action-first and concise', () => {
