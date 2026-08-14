@@ -18,8 +18,7 @@ rm -rf "$STATE_DIR"
 
 ./node_modules/.bin/wrangler d1 migrations apply DB \
   --local \
-  --persist-to "$STATE_DIR" \
-  --yes
+  --persist-to "$STATE_DIR"
 
 ./node_modules/.bin/wrangler dev \
   --persist-to "$STATE_DIR" \
