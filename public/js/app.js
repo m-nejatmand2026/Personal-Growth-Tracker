@@ -124,8 +124,13 @@ async function renderCurrentView() {
   }
 }
 
+function closeTopMore() {
+  $('#topMore')?.removeAttribute('open');
+}
+
 async function showView(name) {
   if (!viewTitles[name]) return;
+  closeTopMore();
   if (state.view === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
   state.view = name;
   if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
@@ -162,5 +167,10 @@ $('#settingsRailBtn')?.addEventListener('click', toggleSettings);
 $('#journalBtn')?.addEventListener('click', () => void showView('journal'));
 $('#journalRailBtn')?.addEventListener('click', () => void showView('journal'));
 $('#insightsBtn')?.addEventListener('click', () => void showView('insights'));
+
+document.addEventListener('click', (event) => {
+  const more = $('#topMore');
+  if (more?.open && !more.contains(event.target)) more.removeAttribute('open');
+});
 
 void load();
