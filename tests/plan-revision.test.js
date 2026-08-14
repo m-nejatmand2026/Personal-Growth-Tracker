@@ -4,8 +4,11 @@ import { readFile } from 'node:fs/promises';
 
 const planJs = await readFile(new URL('../public/js/features/plan.js', import.meta.url), 'utf8');
 const goalsUi = await readFile(new URL('../public/js/modules/goals/ui.js', import.meta.url), 'utf8');
+const goalsModule = await readFile(new URL('../public/js/modules/goals/module.js', import.meta.url), 'utf8');
+const capacityModule = await readFile(new URL('../public/js/modules/capacity/module.js', import.meta.url), 'utf8');
 const planCss = await readFile(new URL('../public/css/plan-revision.css', import.meta.url), 'utf8');
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+const planExperience = `${planJs}\n${goalsModule}\n${capacityModule}`;
 
 test('Revision A Plan exposes Goals Capacity Schedule Compass in that order', () => {
   const goals = planJs.indexOf('<b>Goals</b>');
@@ -42,13 +45,16 @@ test('Goal creation uses human questions before optional expert controls', () =>
   }
 });
 
-test('Plan overview uses concrete available planned and still-flexible time language', () => {
-  assert.match(planJs, /Available this week/);
-  assert.match(planJs, /Planned this week/);
-  assert.match(planJs, /Still flexible/);
-  assert.match(planJs, /after recurring commitments/);
-  assert.match(planJs, /Plan over by/);
-  assert.match(planJs, /Schedule over by/);
+test('Plan overview uses module-owned concrete available planned and still-flexible time language', () => {
+  assert.match(planExperience, /Available this week/);
+  assert.match(planExperience, /Planned this week/);
+  assert.match(planExperience, /Still flexible/);
+  assert.match(planExperience, /after recurring commitments/);
+  assert.match(planExperience, /Plan over by/);
+  assert.match(planExperience, /Schedule over by/);
+  assert.match(planJs, /module\.planSummary/);
+  assert.match(planJs, /dependencyModelsFor/);
+  assert.doesNotMatch(planJs, /models\.areas|models\.goals|models\.capacity/);
   assert.doesNotMatch(planJs, /Spacious|Balanced|Very full|How full\?|Current plan/i);
   assert.doesNotMatch(planJs, /productivity score|performance score/i);
 });
@@ -69,4 +75,5 @@ test('Plan shell remains composition only and does not absorb module API calls',
   assert.match(planJs, /createFrontendModuleRegistry/);
   assert.match(planJs, /module\.load/);
   assert.match(planJs, /module\.render/);
+  assert.match(planJs, /module\.planSummary/);
 });

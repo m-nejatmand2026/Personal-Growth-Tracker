@@ -16,6 +16,37 @@ function routeKey(route) {
   return `${route.method.toUpperCase()} ${pattern}`;
 }
 
+function routeMatches(route, path) {
+  return typeof route.pattern === 'string'
+    ? route.pattern === path
+    : route.pattern.test(path);
+}
+
+function concreteStringOverlap(left, right) {
+  if (
+    String(left.method).toUpperCase()
+    !== String(right.method).toUpperCase()
+  ) {
+    return false;
+  }
+
+  if (
+    typeof left.pattern === 'string'
+    && typeof right.pattern !== 'string'
+  ) {
+    return routeMatches(right, left.pattern);
+  }
+
+  if (
+    typeof right.pattern === 'string'
+    && typeof left.pattern !== 'string'
+  ) {
+    return routeMatches(left, right.pattern);
+  }
+
+  return false;
+}
+
 function assertUniqueStrings(values, label, pattern) {
   const seen = new Set();
 
@@ -198,6 +229,7 @@ export function createModuleRegistry(modules) {
 
   const modulesById = new Map();
   const routeOwners = new Map();
+  const registeredRoutes = [];
   const tableOwners = new Map();
   const publishedEventOwners = new Map();
 
@@ -234,7 +266,17 @@ export function createModuleRegistry(modules) {
         );
       }
 
+      for (const existing of registeredRoutes) {
+        if (concreteStringOverlap(existing.route, route)) {
+          throw new Error(
+            `Overlapping route registration: ${routeKey(existing.route)} (${existing.moduleId}) `
+            + `overlaps ${routeKey(route)} (${module.id}).`
+          );
+        }
+      }
+
       routeOwners.set(key, module.id);
+      registeredRoutes.push({ moduleId: module.id, route });
     }
 
     for (const table of module.ownsTables) {
@@ -376,6 +418,8 @@ export function createModuleRegistry(modules) {
         )
       );
 
+      const matches = [];
+
       for (const module of ordered) {
         if (!enabledIds.has(module.id)) {
           continue;
@@ -389,21 +433,25 @@ export function createModuleRegistry(modules) {
             continue;
           }
 
-          const matches =
-            typeof route.pattern === 'string'
-              ? route.pattern === path
-              : route.pattern.test(path);
-
-          if (matches) {
-            return {
+          if (routeMatches(route, path)) {
+            matches.push({
               module,
               route
-            };
+            });
           }
         }
       }
 
-      return null;
+      if (matches.length > 1) {
+        throw new Error(
+          `Ambiguous route match for ${normalizedMethod} ${path}: `
+          + matches.map(
+            ({ module, route }) => `${module.id} [${routeKey(route)}]`
+          ).join(', ')
+        );
+      }
+
+      return matches[0] || null;
     }
   });
 }

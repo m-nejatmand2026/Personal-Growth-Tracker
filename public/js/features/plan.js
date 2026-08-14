@@ -1,5 +1,4 @@
-import { $ } from '../core/dom.js';
-import { formatMinutes } from '../core/format.js';
+import { $, escapeHtml } from '../core/dom.js';
 import { state } from '../core/state.js';
 import { createFrontendModuleRegistry } from '../platform/module-registry.js';
 import { frontendModules } from '../modules/catalog.js';
@@ -20,25 +19,53 @@ function dependenciesFor(module) {
   ));
 }
 
+function dependencyModelsFor(module, results) {
+  return Object.freeze(Object.fromEntries(
+    module.dependsOn
+      .filter((id) => results[id]?.status === 'ready')
+      .map((id) => [id, results[id].model])
+  ));
+}
+
 function moduleErrorHtml(module, message) {
   return `<section class="plan-module-block" data-module="${module.id}"><div class="card module-error"><div class="section-head"><div><h2>This section is temporarily unavailable</h2><p>${message}</p></div></div><p class="small muted">The rest of your Plan is still available.</p></div></section>`;
 }
 
-function timeFitCard(fit) {
-  if (!fit) return '<div><span>Still flexible</span><strong>—</strong><small>time fit unavailable</small></div>';
-  if (fit.overcommittedMinutes > 0) {
-    return `<div><span>Schedule over by</span><strong>${formatMinutes(fit.overcommittedMinutes)}</strong><small>recurring commitments exceed total time</small></div>`;
+function planSummaryItems(enabled, results) {
+  const items = [];
+  for (const module of enabled) {
+    const result = results[module.id];
+    if (result?.status !== 'ready' || typeof module.planSummary !== 'function') continue;
+    try {
+      const contribution = module.planSummary({
+        model: result.model,
+        models: dependencyModelsFor(module, results),
+        date: state.date,
+        dependencies: dependenciesFor(module)
+      });
+      const list = Array.isArray(contribution) ? contribution : [contribution];
+      for (const item of list) {
+        if (!item || typeof item !== 'object') continue;
+        items.push({
+          moduleId: module.id,
+          id: String(item.id || `${module.id}.${items.length}`),
+          order: Number.isFinite(Number(item.order)) ? Number(item.order) : 100,
+          label: item.label ?? '',
+          value: item.value ?? '—',
+          detail: item.detail ?? ''
+        });
+      }
+    } catch (error) {
+      console.error(`Failed to summarize module ${module.id}`, error);
+    }
   }
-  if (fit.overByMinutes > 0) {
-    return `<div><span>Plan over by</span><strong>${formatMinutes(fit.overByMinutes)}</strong><small>planned goal time exceeds available time</small></div>`;
-  }
-  return `<div><span>Still flexible</span><strong>${formatMinutes(fit.remainingMinutes)}</strong><small>not currently assigned to goal time</small></div>`;
+  return items.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
 
-function planOverview(models) {
-  const areas = models.areas?.areas || [];
-  const goals = (models.goals?.goals || []).filter((goal) => goal.status !== 'archived');
-  const fit = models.capacity?.timeFit?.week || null;
+function planOverview(enabled, results) {
+  const cards = planSummaryItems(enabled, results)
+    .map((item) => `<div data-summary-module="${escapeHtml(item.moduleId)}" data-summary-id="${escapeHtml(item.id)}"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong><small>${escapeHtml(item.detail)}</small></div>`)
+    .join('');
 
   return `<section class="plan-overview gc-page-header gc-page-header--with-stats">
     <div class="plan-overview-copy">
@@ -46,12 +73,7 @@ function planOverview(models) {
       <h2>Plan around the life you have</h2>
       <p>Set direction, then fit it to your time.</p>
     </div>
-    <div class="plan-overview-grid gc-stat-grid">
-      <div><span>Active goals</span><strong>${goals.length}</strong><small>${areas.length} life areas</small></div>
-      <div><span>Available this week</span><strong>${fit ? formatMinutes(fit.availableMinutes) : '—'}</strong><small>after recurring commitments</small></div>
-      <div><span>Planned this week</span><strong>${fit ? formatMinutes(fit.plannedMinutes) : '—'}</strong><small>goal time currently planned</small></div>
-      ${timeFitCard(fit)}
-    </div>
+    <div class="plan-overview-grid gc-stat-grid">${cards}</div>
   </section>`;
 }
 
@@ -81,28 +103,30 @@ export async function renderPlan({ reload }) {
     }
 
     try {
-      const models = Object.fromEntries(Object.entries(results)
-        .filter(([, result]) => result.status === 'ready')
-        .map(([id, result]) => [id, result.model]));
       results[module.id] = {
         status: 'ready',
-        model: await module.load({ date: state.date, models, dependencies: dependenciesFor(module) })
+        model: await module.load({
+          date: state.date,
+          models: dependencyModelsFor(module, results),
+          dependencies: dependenciesFor(module)
+        })
       };
     } catch (error) {
       results[module.id] = { status: 'failed', error: error?.message || 'Could not load this section.' };
     }
   }
 
-  const models = Object.fromEntries(Object.entries(results)
-    .filter(([, result]) => result.status === 'ready')
-    .map(([id, result]) => [id, result.model]));
-
   const planModules = [...enabled].sort((a, b) => slotOrder(a, 'plan') - slotOrder(b, 'plan'));
   const panels = planModules.map((module) => {
     const result = results[module.id];
     if (!result || result.status !== 'ready') return moduleErrorHtml(module, result?.error || 'Section unavailable.');
     try {
-      return `<section class="plan-module-block" id="plan-module-${module.id}" data-module="${module.id}">${module.render({ model: result.model, models, date: state.date, dependencies: dependenciesFor(module) })}</section>`;
+      return `<section class="plan-module-block" id="plan-module-${module.id}" data-module="${module.id}">${module.render({
+        model: result.model,
+        models: dependencyModelsFor(module, results),
+        date: state.date,
+        dependencies: dependenciesFor(module)
+      })}</section>`;
     } catch (error) {
       results[module.id] = { status: 'failed', error: error?.message || 'Could not display this section.' };
       return moduleErrorHtml(module, results[module.id].error);
@@ -110,7 +134,7 @@ export async function renderPlan({ reload }) {
   }).join('');
 
   root.innerHTML = `
-    ${planOverview(models)}
+    ${planOverview(enabled, results)}
     ${planNavigation()}
     <div class="plan-module-stack">${panels}</div>
     <section id="compassSection" class="compass-section">
@@ -131,7 +155,7 @@ export async function renderPlan({ reload }) {
     try {
       module.bind({
         model: result.model,
-        models,
+        models: dependencyModelsFor(module, results),
         date: state.date,
         reload: reloadPlatform,
         dependencies: dependenciesFor(module)

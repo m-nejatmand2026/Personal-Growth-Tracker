@@ -7,6 +7,39 @@ import {
   loadCapacityModel
 } from './ui.js';
 
+function planSummary(model) {
+  const fit = model?.timeFit?.week || null;
+  const status = !fit
+    ? { label: 'Still flexible', value: '—', detail: 'time fit unavailable' }
+    : fit.overcommittedMinutes > 0
+      ? { label: 'Schedule over by', value: formatMinutes(fit.overcommittedMinutes), detail: 'recurring commitments exceed total time' }
+      : fit.overByMinutes > 0
+        ? { label: 'Plan over by', value: formatMinutes(fit.overByMinutes), detail: 'planned goal time exceeds available time' }
+        : { label: 'Still flexible', value: formatMinutes(fit.remainingMinutes), detail: 'not currently assigned to goal time' };
+
+  return Object.freeze([
+    Object.freeze({
+      id: 'capacity.available-week',
+      order: 20,
+      label: 'Available this week',
+      value: fit ? formatMinutes(fit.availableMinutes) : '—',
+      detail: 'after recurring commitments'
+    }),
+    Object.freeze({
+      id: 'capacity.planned-week',
+      order: 30,
+      label: 'Planned this week',
+      value: fit ? formatMinutes(fit.plannedMinutes) : '—',
+      detail: 'goal time currently planned'
+    }),
+    Object.freeze({
+      id: 'capacity.time-fit-week',
+      order: 40,
+      ...status
+    })
+  ]);
+}
+
 export const capacityModule = Object.freeze({
   id: 'capacity',
   contractVersion: 1,
@@ -20,6 +53,9 @@ export const capacityModule = Object.freeze({
   ]),
   async load({ date }) {
     return loadCapacityModel(date);
+  },
+  planSummary({ model }) {
+    return planSummary(model);
   },
   render({ model }) {
     return capacityPanelHtml(model);
