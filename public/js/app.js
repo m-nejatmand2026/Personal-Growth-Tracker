@@ -94,7 +94,12 @@ async function showView(name) {
   if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
   $$('.view').forEach((view) => view.classList.remove('active'));
   $(`#${name}View`)?.classList.add('active');
-  $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
+  $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => {
+    const isCurrent = button.dataset.view === name;
+    button.classList.toggle('active', isCurrent);
+    if (isCurrent) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
   $('#journalBtn')?.classList.toggle('active', name === 'journal');
   $('#journalRailBtn')?.classList.toggle('active', name === 'journal');
   $('#pageTitle').textContent = viewTitles[name];
