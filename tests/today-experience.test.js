@@ -54,11 +54,17 @@ test('targetless direction shows Actual without inventing zero guidance', () => 
   assert.deepEqual(model.cards[0].metrics, [{ label: 'Actual', minutes: 30 }]);
 });
 
-test('Today capacity describes physical time rather than productivity performance', () => {
-  assert.match(capacityJs, /Time reality/);
-  assert.match(capacityJs, /of flexible time planned/);
+test('Today Capacity uses concrete available planned and flexible time', () => {
+  assert.match(capacityJs, /title: 'Time today'/);
+  assert.match(capacityJs, /still flexible today/);
+  assert.match(capacityJs, /more planned than available/);
+  assert.match(capacityJs, /label: 'Available'/);
+  assert.match(capacityJs, /label: 'Planned'/);
+  assert.match(capacityJs, /'Still flexible'/);
   assert.match(capacityJs, /physical time math, not a productivity score/i);
+  assert.doesNotMatch(capacityJs, /Plan load unavailable|of flexible time planned|Goal plan|Total day/);
   assert.match(capacityCss, /time-reality-card/);
+  assert.match(capacityCss, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
 });
 
 test('Wellbeing owns visible Daily State and accessible progressive Energy selection', () => {
