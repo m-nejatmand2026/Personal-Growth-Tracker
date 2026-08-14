@@ -56,9 +56,16 @@ test('Insights distinguishes unavailable evidence from an honest empty sample', 
   assert.match(insightsJs, /let evidenceAvailable = true/);
   assert.match(insightsJs, /evidenceAvailable = false/);
   assert.match(insightsJs, /if \(!evidenceAvailable\)/);
-  assert.match(insightsJs, /Evidence is unavailable/);
-  assert.match(insightsJs, /No summaries were generated\. Try again later\./);
-  assert.doesNotMatch(insightsJs, /Evidence is unavailable[\s\S]*tracked days/);
+  const unavailableStart = insightsJs.indexOf('function unavailableHtml()');
+  const renderStart = insightsJs.indexOf('export async function renderInsights()');
+  assert.ok(unavailableStart >= 0 && renderStart > unavailableStart);
+  const unavailableBlock = insightsJs.slice(unavailableStart, renderStart);
+  assert.match(unavailableBlock, /Evidence is unavailable/);
+  assert.match(unavailableBlock, /No summaries were generated\. Try again later\./);
+  assert.doesNotMatch(unavailableBlock, /tracked days|readinessPct|Still learning/);
+  const failureGuard = insightsJs.indexOf('if (!evidenceAvailable)');
+  const trackedDays = insightsJs.indexOf('const trackedDays');
+  assert.ok(failureGuard >= 0 && failureGuard < trackedDays, 'failure state must return before evidence-count rendering');
 });
 
 test('Progress and Insights presentation remains module-owned and responsive', () => {
