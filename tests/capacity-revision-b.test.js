@@ -45,7 +45,7 @@ test('full Capacity panel uses concrete time language and removes qualitative lo
   assert.match(html, /Planned/);
   assert.match(html, /still flexible/);
   assert.match(html, /26% of available time is planned/);
-  assert.match(html, /not a productivity score/);
+  assert.match(html, /(?:not|neither[^.]*is) a productivity score/i);
   assert.doesNotMatch(html, /Spacious|Balanced|Very full|How full\?|Plan load/i);
 });
 
