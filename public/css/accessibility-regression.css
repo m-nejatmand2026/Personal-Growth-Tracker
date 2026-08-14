@@ -1,0 +1,50 @@
+/* Final cross-cutting acceptance safeguards. Business presentation remains module-owned. */
+html,
+body {
+  max-inline-size: 100%;
+  overflow-x: clip;
+}
+
+body.gc-modal-open {
+  overflow: hidden;
+}
+
+:where(.shell, .workspace, .view, .os-section, .card, .plan-module-block, .plan-module-stack, .today-command, .today-composition, .progress-dashboard, .insights-hero) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+:where(img, svg, canvas, video) {
+  max-inline-size: 100%;
+  height: auto;
+}
+
+:where(button, input, select, textarea) {
+  max-inline-size: 100%;
+}
+
+:where(h1, h2, h3, p, strong, small, label, .manage-main, .progress-history-row) {
+  overflow-wrap: anywhere;
+}
+
+[role="dialog"] {
+  max-inline-size: calc(100vw - 2 * var(--gc-space-3));
+  max-block-size: calc(100dvh - 2 * var(--gc-space-3));
+}
+
+@media (max-width: 375px) {
+  :where(.workspace, .view, .plan-overview-grid, .progress-stat-grid, .insight-summary-grid, .today-composition) {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  :where(.plan-section-nav, .logger-mode-grid, .amt-values) > * {
+    min-inline-size: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+}
