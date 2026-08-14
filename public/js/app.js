@@ -117,10 +117,10 @@ async function showView(name) {
   });
   $('#journalBtn')?.classList.toggle('active', name === 'journal');
   $('#journalRailBtn')?.classList.toggle('active', name === 'journal');
-  const wellnessButton = $('#wellnessBoostBtn');
-  wellnessButton?.classList.toggle('active', name === 'wellness-boost');
-  if (name === 'wellness-boost') wellnessButton?.setAttribute('aria-current', 'page');
-  else wellnessButton?.removeAttribute('aria-current');
+  const insightsButton = $('#insightsBtn');
+  insightsButton?.classList.toggle('active', name === 'insights');
+  if (name === 'insights') insightsButton?.setAttribute('aria-current', 'page');
+  else insightsButton?.removeAttribute('aria-current');
   $('#pageTitle').textContent = viewTitles[name];
   await renderCurrentView();
 }
@@ -135,6 +135,6 @@ $('#settingsBtn')?.addEventListener('click', toggleSettings);
 $('#settingsRailBtn')?.addEventListener('click', toggleSettings);
 $('#journalBtn')?.addEventListener('click', () => void showView('journal'));
 $('#journalRailBtn')?.addEventListener('click', () => void showView('journal'));
-$('#wellnessBoostBtn')?.addEventListener('click', () => void showView('wellness-boost'));
+$('#insightsBtn')?.addEventListener('click', () => void showView('insights'));
 
 void load();
