@@ -100,7 +100,7 @@ function populateGoalEditor(goal) {
   $('#goalName').focus();
 }
 
-export function bindGoalsPanel(model, { reloadPlatform, areasCapability = null }) {
+export function bindGoalsPanel(model, { reloadPlatform }, { areasCapability = null } = {}) {
   $$('[data-edit-goal]').forEach((button) => button.addEventListener('click', () => {
     const goal = model.goals.find((item) => item.id === Number(button.dataset.editGoal));
     if (goal) populateGoalEditor(goal);
