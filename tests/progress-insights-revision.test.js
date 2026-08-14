@@ -55,9 +55,10 @@ test('Insights keeps evidence thresholds sample size and association-only langua
 test('Insights distinguishes unavailable evidence from an honest empty sample', () => {
   assert.match(insightsJs, /let evidenceAvailable = true/);
   assert.match(insightsJs, /evidenceAvailable = false/);
-  assert.match(insightsJs, /Evidence is temporarily unavailable/);
-  assert.match(insightsJs, /could not read both Progress and Wellbeing evidence/);
-  assert.match(insightsJs, /so no summaries or relationships were generated/);
+  assert.match(insightsJs, /if \(!evidenceAvailable\)/);
+  assert.match(insightsJs, /Evidence is unavailable/);
+  assert.match(insightsJs, /No summaries were generated\. Try again later\./);
+  assert.doesNotMatch(insightsJs, /Evidence is unavailable[\s\S]*tracked days/);
 });
 
 test('Progress and Insights presentation remains module-owned and responsive', () => {
