@@ -1,4 +1,4 @@
-import { $, $$ } from './core/dom.js';
+import { $, $$, escapeHtml } from './core/dom.js';
 import { state } from './core/state.js';
 import { renderPlan } from './features/plan.js';
 import { renderSettings } from './features/settings.js';
@@ -40,7 +40,8 @@ async function renderTodayView() {
       dailyPlanModel = await dailyPlan.load({ date: state.date });
       dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date });
     } catch (error) {
-      dailyPlanPanel = `<section class="os-section daily-plan-section"><div class="daily-plan-empty"><strong>Short-term planning is temporarily unavailable.</strong><span>${error?.message || 'Other parts of Today still work.'}</span></div></section>`;
+      const message = escapeHtml(error?.message || 'Other parts of Today still work.');
+      dailyPlanPanel = `<section class="os-section daily-plan-section"><div class="daily-plan-empty"><strong>Short-term planning is temporarily unavailable.</strong><span>${message}</span></div></section>`;
     }
   }
 
@@ -67,7 +68,8 @@ async function renderJournalView(overrides = null) {
     root.innerHTML = journal.renderView({ model });
     journal.bindView({ model, rerender: async (next) => { if (next) journalFilters = { ...journalFilters, ...next }; await renderJournalView(); } });
   } catch (error) {
-    root.innerHTML = `<section class="os-section"><div class="empty">${error?.message || 'Could not load journal.'}</div></section>`;
+    const message = escapeHtml(error?.message || 'Could not load journal.');
+    root.innerHTML = `<section class="os-section"><div class="empty">${message}</div></section>`;
   }
 }
 
@@ -79,27 +81,34 @@ function renderWellnessBoostView() {
 }
 
 async function renderCurrentView() {
-  if (state.view === 'today') await renderTodayView();
-  if (state.view === 'plan') await renderPlan({ reload: load });
-  if (state.view === 'progress') {
-    if (progress) {
-      const summary = today
-        ? await today.loadSummary({ date: state.date })
-        : null;
-      await progress.render({
-        reload: load,
-        weeklyDirection: summary?.weeklyDirection || []
-      });
+  const root = $(`#${state.view}View`);
+  root?.setAttribute('aria-busy', 'true');
+
+  try {
+    if (state.view === 'today') await renderTodayView();
+    if (state.view === 'plan') await renderPlan({ reload: load });
+    if (state.view === 'progress') {
+      if (progress) {
+        const summary = today
+          ? await today.loadSummary({ date: state.date })
+          : null;
+        await progress.render({
+          reload: load,
+          weeklyDirection: summary?.weeklyDirection || []
+        });
+      }
+      else if (root) root.innerHTML = '<div class="empty">Progress is unavailable.</div>';
     }
-    else { const root = $('#progressView'); if (root) root.innerHTML = '<div class="empty">Progress is unavailable.</div>'; }
+    if (state.view === 'insights') {
+      if (insights) await insights.render();
+      else if (root) root.innerHTML = '<div class="empty">Insights are unavailable.</div>';
+    }
+    if (state.view === 'wellness-boost') renderWellnessBoostView();
+    if (state.view === 'journal') await renderJournalView();
+    if (state.view === 'settings') renderSettings({ reload: load });
+  } finally {
+    root?.removeAttribute('aria-busy');
   }
-  if (state.view === 'insights') {
-    if (insights) await insights.render();
-    else { const root = $('#insightsView'); if (root) root.innerHTML = '<div class="empty">Insights are unavailable.</div>'; }
-  }
-  if (state.view === 'wellness-boost') renderWellnessBoostView();
-  if (state.view === 'journal') await renderJournalView();
-  if (state.view === 'settings') renderSettings({ reload: load });
 }
 
 async function showView(name) {
@@ -107,8 +116,11 @@ async function showView(name) {
   if (state.view === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
   state.view = name;
   if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
-  $$('.view').forEach((view) => view.classList.remove('active'));
-  $(`#${name}View`)?.classList.add('active');
+  $$('.view').forEach((view) => {
+    const isCurrent = view.id === `${name}View`;
+    view.classList.toggle('active', isCurrent);
+    view.hidden = !isCurrent;
+  });
   $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => {
     const isCurrent = button.dataset.view === name;
     button.classList.toggle('active', isCurrent);
@@ -122,6 +134,7 @@ async function showView(name) {
   if (name === 'insights') insightsButton?.setAttribute('aria-current', 'page');
   else insightsButton?.removeAttribute('aria-current');
   $('#pageTitle').textContent = viewTitles[name];
+  document.title = `${viewTitles[name]} — Growth Compass`;
   await renderCurrentView();
 }
 
