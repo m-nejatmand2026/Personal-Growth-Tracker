@@ -38,4 +38,15 @@ jobs:
         run: ./node_modules/.bin/playwright install --with-deps chromium webkit
 
       - name: Run local Worker browser acceptance gate
+        env:
+          GC_E2E_SCREENSHOT_DIR: .artifacts/ui
         run: bash scripts/run-browser-e2e.sh
+
+      - name: Upload Revision C visual evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: revision-c-ui-${{ github.event.pull_request.head.sha || github.sha }}
+          path: .artifacts/ui
+          if-no-files-found: ignore
+          retention-days: 7
