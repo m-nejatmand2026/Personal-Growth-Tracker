@@ -72,24 +72,30 @@ test('automatic preview deployment never applies migrations and every Wrangler d
   assert.doesNotMatch(deployCommands[1], /--dry-run/);
 });
 
-test('Cloudflare credentials remain secret-backed and UI plus API are smoke tested after deployment', () => {
+test('Cloudflare deployment credentials remain secret-backed', () => {
   assert.match(workflow, /secrets\.CLOUDFLARE_API_TOKEN/);
   assert.match(workflow, /secrets\.CLOUDFLARE_ACCOUNT_ID/);
   assert.match(workflow, /Missing CLOUDFLARE_API_TOKEN repository secret/);
   assert.match(workflow, /Missing CLOUDFLARE_ACCOUNT_ID repository secret/);
-  assert.match(workflow, /https:\/\/personal-growth-tracker-preview\.m-nejatmand\.workers\.dev/);
-  assert.match(workflow, /grep -F 'Growth Compass'/);
-  assert.match(workflow, /\/api\/v1\/areas/);
 });
 
-test('preview smoke test can authenticate through Cloudflare Access and proves anonymous data access is blocked', () => {
-  assert.match(workflow, /secrets\.CLOUDFLARE_ACCESS_CLIENT_ID/);
-  assert.match(workflow, /secrets\.CLOUDFLARE_ACCESS_CLIENT_SECRET/);
-  assert.match(workflow, /Cloudflare Access service-token secrets must be configured as a pair/);
+test('preview deployment requires the configured Cloudflare Access service token', () => {
+  assert.match(workflow, /secrets\.CF_ACCESS_CLIENT_ID/);
+  assert.match(workflow, /secrets\.CF_ACCESS_CLIENT_SECRET/);
+  assert.match(workflow, /Missing CF_ACCESS_CLIENT_ID repository secret/);
+  assert.match(workflow, /Missing CF_ACCESS_CLIENT_SECRET repository secret/);
+  assert.doesNotMatch(workflow, /CLOUDFLARE_ACCESS_CLIENT_ID|CLOUDFLARE_ACCESS_CLIENT_SECRET/);
+  assert.doesNotMatch(workflow, /transitional unauthenticated preview smoke test/);
+});
+
+test('preview smoke gate proves anonymous API access is blocked and authenticated UI plus API work', () => {
+  assert.match(workflow, /https:\/\/personal-growth-tracker-preview\.m-nejatmand\.workers\.dev/);
+  assert.match(workflow, /unauth_status=/);
+  assert.match(workflow, /Unauthenticated preview API access returned HTTP/);
   assert.match(workflow, /CF-Access-Client-Id:/);
   assert.match(workflow, /CF-Access-Client-Secret:/);
-  assert.match(workflow, /unauth_status=/);
-  assert.match(workflow, /unauthenticated preview API access still returned HTTP/);
-  assert.match(workflow, /running transitional unauthenticated preview smoke test/);
-  assert.doesNotMatch(workflow, /echo .*CLOUDFLARE_ACCESS_CLIENT_(?:ID|SECRET)/);
+  assert.match(workflow, /grep -F 'Growth Compass'/);
+  assert.match(workflow, /\/api\/v1\/areas/);
+  assert.match(workflow, /Cloudflare Access boundary \+ authenticated Preview smoke tests passed/);
+  assert.doesNotMatch(workflow, /echo .*CF_ACCESS_CLIENT_(?:ID|SECRET)/);
 });
