@@ -46,6 +46,13 @@ async function openInsightsFromTopbar(page) {
   assert.equal(await page.title(), 'Insights — Growth Compass');
 }
 
+async function openJournalFromTopbar(page) {
+  await page.locator('#journalBtn').click();
+  await page.locator('#pageTitle').filter({ hasText: 'Journal' }).waitFor();
+  await page.locator('#journalView').waitFor({ state: 'visible' });
+  assert.equal(await page.title(), 'Journal — Growth Compass');
+}
+
 async function validatePlanDisclosure(page, browserName) {
   const capacity = page.locator('#plan-module-capacity');
   await capacity.waitFor({ state: 'attached' });
@@ -71,6 +78,36 @@ async function validateInsightsDisclosure(page, browserName) {
   await details.locator('summary').click();
   await page.waitForFunction(() => document.querySelector('.insight-method-disclosure')?.open === true);
   await details.locator('.insight-stage-grid').waitFor({ state: 'visible' });
+}
+
+async function validateJournalWritingFirst(page, browserName) {
+  await openJournalFromTopbar(page);
+  await assertNoHorizontalOverflow(page, `${browserName} Journal`);
+  const opener = page.locator('.journal-new');
+  await opener.click();
+  const dialog = page.getByRole('dialog', { name: 'Write a journal entry' });
+  await dialog.waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.activeElement?.id === 'journalBody');
+
+  const promptDetails = dialog.locator('.journal-prompt-disclosure');
+  const metaDetails = dialog.locator('.journal-meta-disclosure');
+  const privacyDetails = dialog.locator('.journal-privacy-disclosure');
+  assert.equal(await promptDetails.getAttribute('open'), null, `${browserName}: prompts should be optional by default`);
+  assert.equal(await metaDetails.getAttribute('open'), null, `${browserName}: metadata should be optional for a new entry`);
+  assert.equal(await privacyDetails.getAttribute('open'), null, `${browserName}: privacy explanation should be available without crowding writing`);
+
+  await promptDetails.locator('summary').click();
+  await page.waitForFunction(() => document.querySelector('.journal-prompt-disclosure')?.open === true);
+  await dialog.locator('[data-journal-template]').first().waitFor({ state: 'visible' });
+  await metaDetails.locator('summary').click();
+  await page.waitForFunction(() => document.querySelector('.journal-meta-disclosure')?.open === true);
+  await dialog.locator('#journalDate').waitFor({ state: 'visible' });
+
+  const box = await dialog.boundingBox();
+  const viewport = page.viewportSize();
+  assert.ok(box && viewport && box.x >= -1 && box.x + box.width <= viewport.width + 1, `${browserName}: Journal editor must fit viewport width`);
+  await page.keyboard.press('Escape');
+  await dialog.waitFor({ state: 'detached' });
 }
 
 async function exerciseDesktop(browserType, browserName) {
@@ -102,6 +139,8 @@ async function exerciseDesktop(browserType, browserName) {
       if (view === 'progress') await validateProgressDisclosure(page, `${browserName} desktop`);
       if (view === 'insights') await validateInsightsDisclosure(page, `${browserName} desktop`);
     }
+
+    await validateJournalWritingFirst(page, `${browserName} desktop`);
 
     const opener = page.locator('[data-open-logger]:visible').first();
     await opener.focus();
@@ -153,6 +192,8 @@ async function exerciseMobile(browserType, browserName) {
     await validateInsightsDisclosure(page, `${browserName} 375px`);
     await selectView(page, 'wellness-boost', 'Wellness Boost', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Wellness Boost`);
+    await validateJournalWritingFirst(page, `${browserName} 375px`);
+    await assertNoHorizontalOverflow(page, `${browserName} 375px after Journal`);
 
     const quickAdd = page.locator('#quickAddBtn');
     await quickAdd.click();
@@ -172,11 +213,11 @@ async function exerciseMobile(browserType, browserName) {
 }
 
 for (const [browserName, browserType] of BROWSERS) {
-  test(`${browserName} desktop validates simplified navigation modal disclosures and reflow contracts`, async () => {
+  test(`${browserName} desktop validates simplified navigation modal disclosures Journal and reflow contracts`, async () => {
     await exerciseDesktop(browserType, browserName);
   });
 
-  test(`${browserName} 375px validates touch navigation simplified disclosures Logger fit and reflow`, async () => {
+  test(`${browserName} 375px validates touch navigation Journal Logger fit disclosures and reflow`, async () => {
     await exerciseMobile(browserType, browserName);
   });
 }
