@@ -27,7 +27,10 @@ function thresholdHtml(count) {
     { min: 21, max: 41, title: '21–41', text: 'Early associations' },
     { min: 42, max: Infinity, title: '42+', text: 'Stronger associations' }
   ];
-  return rows.map((row) => `<div class="insight-stage ${count >= row.min && count <= row.max ? 'current' : ''}"><strong>${row.title}</strong><span>${row.text}</span></div>`).join('');
+  return rows.map((row) => {
+    const current = count >= row.min && count <= row.max;
+    return `<div class="insight-stage ${current ? 'current' : ''}"${current ? ' aria-current="step"' : ''}><strong>${row.title}</strong><span>${row.text}</span></div>`;
+  }).join('');
 }
 
 export async function renderInsights() {
@@ -66,7 +69,7 @@ export async function renderInsights() {
         <h2>Understand patterns without fake certainty</h2>
         <p>Growth Compass waits for enough evidence, shows sample size, and uses association-only language.</p>
       </div>
-      <div class="insight-readiness-ring" style="--readiness:${readinessPct}" aria-label="${readinessPct}% toward 21 tracked days"><strong>${trackedDays}</strong><span>tracked days</span></div>
+      <div class="insight-readiness-ring" role="img" style="--readiness:${readinessPct}" aria-label="${readinessPct}% toward 21 tracked days"><strong>${trackedDays}</strong><span>tracked days</span></div>
     </section>
     <div class="insight-summary-grid">
       <article class="insight-summary-card"><span>Current stage</span><strong>${escapeHtml(stage.label)}</strong><small>${escapeHtml(stage.detail)}</small></article>
