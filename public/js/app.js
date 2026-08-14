@@ -29,27 +29,40 @@ async function load() {
 
 const logger = loggerCapability?.create({ onSaved: load, activities }) || Object.freeze({ open() {}, close() {} });
 
+function dailyPlanUnavailable(error) {
+  const message = escapeHtml(error?.message || 'Other parts of Today still work.');
+  return `<section class="os-section daily-plan-section"><div class="daily-plan-empty"><strong>Short-term planning is temporarily unavailable.</strong><span>${message}</span></div></section>`;
+}
+
 async function renderTodayView() {
   let dailyPlanModel = null;
   let dailyPlanPanel = '';
   let journalPreviewModel = null;
   let journalPreview = '';
 
+  const [dailyPlanResult, journalPreviewResult] = await Promise.allSettled([
+    dailyPlan ? dailyPlan.load({ date: state.date }) : null,
+    journal ? journal.loadPreview({ date: state.date }) : null
+  ]);
+
   if (dailyPlan) {
-    try {
-      dailyPlanModel = await dailyPlan.load({ date: state.date });
-      dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date });
-    } catch (error) {
-      const message = escapeHtml(error?.message || 'Other parts of Today still work.');
-      dailyPlanPanel = `<section class="os-section daily-plan-section"><div class="daily-plan-empty"><strong>Short-term planning is temporarily unavailable.</strong><span>${message}</span></div></section>`;
+    if (dailyPlanResult.status === 'fulfilled') {
+      dailyPlanModel = dailyPlanResult.value;
+      if (dailyPlanModel) {
+        try {
+          dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date });
+        } catch (error) {
+          dailyPlanPanel = dailyPlanUnavailable(error);
+        }
+      }
+    } else {
+      dailyPlanPanel = dailyPlanUnavailable(dailyPlanResult.reason);
     }
   }
 
-  if (journal) {
-    try {
-      journalPreviewModel = await journal.loadPreview({ date: state.date });
-      journalPreview = journal.renderPreview({ model: journalPreviewModel });
-    } catch { journalPreview = ''; }
+  if (journal && journalPreviewResult.status === 'fulfilled') {
+    journalPreviewModel = journalPreviewResult.value;
+    if (journalPreviewModel) journalPreview = journal.renderPreview({ model: journalPreviewModel });
   }
 
   await renderToday({ reload: load, openLogger: logger.open, dailyPlanPanel, journalPreview });
