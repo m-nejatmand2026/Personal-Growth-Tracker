@@ -41,18 +41,32 @@ test('Meditation starter library owns concise choice copy plus original guided c
   assert.ok(boostContent.every((item) => item.cues.every((cue) => cue.text && cue.atSeconds < item.durationMinutes * 60)));
 });
 
-test('Meditation library is calm and defers secondary decisions until after selection', () => {
+test('Meditation library feels like a calm destination instead of a dashboard grid', () => {
   const html = wellnessBoostModule.renderView();
   assert.match(html, /data-module="wellness-boost"/);
+  assert.match(html, /class="wellness-boost-view wellness-boost-library-view"/);
+  assert.match(html, /<span class="section-kicker">Meditation<\/span>/);
   assert.match(html, /Take a few minutes for yourself\./);
-  assert.match(html, />Meditation</);
-  for (const duration of ['3 min', '5 min', '10 min', '20 min']) assert.match(html, new RegExp(duration));
+  assert.match(html, /Featured meditation · Calm/);
+  assert.match(html, /class="wellness-boost-featured wellness-boost-tone-calm"[^>]*data-wb-open="meditation-steadier-breath"/);
+  assert.match(html, />A steadier breath</);
+  assert.match(html, /More meditations/);
   assert.equal((html.match(/data-wb-open=/g) || []).length, 4);
-  assert.equal((html.match(/class="wellness-boost-card"/g) || []).length, 4);
-  assert.match(html, /Settle into the moment\./);
-  assert.match(html, /Reconnect with your breath\./);
+  assert.equal((html.match(/class="wellness-boost-row wellness-boost-tone-/g) || []).length, 3);
+  assert.doesNotMatch(html, /wellness-boost-grid|class="os-section wellness-boost-type"/);
   assert.doesNotMatch(html, /data-wb-duration=|wellness-boost-filter|Open practice/);
   assert.doesNotMatch(html, /Guided voice · Ambient · Both|How would you like to listen\?|data-wb-mode=/);
+});
+
+test('Wellness Boost uses restrained category tones and a narrower content column', () => {
+  assert.match(css, /\.wellness-boost-library-view\{[^}]*width:min\(100%,860px\)[^}]*margin:0 auto/s);
+  for (const tone of ['reset', 'calm', 'focus', 'restore']) {
+    assert.match(css, new RegExp(`\\.wellness-boost-tone-${tone}\\{`));
+  }
+  assert.match(css, /\.wellness-boost-featured\{[^}]*min-height:210px[^}]*background:linear-gradient/s);
+  assert.match(css, /\.wellness-boost-more-list\{display:grid\}/);
+  assert.match(css, /\.wellness-boost-row\{[^}]*min-height:78px[^}]*border-top:1px solid var\(--gc-border\)/s);
+  assert.doesNotMatch(css, /\.wellness-boost-grid\{/);
 });
 
 test('Meditation player asks listening style only after a practice is chosen and then becomes minimal', () => {
@@ -119,11 +133,11 @@ test('module removal leaves unrelated capabilities available', () => {
   assert.equal(enabled.some((module) => module.id === 'journal'), true);
 });
 
-test('Wellness Boost choice cards and player remain phone-first accessible', () => {
-  assert.match(css, /\.wellness-boost-card\{[^}]*min-height:132px/s);
+test('Wellness Boost destination and player remain phone-first accessible', () => {
   assert.match(css, /min-height:var\(--gc-target-min\)/);
   assert.match(css, /@media\(max-width:650px\)/);
-  assert.match(css, /\.wellness-boost-grid\{grid-template-columns:1fr/);
+  assert.match(css, /\.wellness-boost-featured\{[^}]*min-height:176px/s);
+  assert.match(css, /\.wellness-boost-row\{[^}]*min-height:72px/s);
   assert.match(css, /\.wellness-boost-mode-picker\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(moduleJs, /role="status" aria-live="polite"/);
