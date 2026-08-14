@@ -30,21 +30,37 @@ Each practice owns:
 - title;
 - duration;
 - category;
-- short description;
+- concise library summary;
+- optional longer description;
 - timed guidance cues;
 - supported playback modes.
 
 The module is structured so later practice types such as Breathing, Reset, Focus, Sleep, or gentle movement can be added without changing Today, Progress, Wellbeing, or platform/core.
 
+## Experience model
+
+The default Wellness Boost path must remain visually calm and progressive:
+
+1. Wellness Boost opens with one short supportive line.
+2. Meditation shows four compact choice cards.
+3. Each card shows only the information needed to choose: title, duration, category, and one concise summary.
+4. The whole card is the selection target; repeated `Open practice` buttons are not shown.
+5. Duration filter controls are not shown while the library is only four items.
+6. Playback choices are deferred until after a meditation is selected.
+7. After Start, setup controls disappear and the player foregrounds remaining time, progress, Pause/Resume, and End.
+8. Full guidance remains available through a collapsed `Read guidance` disclosure.
+
+Do not fill the library with disabled or decorative `Coming soon` practice types. New Wellness Boost types should appear only when usable.
+
 ## Playback model
 
 The Version 1 Beta player offers:
 
-- **Guided voice** — uses the device/browser built-in speech voice to read the original timed meditation cues;
+- **Guided** — uses the device/browser built-in speech voice to read the original timed meditation cues;
 - **Ambient** — uses a locally generated low-volume ambient tone created with browser audio primitives;
 - **Both** — combines guided voice and ambient sound.
 
-The player supports start, pause/resume, end, visible elapsed/total time, progress, and readable guidance text.
+The player supports start, pause/resume, end, visible remaining time, progress, and readable guidance text.
 
 Leaving Wellness Boost stops active speech and ambient playback.
 
@@ -71,13 +87,15 @@ If favorites, recents, downloaded audio, or practice history are added later, th
 
 ## Navigation
 
-Wellness Boost is a dedicated app section.
+Wellness Boost is a dedicated first-class app section.
 
-Desktop exposes it in the navigation rail. Mobile exposes a dedicated top action while preserving the five-position bottom navigation:
+Desktop exposes Wellness Boost and Insights in the navigation rail.
 
-`Today | Plan | + | Progress | Insights`
+Mobile keeps the universal Logger centered while making Wellness Boost directly visible in the five-position main navigation:
 
-This keeps the universal Logger optically centered and avoids crowding the high-frequency mobile navigation.
+`Today | Plan | + | Progress | Wellness`
+
+Insights remains available as a labeled secondary top action on mobile. Journal and Settings remain secondary destinations.
 
 ## Modularity requirements
 
