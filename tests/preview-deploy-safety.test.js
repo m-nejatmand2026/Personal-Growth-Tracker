@@ -81,3 +81,15 @@ test('Cloudflare credentials remain secret-backed and UI plus API are smoke test
   assert.match(workflow, /grep -F 'Growth Compass'/);
   assert.match(workflow, /\/api\/v1\/areas/);
 });
+
+test('preview smoke test can authenticate through Cloudflare Access and proves anonymous data access is blocked', () => {
+  assert.match(workflow, /secrets\.CLOUDFLARE_ACCESS_CLIENT_ID/);
+  assert.match(workflow, /secrets\.CLOUDFLARE_ACCESS_CLIENT_SECRET/);
+  assert.match(workflow, /Cloudflare Access service-token secrets must be configured as a pair/);
+  assert.match(workflow, /CF-Access-Client-Id:/);
+  assert.match(workflow, /CF-Access-Client-Secret:/);
+  assert.match(workflow, /unauth_status=/);
+  assert.match(workflow, /unauthenticated preview API access still returned HTTP/);
+  assert.match(workflow, /running transitional unauthenticated preview smoke test/);
+  assert.doesNotMatch(workflow, /echo .*CLOUDFLARE_ACCESS_CLIENT_(?:ID|SECRET)/);
+});
