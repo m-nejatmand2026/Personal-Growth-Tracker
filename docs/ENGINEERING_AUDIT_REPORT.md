@@ -191,4 +191,150 @@ Production remains untouched.
 
 ## Phase 2 — CI/CD and supply-chain safety
 
+### Overall status: CONCERN
+
+The preview delivery path has strong environment separation, least-privilege Cloudflare credentials, migration refusal, dry-run deployment and smoke testing. The audit nevertheless found one important correctness flaw in the original chain and several reproducibility/hardening issues.
+
+### C1 — Quality and Preview were not using the same tested commit
+
+**Status:** PASS after remediation  
+**Severity before remediation:** HIGH  
+**Release impact:** resolved before production use
+
+Observed evidence from the real GitHub logs:
+
+- `pull_request` Quality used the default `actions/checkout` behavior and checked out GitHub's synthetic `refs/pull/6/merge` commit;
+- `workflow_run.head_sha` identified the feature-branch head;
+- Deploy Preview then checked out and deployed that head SHA;
+- therefore the previous statement "deploy the exact tested SHA" was not literally true.
+
+GitHub documents that pull-request workflows normally test the merge commit. The deployment contract, however, is intentionally a branch-head preview contract.
+
+Remediation:
+
+- Quality now explicitly checks out `${{ github.event.pull_request.head.sha || github.sha }}`;
+- checkout credentials are not persisted;
+- preview continues to check out `workflow_run.head_sha`;
+- release-blocking tests require the two workflows to use the same head-SHA contract.
+
+### C2 — Action references used movable major-version tags
+
+**Status:** PASS after remediation  
+**Severity before remediation:** MEDIUM  
+**Release impact:** resolved
+
+GitHub's secure-use guidance states that a full-length commit SHA is the immutable way to reference an Action. Quality and Deploy Preview previously used `actions/checkout@v6` and `actions/setup-node@v6`.
+
+Remediation:
+
+- checkout pinned to `d23441a48e516b6c34aea4fa41551a30e30af803`;
+- setup-node pinned to `249970729cb0ef3589644e2896645e5dc5ba9c38`;
+- these SHAs were observed from successful GitHub-hosted runs before pinning;
+- regression tests reject a return to mutable `@vN` references for these workflow actions.
+
+### C3 — Quality installed dependencies it did not need
+
+**Status:** PASS after remediation  
+**Severity before remediation:** MEDIUM  
+**Release impact:** resolved for Quality
+
+The test suite uses Node's built-in test runner and local source modules. `npm install` was therefore an unnecessary network/supply-chain execution step in Quality and was also producing install-script warnings for Wrangler dependencies.
+
+Remediation:
+
+- Quality now runs `npm test` without installing external dependencies;
+- Node remains pinned to major 24 through an immutable setup-node action reference;
+- Wrangler is not needed to execute the release-blocking test suite.
+
+### C4 — Preview Worker identity was inferred rather than explicitly guarded
+
+**Status:** PASS after remediation  
+**Severity before remediation:** MEDIUM  
+**Release impact:** resolved
+
+Cloudflare documents that a named Wrangler environment normally creates `<top-level-name>-<environment-name>`, and `wrangler deploy` supports an explicit `--name` option.
+
+Remediation:
+
+- the workflow verifies the top-level Worker name is exactly `personal-growth-tracker`;
+- any explicit `env.preview.name` must be exactly `personal-growth-tracker-preview`;
+- both dry-run and real deploy pass `--env preview --name personal-growth-tracker-preview`;
+- the existing exact preview D1 ID/name guards remain in place.
+
+### C5 — Preview smoke testing checked only static UI
+
+**Status:** PASS after remediation  
+**Severity before remediation:** LOW  
+**Release impact:** resolved
+
+The previous smoke test proved only that the root HTML contained `Growth Compass`. It did not prove Worker API routing plus D1 binding were operational.
+
+Remediation:
+
+- root UI smoke check remains;
+- a read-only `/api/v1/areas` request is now also required to succeed after deployment.
+
+### C6 — Dependency graph is not lockfile-reproducible
+
+**Status:** CONCERN  
+**Severity:** MEDIUM  
+**Release impact:** fix before public release; preferable before broader contributor/developer use
+
+Evidence:
+
+- no `package-lock.json` is committed;
+- npm documents `npm ci` as the clean/frozen install intended for automated environments and requires a lockfile;
+- the direct Wrangler dev dependency previously used `^4.0.0` and could move across Wrangler 4 releases.
+
+Partial remediation completed:
+
+- `package.json` now pins the direct Wrangler dependency to exact `4.123.0`;
+- deployment already invokes exact `wrangler@4.123.0`;
+- Quality no longer installs dependencies.
+
+Remaining remediation:
+
+Generate and commit a reviewed lockfile from the pinned dependency graph, then use `npm ci` for any future CI job that actually needs project dependencies. This remains open because the current device-independent GitHub editing path does not need to fabricate a large lockfile by hand.
+
+### C7 — Privileged `workflow_run` deliberately executes trusted branch content
+
+**Status:** CONCERN / accepted constrained risk  
+**Severity:** MEDIUM  
+**Release impact:** keep under review as contributor model changes
+
+GitHub explicitly warns that privileged `workflow_run` workflows must not execute untrusted pull-request code with secrets.
+
+Current mitigations:
+
+- the run must originate from this repository, not a fork;
+- the head branch must be exactly `feature/experience-refinement`;
+- GitHub permissions are read-only;
+- Cloudflare token is limited to Workers Scripts Write + D1 Read and has no D1 Write;
+- preview Worker and D1 identities are checked before credentials are used for deployment;
+- automatic migrations are impossible through the workflow;
+- deploy uses the exact Quality head SHA.
+
+Assessment:
+
+For the current owner-controlled branch this is a deliberate trusted-code deployment boundary. If external collaborators gain write access or arbitrary same-repository branches become deployable, this design must be revisited before expanding trust.
+
+### C8 — Branch/ruleset enforcement could not be independently inspected
+
+**Status:** EVIDENCE GAP  
+**Severity:** LOW now; potentially higher before team/public contribution
+
+The connected GitHub integration can read repository code and workflow runs but returned `403` when asked for branch-protection settings. Therefore this audit does not claim that required-review/required-status/ruleset settings are enabled.
+
+Resolve during release-engineering/security audit using an account context that can inspect repository rules, or verify through GitHub Settings before opening contribution access.
+
+### Phase 2 decision
+
+**CI/CD direction: continue with hardening.** The automatic preview model remains appropriate and is substantially safer after the audit corrections. C6 is the main reproducibility debt. C7 is acceptable only while the deploy branch is trusted and owner-controlled.
+
+No production Worker or production D1 deployment occurred during these corrections.
+
+---
+
+## Phase 3 — Automated tests
+
 Status: **NEXT**.
