@@ -1,4 +1,5 @@
 import { bad } from './core/http.js';
+import { healthRoute } from './platform/health.js';
 import { createModuleRegistry } from './platform/module-registry.js';
 import { platformModules } from './modules/catalog.js';
 import { bootstrapRoute } from './routes/bootstrap.js';
@@ -68,6 +69,11 @@ export async function routeApi(request, env) {
   const path = url.pathname;
   const method = request.method;
   const context = { request, url, env };
+
+  // Health is a platform-owned operational route. It contains no profile or
+  // business data and verifies the Worker's D1 binding without coupling CI to
+  // a user-owned module.
+  if (method === 'GET' && path === '/api/health') return healthRoute(context);
 
   // Version 1 routes are registered by module manifests. Adding/removing a
   // Version 1 module does not require another central-router conditional.
