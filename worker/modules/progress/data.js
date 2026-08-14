@@ -152,6 +152,31 @@ export async function listProgressRecords(
   return results;
 }
 
+export async function summarizeProgressMinutesByGoal(
+  DB,
+  profileId,
+  {
+    from,
+    to
+  }
+) {
+  const { results } = await DB.prepare(`
+    SELECT
+      goal_id,
+      SUM(COALESCE(minutes, 0)) AS actual_minutes
+    FROM progress_records
+    WHERE profile_id=?
+      AND occurred_on>=?
+      AND occurred_on<=?
+      AND goal_id IS NOT NULL
+    GROUP BY goal_id
+  `)
+    .bind(profileId, from, to)
+    .all();
+
+  return results;
+}
+
 /**
  * Legacy Beta compatibility.
  *
@@ -226,6 +251,31 @@ export async function listLegacySessions(
         ...bindings
       )
       .all();
+
+  return results;
+}
+
+export async function summarizeLegacyMinutesByActivityKey(
+  DB,
+  profileId,
+  {
+    from,
+    to
+  }
+) {
+  if (profileId !== 'default') return [];
+
+  const { results } = await DB.prepare(`
+    SELECT
+      activity_key,
+      SUM(COALESCE(minutes, 0)) AS actual_minutes
+    FROM sessions
+    WHERE occurred_on>=?
+      AND occurred_on<=?
+    GROUP BY activity_key
+  `)
+    .bind(from, to)
+    .all();
 
   return results;
 }
