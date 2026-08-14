@@ -39,16 +39,21 @@ The module is structured so later practice types such as Breathing, Reset, Focus
 
 ## Experience model
 
-The default Wellness Boost path must remain visually calm and progressive:
+Wellness Boost should feel like entering a quieter destination, not another dashboard.
 
-1. Wellness Boost opens with one short supportive line.
-2. Meditation shows four compact choice cards.
-3. Each card shows only the information needed to choose: title, duration, category, and one concise summary.
-4. The whole card is the selection target; repeated `Open practice` buttons are not shown.
-5. Duration filter controls are not shown while the library is only four items.
-6. Playback choices are deferred until after a meditation is selected.
-7. After Start, setup controls disappear and the player foregrounds remaining time, progress, Pause/Resume, and End.
-8. Full guidance remains available through a collapsed `Read guidance` disclosure.
+The default path is intentionally progressive:
+
+1. Wellness Boost opens with the short Meditation context and the line **Take a few minutes for yourself.**
+2. The library uses a restrained content width instead of stretching across the full desktop workspace.
+3. One meditation is visually featured to create a clear focal point. In Version 1 Beta, **A steadier breath** is the featured five-minute practice.
+4. The remaining meditations appear as compact rows under **More meditations** rather than four equal dashboard cards.
+5. Reset, Calm, Focus, and Restore use low-saturation module-owned tones for distinction without turning the page into a bright wellness-app palette.
+6. The library is not wrapped in a large white dashboard panel.
+7. The whole featured practice and each compact row are the selection targets. Repeated `Open practice` buttons are not shown.
+8. Duration filter controls are not shown while the library is only four items.
+9. Playback choices are deferred until after a meditation is selected.
+10. After Start, setup controls disappear and the player foregrounds remaining time, progress, Pause/Resume, and End.
+11. Full guidance remains available through a collapsed `Read guidance` disclosure.
 
 Do not fill the library with disabled or decorative `Coming soon` practice types. New Wellness Boost types should appear only when usable.
 
