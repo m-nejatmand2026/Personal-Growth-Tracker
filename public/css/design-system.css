@@ -17,7 +17,8 @@
   --gc-warm-soft: #f6edc9;
   --gc-danger: #a33b3b;
   --gc-danger-soft: #fee2e2;
-  --gc-focus: #0b5fff;
+  --gc-focus: #0a6664;
+  --gc-focus-halo: rgba(15, 119, 117, 0.16);
 
   --gc-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --gc-text-xs: 0.6875rem;
@@ -92,8 +93,9 @@ body {
 }
 
 :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 3px solid var(--gc-focus);
+  outline: 2px solid var(--gc-focus);
   outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--gc-focus-halo);
 }
 
 .gc-sr-only {
@@ -217,6 +219,11 @@ body {
 }
 
 @media (forced-colors: active) {
+  :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid Highlight;
+    box-shadow: none;
+  }
+
   .gc-threshold__actual,
   .gc-threshold__marker {
     forced-color-adjust: none;
