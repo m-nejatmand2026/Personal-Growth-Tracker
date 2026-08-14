@@ -37,12 +37,16 @@ test('mobile main navigation makes Wellness first-class while Logger stays cente
   assert.doesNotMatch(nav, /data-view="insights"/);
 });
 
-test('mobile header keeps Insights reachable as a labeled secondary section without duplicating Log', () => {
-  assert.match(indexHtml, /id="insightsBtn"[^>]*aria-label="Open Insights"[^>]*>[\s\S]*?<b class="top-section-label">Insights<\/b>/);
-  assert.match(shellCss, /\.top-section-btn\{[^}]*display:inline-flex/s);
+test('mobile header keeps secondary destinations behind one touch-safe More control without duplicating Log', () => {
+  assert.match(indexHtml, /<details id="topMore" class="top-more">/);
+  assert.match(indexHtml, /aria-label="More sections and settings"/);
+  assert.match(indexHtml, /id="insightsBtn"[\s\S]*?<b>Insights<\/b>/);
+  assert.match(indexHtml, /id="journalBtn"[\s\S]*?<b>Journal<\/b>/);
+  assert.match(indexHtml, /id="settingsBtn"[\s\S]*?<b>Settings<\/b>/);
+  assert.match(shellCss, /\.top-more>summary\{[^}]*width:var\(--gc-target-min\);height:var\(--gc-target-min\)/);
   assert.match(shellCss, /@media \(max-width:760px\)\{\s*\.top-log-btn\{display:none\}/s);
-  assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*?\.top-section-btn\{display:none\}/);
-  assert.match(appJs, /insightsBtn/);
+  assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*?\.top-actions\{display:none\}/);
+  assert.match(appJs, /function closeTopMore\(\)/);
   assert.match(appJs, /showView\('insights'\)/);
 });
 
