@@ -1,110 +1,90 @@
 # Growth Compass private Beta — Cloudflare Access
 
-Status: required operational protection for the owner-only Beta.
+Status: active operational protection for the owner-only Beta.
 
 This document defines the temporary authentication perimeter for the current single-profile Growth Compass Beta. It does **not** replace the future application-level user identity/profile authorization architecture.
 
-## Why this exists
+## Protected Workers
 
-The current application identity boundary resolves every Version 1 request to the seeded `default` profile. Until public-user authentication exists, the deployed Workers must not be reachable anonymously.
-
-Protect both current Worker URLs:
+Both stable Worker URLs must be protected with Cloudflare Access using the Worker Access scope **All traffic**:
 
 - production: `personal-growth-tracker.m-nejatmand.workers.dev`
 - preview: `personal-growth-tracker-preview.m-nejatmand.workers.dev`
 
-The two are separate Workers. Configure Access on each Worker's `workers.dev` route.
-
-## Human access policy
-
-For each Worker:
-
-1. Open Cloudflare Dashboard → Workers & Pages.
-2. Select the Worker.
-3. Open Domains / Domains & Routes.
-4. On the `workers.dev` route, choose **Enable Cloudflare Access**.
-5. Open **Manage Cloudflare Access**.
-6. Configure an Allow policy that permits only the owner's identity/email.
-7. Use the account's existing identity provider, or Cloudflare One-Time PIN if that is the chosen identity method.
-8. Do not add a broad `Everyone` allow rule.
-
-Production needs only the owner human-access policy during the current Beta.
+For normal human use, the current Beta uses the Cloudflare account authentication policy. Account membership must remain restricted to trusted owner/admin identities.
 
 ## Preview CI service identity
 
-Automatic GitHub Preview smoke tests need non-browser authentication after Access is enabled.
-
-Create one dedicated service token:
+Automatic GitHub Preview smoke tests use one dedicated Cloudflare Access service token:
 
 - name: `Growth Compass Preview CI`
-- use only for Preview smoke testing
-- choose a finite expiry and rotate it deliberately
+- action: `Service Auth`
+- include rule: the specific `Growth Compass Preview CI` service token
+- attached only to the Access application/policy protecting `personal-growth-tracker-preview.m-nejatmand.workers.dev`
 
-Cloudflare Dashboard path:
+Do not use `Any Access Service Token`, `Everyone`, a country/IP rule, or attach this CI token to the production Worker.
 
-Zero Trust → Access → Service Auth → Service Tokens.
-
-Copy the Client ID and Client Secret immediately. Cloudflare displays the secret only when it is created/rotated.
-
-On the Access application/policy protecting `personal-growth-tracker-preview.m-nejatmand.workers.dev`, add a **Service Auth** policy that includes this specific service token.
-
-Do not grant the Preview service token access to the production Worker unless a future production automation explicitly requires it.
+The service-token secret is shown only when created/rotated. Rotate it deliberately before expiry.
 
 ## GitHub Actions secrets
 
-In the GitHub repository:
+Repository secrets used by Preview automation:
 
-Settings → Secrets and variables → Actions → Repository secrets.
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+- `CF_ACCESS_CLIENT_ID`
+- `CF_ACCESS_CLIENT_SECRET`
 
-Add:
+The Cloudflare API token remains least privilege for deployment: Workers Scripts Write + D1 Read, with no D1 Write permission.
 
-- `CLOUDFLARE_ACCESS_CLIENT_ID`
-- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
+Never commit secret values to source, Wrangler config, documentation, issues, PR comments, workflow logs, `.env`, or `.dev.vars`.
 
-Never commit these values to the repository, `.env`, Wrangler config, documentation, issues, PR comments, or workflow logs.
-
-The Preview workflow sends them only as:
+The Access credentials are sent only as the standard headers:
 
 - `CF-Access-Client-Id`
 - `CF-Access-Client-Secret`
 
 ## CI enforcement behavior
 
-`.github/workflows/deploy-preview.yml` supports a staged rollout:
+`.github/workflows/deploy-preview.yml` treats Access as mandatory.
 
-- before the Access secrets exist, the existing unauthenticated smoke check remains temporarily available so CI does not break during configuration;
-- the two Access secrets must always exist as a pair;
-- once the pair exists, the workflow first checks that an anonymous request to `/api/v1/areas` does **not** receive a successful 2xx response;
-- it then performs authenticated UI and API smoke tests using the service token;
-- therefore adding the secrets turns Access protection into an automated release gate rather than a documentation-only expectation.
+After successful Quality on the trusted feature branch, the workflow:
 
-After Access has been configured successfully, the transitional unauthenticated path should be removed in a later hardening change so Preview CI requires Access credentials unconditionally.
+1. checks out the exact tested SHA;
+2. verifies the trusted repository/branch and preview Worker/D1 identities;
+3. requires all four Cloudflare/GitHub repository secrets;
+4. refuses deployment when preview D1 migrations are pending;
+5. runs a preview-only dry run and deployment;
+6. requests `/api/v1/areas` without credentials and fails if that request receives a successful 2xx response;
+7. sends the dedicated Access service-token headers and requires both the UI and `/api/v1/areas` to succeed.
+
+There is no unauthenticated Preview smoke-test fallback after Access rollout.
 
 ## Verification checklist
 
 ### Production
 
-From a signed-out/private browser session:
+From an unauthenticated/private browser session:
 
 - production root must require Cloudflare Access authentication;
 - `/api/v1/areas` must not expose data anonymously;
 - `/api/export` must not expose data anonymously.
 
-After authenticating with the approved owner identity:
+After authenticating as an approved Cloudflare account member:
 
-- normal Growth Compass UI must load;
+- the Growth Compass UI must load;
 - API-backed screens must work;
-- export must work only for the authenticated owner.
+- export must work only after authentication.
 
 ### Preview
 
-From a signed-out/private browser session:
+From an unauthenticated/private browser session:
 
 - preview root must require Cloudflare Access authentication;
 - `/api/v1/areas` must not expose data anonymously;
 - `/api/export` must not expose data anonymously.
 
-GitHub Preview deployment must then pass its authenticated UI + API smoke checks using the dedicated Preview service token.
+GitHub Preview deployment must then pass the automated anonymous-denial check and the authenticated UI/API smoke test using `Growth Compass Preview CI`.
 
 ## What Access does not solve
 
