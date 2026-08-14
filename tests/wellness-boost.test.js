@@ -11,6 +11,7 @@ import { wellnessBoostModule } from '../public/js/modules/wellness-boost/module.
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 const todayUi = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
 const app = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
+const moduleJs = await readFile(new URL('../public/js/modules/wellness-boost/module.js', import.meta.url), 'utf8');
 const css = await readFile(new URL('../public/css/modules/wellness-boost.css', import.meta.url), 'utf8');
 
 test('Wellness Boost owns an independent dependency-free capability', () => {
@@ -24,27 +25,52 @@ test('Wellness Boost owns an independent dependency-free capability', () => {
   assert.deepEqual(worker.routes, []);
   assert.deepEqual(frontend.slots, []);
   assert.equal(typeof frontend.renderView, 'function');
+  assert.equal(typeof frontend.bindView, 'function');
+  assert.equal(typeof frontend.deactivate, 'function');
 });
 
-test('boost platform metadata is generic while Meditation remains module content', () => {
+test('Meditation starter library owns 3 5 10 and 20 minute original guided content', () => {
   assert.ok(boostTypes.meditation);
-  assert.ok(boostContent.every((item) => item.boostType && item.title && item.category));
-  assert.ok(boostContent.every((item) => Number.isInteger(item.durationMinutes)));
-  assert.ok(boostContent.every((item) => ['voice', 'music', 'both'].includes(item.audioKind)));
-  assert.ok(boostContent.some((item) => item.audioKind === 'music' && item.tracks.length));
-  assert.ok(boostContent.some((item) => item.audioKind === 'both'));
+  assert.deepEqual(boostContent.map((item) => item.durationMinutes), [3, 5, 10, 20]);
+  assert.ok(boostContent.every((item) => item.boostType === 'meditation'));
+  assert.ok(boostContent.every((item) => item.title && item.category && item.description));
+  assert.ok(boostContent.every((item) => item.availableModes.join(',') === 'voice,ambient,both'));
+  assert.ok(boostContent.every((item) => item.cues.length >= 5));
+  assert.ok(boostContent.every((item) => item.cues[0].atSeconds === 0));
+  assert.ok(boostContent.every((item) => item.cues.every((cue) => cue.text && cue.atSeconds < item.durationMinutes * 60)));
 });
 
-test('module-owned dedicated UI provides native accessible audio semantics', () => {
+test('dedicated library exposes duration choice before a practice player', () => {
   const html = wellnessBoostModule.renderView();
   assert.match(html, /data-module="wellness-boost"/);
   assert.match(html, /Wellness Boost/);
   assert.match(html, />Meditation</);
-  assert.match(html, /<audio controls preload="metadata" aria-label="Play/);
-  assert.match(html, /<source src="data:audio\/wav;base64,/);
-  assert.match(html, /Duration 3 minutes/);
-  assert.match(html, /rights-safe placeholder/);
-  assert.match(html, /no unlicensed recording has been added/i);
+  for (const duration of ['3 min', '5 min', '10 min', '20 min']) assert.match(html, new RegExp(duration));
+  assert.match(html, /data-wb-duration=/);
+  assert.match(html, /data-wb-open="meditation-gentle-arrival"/);
+  assert.match(html, /Guided voice · Ambient · Both/);
+  assert.doesNotMatch(html, /<audio|unlicensed recording|rights-safe placeholder/);
+});
+
+test('Meditation playback is local rights-safe and does not create Progress', () => {
+  assert.match(moduleJs, /SpeechSynthesisUtterance/);
+  assert.match(moduleJs, /window\.AudioContext \|\| window\.webkitAudioContext/);
+  assert.match(moduleJs, /Locally generated tone/);
+  assert.match(moduleJs, /No meditation recording is uploaded/);
+  assert.match(moduleJs, /Nothing (?:here )?creates Progress|Nothing was added to Progress/);
+  assert.doesNotMatch(moduleJs, /\/api\/v1\/progress|fetch\(|localStorage|sessionStorage/);
+});
+
+test('Meditation player owns start pause resume end and navigation cleanup lifecycle', () => {
+  assert.match(moduleJs, /data-wb-start/);
+  assert.match(moduleJs, /data-wb-toggle/);
+  assert.match(moduleJs, /data-wb-end/);
+  assert.match(moduleJs, /speechSynthesis\.pause\(\)/);
+  assert.match(moduleJs, /speechSynthesis\.resume\(\)/);
+  assert.match(moduleJs, /function deactivate\(\)/);
+  assert.match(app, /wellnessBoost\?\.bindView/);
+  assert.match(app, /state\.view === 'wellness-boost' && name !== 'wellness-boost'/);
+  assert.match(app, /wellnessBoost\?\.deactivate/);
 });
 
 test('Wellness Boost is a first-class app section while the five-slot mobile Logger navigation remains stable', () => {
@@ -54,7 +80,7 @@ test('Wellness Boost is a first-class app section while the five-slot mobile Log
   assert.match(app, /moduleRegistry\.get\('wellness-boost'\)/);
   assert.match(app, /state\.view === 'wellness-boost'/);
   assert.match(app, /wellnessBoost\?\.renderView/);
-  assert.match(indexHtml, /grid-template-columns|id="quickAddBtn"/);
+  assert.match(indexHtml, /id="quickAddBtn"/);
   assert.match(indexHtml, /data-view="today"/);
   assert.match(indexHtml, /data-view="plan"/);
   assert.match(indexHtml, /data-view="progress"/);
@@ -75,9 +101,14 @@ test('module removal leaves unrelated capabilities available', () => {
   assert.equal(enabled.some((module) => module.id === 'journal'), true);
 });
 
-test('Wellness Boost dedicated view is mobile-safe with accessible touch-size audio controls', () => {
-  assert.match(css, /\.wellness-boost-view/);
+test('Wellness Boost library and player remain phone-first accessible', () => {
+  assert.match(css, /\.wellness-boost-player/);
   assert.match(css, /min-height:var\(--gc-target-min\)/);
   assert.match(css, /@media\(max-width:650px\)/);
-  assert.match(css, /grid-template-columns:1fr/);
+  assert.match(css, /\.wellness-boost-grid\{grid-template-columns:1fr\}/);
+  assert.match(css, /\.wellness-boost-mode-picker\{grid-template-columns:1fr\}/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(moduleJs, /role="status" aria-live="polite"/);
+  assert.match(moduleJs, /role="group" aria-label="Playback style"/);
+  assert.match(moduleJs, /Read the guidance/);
 });
