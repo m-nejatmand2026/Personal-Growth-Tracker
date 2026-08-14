@@ -6,6 +6,7 @@ const indexHtml = await readFile(new URL('../public/index.html', import.meta.url
 const today = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
 const plan = await readFile(new URL('../public/js/features/plan.js', import.meta.url), 'utf8');
 const resetCss = await readFile(new URL('../public/css/ux-reset.css', import.meta.url), 'utf8');
+const accessibilityCss = await readFile(new URL('../public/css/accessibility-regression.css', import.meta.url), 'utf8');
 
 test('Revision C presentation layer loads after shared experience styling and before accessibility safeguards', () => {
   const framework = indexHtml.indexOf('/css/experience-framework.css');
@@ -35,6 +36,13 @@ test('Revision C reduces explanatory chrome while preserving minimum touch targe
   assert.match(resetCss, /\.plan-module-summary \{[\s\S]*min-height: 56px;/);
   assert.match(resetCss, /#loggerActivityQuery \{[\s\S]*min-height: 52px;/);
   assert.doesNotMatch(resetCss, /min-height:\s*(?:3[0-9]|4[0-3])px/);
+});
+
+test('Logger visual simplification preserves its mode legend and dynamic guidance for assistive technology', () => {
+  assert.match(
+    accessibilityCss,
+    /\.logger-mode-fieldset legend,\s*\.logger-mode-hint\s*\{[\s\S]*display: block;[\s\S]*position: absolute;[\s\S]*inline-size: 1px;[\s\S]*clip-path: inset\(50%\);/
+  );
 });
 
 test('primary capture wording is consistent across desktop rail topbar and mobile navigation', () => {
