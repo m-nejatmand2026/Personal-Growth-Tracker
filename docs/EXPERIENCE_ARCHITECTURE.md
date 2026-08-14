@@ -1,4 +1,4 @@
-# Growth Compass - Version 1 Beta experience architecture
+# Growth Compass — Version 1 Beta experience architecture
 
 Status: **Revision B - Simplicity / Human-Language UX is the active experience contract as of 14 August 2026.**
 
