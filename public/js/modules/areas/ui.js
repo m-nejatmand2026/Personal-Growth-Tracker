@@ -109,11 +109,14 @@ async function reorderAreas(model, areaId, direction) {
   if (index < 0 || target < 0 || target >= ordered.length) return false;
   [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
 
-  const changed = [ordered[index], ordered[target]];
-  await Promise.all(changed.map((area) => api(`/api/v1/areas/${area.id}`, {
-    method: 'PUT',
-    body: JSON.stringify({ sort_order: (ordered.indexOf(area) + 1) * 10 })
-  })));
+  await Promise.all(ordered.map((area, position) => {
+    const sortOrder = (position + 1) * 10;
+    if (Number(area.sort_order) === sortOrder) return Promise.resolve();
+    return api(`/api/v1/areas/${area.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ sort_order: sortOrder })
+    });
+  }));
   return true;
 }
 
