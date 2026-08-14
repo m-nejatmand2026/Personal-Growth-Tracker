@@ -55,8 +55,9 @@ Operational runbooks override old README/manual command snippets when they disag
 - [`ENGINEERING_AUDIT_PLAN.md`](ENGINEERING_AUDIT_PLAN.md) — scope/order/exit criteria.
 - `audit/PHASE_*.md` — evidence and findings for each audit phase.
 - [`ENGINEERING_AUDIT_REPORT.md`](ENGINEERING_AUDIT_REPORT.md) — rolling/final synthesis; check its status/header before treating checkpoint counts as current.
+- [`POST_AUDIT_HARDENING_2026-08-14.md`](POST_AUDIT_HARDENING_2026-08-14.md) — additive current checkpoint for modularity hardening and the real Worker + isolated D1 integration gate completed after the 12-phase audit.
 
-Audit findings classify current risk. They do not authorize production deployment or product-scope changes by themselves.
+Audit findings classify current risk. They do not authorize production deployment or product-scope changes by themselves. When a later dated hardening checkpoint explicitly records a finding as remediated, use the later checkpoint together with live code/tests for current implementation status while keeping the original audit as historical evidence.
 
 ## UX/research/reference material
 
@@ -111,6 +112,6 @@ For a new engineer/contributor:
 5. `DEVELOPMENT_WORKFLOW.md`;
 6. relevant capability spec;
 7. relevant runbook/API contract;
-8. current audit findings for the area being changed.
+8. current audit findings and any later post-audit hardening checkpoint for the area being changed.
 
 This reading path is intentionally shorter than reading every document in chronological order.
