@@ -12,6 +12,8 @@ const indexHtml = await readFile(new URL('../public/index.html', import.meta.url
 const todayUi = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
 const app = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 const moduleJs = await readFile(new URL('../public/js/modules/wellness-boost/module.js', import.meta.url), 'utf8');
+const playerJs = await readFile(new URL('../public/js/modules/wellness-boost/player.js', import.meta.url), 'utf8');
+const wellnessRuntime = `${moduleJs}\n${playerJs}`;
 const css = await readFile(new URL('../public/css/modules/wellness-boost.css', import.meta.url), 'utf8');
 const frameworkCss = await readFile(new URL('../public/css/experience-framework.css', import.meta.url), 'utf8');
 
@@ -87,22 +89,36 @@ test('Meditation player asks listening style only after a practice is chosen and
 });
 
 test('Meditation playback is local rights-safe and does not create Progress or Wellbeing facts', () => {
-  assert.match(moduleJs, /SpeechSynthesisUtterance/);
-  assert.match(moduleJs, /window\.AudioContext \|\| window\.webkitAudioContext/);
+  assert.match(playerJs, /SpeechSynthesisUtterance/);
+  assert.match(playerJs, /window\.AudioContext \|\| window\.webkitAudioContext/);
   assert.match(moduleJs, /Ambient sound is generated locally in your browser/);
   assert.match(moduleJs, /No meditation recording is uploaded/);
   assert.match(moduleJs, /nothing here is added to Progress or Wellbeing/);
-  assert.doesNotMatch(moduleJs, /\/api\/v1\/progress|\/api\/v1\/wellbeing|fetch\(|localStorage|sessionStorage/);
+  assert.doesNotMatch(wellnessRuntime, /\/api\/v1\/progress|\/api\/v1\/wellbeing|fetch\(|localStorage|sessionStorage/);
+});
+
+test('Meditation playback engine is a private replaceable Wellness subcomponent', () => {
+  assert.match(moduleJs, /createMeditationPlayer/);
+  assert.match(moduleJs, /from '\.\/player\.js'/);
+  assert.match(playerJs, /export function createMeditationPlayer\(\)/);
+  assert.match(playerJs, /return Object\.freeze\(\{/);
+  assert.match(playerJs, /isActive\(\)/);
+  assert.match(playerJs, /start,/);
+  assert.match(playerJs, /toggle,/);
+  assert.match(playerJs, /stop/);
+  assert.doesNotMatch(moduleJs, /SpeechSynthesisUtterance|AudioContext|setInterval|clearInterval/);
+  assert.doesNotMatch(playerJs, /boostContent|activePracticeId|FEATURED_PRACTICE_ID|renderLibrary/);
 });
 
 test('Meditation player owns start pause resume end remaining-time and navigation cleanup lifecycle', () => {
   assert.match(moduleJs, /data-wb-start/);
   assert.match(moduleJs, /data-wb-toggle/);
   assert.match(moduleJs, /data-wb-end/);
-  assert.match(moduleJs, /formatClock\(total - safeElapsed\)/);
-  assert.match(moduleJs, /speechSynthesis\.pause\(\)/);
-  assert.match(moduleJs, /speechSynthesis\.resume\(\)/);
+  assert.match(playerJs, /formatMeditationClock\(total - safeElapsed\)/);
+  assert.match(playerJs, /speechSynthesis\.pause\(\)/);
+  assert.match(playerJs, /speechSynthesis\.resume\(\)/);
   assert.match(moduleJs, /function deactivate\(\)/);
+  assert.match(moduleJs, /player\.stop\(\{ quiet: true \}\)/);
   assert.match(app, /wellnessBoost\?\.bindView/);
   assert.match(app, /state\.view === 'wellness-boost' && name !== 'wellness-boost'/);
   assert.match(app, /wellnessBoost\?\.deactivate/);
