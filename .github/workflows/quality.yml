@@ -11,7 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout exact tested commit
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -28,8 +28,14 @@ jobs:
       - name: Run unit, contract and modularity boundary tests
         run: npm test
 
-      - name: Install pinned Worker integration-test runtime
-        run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4.123.0
+      - name: Install pinned Worker and browser test runtimes
+        run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4.123.0 playwright@1.62.0
 
       - name: Run real Worker and isolated D1 integration tests
         run: npm run test:integration
+
+      - name: Install pinned browser binaries
+        run: ./node_modules/.bin/playwright install --with-deps chromium webkit
+
+      - name: Run local Worker browser acceptance gate
+        run: bash scripts/run-browser-e2e.sh

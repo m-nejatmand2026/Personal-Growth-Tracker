@@ -16,7 +16,7 @@ test('Quality tests the exact PR head SHA later supplied by workflow_run', () =>
   assert.match(quality, new RegExp(`actions/setup-node@${SETUP_NODE_SHA}`));
   assert.doesNotMatch(quality, /npm ci/);
   assert.equal((quality.match(/npm install/g) || []).length, 1);
-  assert.match(quality, /run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4\.123\.0/);
+  assert.match(quality, /run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4\.123\.0 playwright@1\.62\.0/);
   assert.match(quality, /run: npm test/);
 });
 

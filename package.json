@@ -10,11 +10,13 @@
     "deploy:production": "wrangler deploy",
     "test": "node --test",
     "test:integration": "node --test tests/integration/worker-d1.integration.js",
+    "test:browser": "node --test tests/browser/browser-e2e.browser.js",
     "db:migrate:local": "wrangler d1 migrations apply personal-growth-tracker --local",
     "db:migrate:preview": "wrangler d1 migrations apply DB --remote --env preview",
     "db:migrate:production": "wrangler d1 migrations apply DB --remote"
   },
   "devDependencies": {
+    "playwright": "1.62.0",
     "wrangler": "4.123.0"
   }
 }

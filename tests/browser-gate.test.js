@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const quality = await readFile(new URL('../.github/workflows/quality.yml', import.meta.url), 'utf8');
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+const browserTest = await readFile(new URL('./browser/browser-e2e.browser.js', import.meta.url), 'utf8');
+const runner = await readFile(new URL('../scripts/run-browser-e2e.sh', import.meta.url), 'utf8');
+
+test('Quality keeps pinned Chromium and WebKit browser acceptance release-blocking', () => {
+  assert.equal(packageJson.devDependencies.playwright, '1.62.0');
+  assert.equal(packageJson.scripts['test:browser'], 'node --test tests/browser/browser-e2e.browser.js');
+  assert.match(quality, /playwright@1\.62\.0/);
+  assert.match(quality, /playwright install --with-deps chromium webkit/);
+  assert.match(quality, /bash scripts\/run-browser-e2e\.sh/);
+  assert.ok(quality.indexOf('npm run test:integration') < quality.indexOf('run-browser-e2e.sh'));
+});
+
+test('browser acceptance runs only against an isolated local Worker and local D1', () => {
+  assert.match(runner, /d1 migrations apply DB/);
+  assert.match(runner, /--local/);
+  assert.match(runner, /--persist-to/);
+  assert.match(runner, /wrangler dev/);
+  assert.match(runner, /127\.0\.0\.1:8787\/api\/health/);
+  assert.match(runner, /GC_E2E_BASE_URL=http:\/\/127\.0\.0\.1:8787/);
+  assert.doesNotMatch(runner, /--remote|workers\.dev|1937971c|a182d8c8/);
+});
+
+test('browser acceptance covers cross-browser desktop mobile keyboard modal and reflow evidence', () => {
+  assert.match(browserTest, /chromium/);
+  assert.match(browserTest, /webkit/);
+  assert.match(browserTest, /width: 375, height: 812/);
+  assert.match(browserTest, /Skip to main content/);
+  assert.match(browserTest, /What do you want to do\?/);
+  assert.match(browserTest, /aria-modal/);
+  assert.match(browserTest, /44px touch target/);
+  assert.match(browserTest, /documentWidth <= metrics\.viewport/);
+  assert.match(browserTest, /bodyWidth <= metrics\.viewport/);
+  assert.doesNotMatch(browserTest, /https:\/\//);
+});
