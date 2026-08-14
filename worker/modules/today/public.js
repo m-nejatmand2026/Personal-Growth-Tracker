@@ -3,6 +3,8 @@ import { activitiesContractV1 } from '../activities/public.js';
 import { plansContractV1 } from '../plans/public.js';
 import { progressContractV1 } from '../progress/public.js';
 
+export const TODAY_DIRECTION_PERIODS = Object.freeze(['day', 'week', 'month', 'year']);
+
 function daysInYear(year) {
   return Math.round(
     (Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / 86400000
@@ -26,19 +28,49 @@ function dailyShare(minutes, period, dateText) {
   return 0;
 }
 
+function dateKey(year, month, day) {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export function directionRange(dateText, period = 'week') {
+  const date = new Date(`${dateText}T12:00:00Z`);
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+
+  if (period === 'day') {
+    return Object.freeze({ start: dateText, end: dateText });
+  }
+
+  if (period === 'month') {
+    const lastDay = new Date(Date.UTC(year, month, 0, 12)).getUTCDate();
+    return Object.freeze({
+      start: dateKey(year, month, 1),
+      end: dateKey(year, month, lastDay)
+    });
+  }
+
+  if (period === 'year') {
+    return Object.freeze({
+      start: dateKey(year, 1, 1),
+      end: dateKey(year, 12, 31)
+    });
+  }
+
+  const start = weekStart(dateText);
+  return Object.freeze({ start, end: addDays(start, 6) });
+}
+
 function datesBetween(start, end) {
   const dates = [];
   for (let date = start; date <= end; date = addDays(date, 1)) dates.push(date);
   return dates;
 }
 
-async function getWeeklyDirection(DB, profileId, start) {
-  const end = addDays(start, 6);
-  const [history, allocationModel, activities] = await Promise.all([
-    progressContractV1.listHistory(DB, profileId, {
+async function getDirection(DB, profileId, start, end) {
+  const [actualRows, allocationModel, activities] = await Promise.all([
+    progressContractV1.sumMinutesByGoal(DB, profileId, {
       from: start,
       to: end,
-      limit: 500,
       includeLegacy: true
     }),
     plansContractV1.getActiveAllocationsForRange(DB, profileId, start, end),
@@ -47,15 +79,9 @@ async function getWeeklyDirection(DB, profileId, start) {
     })
   ]);
 
-  const actualByGoal = new Map();
-  for (const item of history) {
-    if (item.goal_id == null) continue;
-    const goalId = Number(item.goal_id);
-    actualByGoal.set(
-      goalId,
-      (actualByGoal.get(goalId) || 0) + Math.max(0, Number(item.minutes) || 0)
-    );
-  }
+  const actualByGoal = new Map(
+    actualRows.map((row) => [Number(row.goal_id), Math.max(0, Number(row.actual_minutes) || 0)])
+  );
 
   const activityByGoal = new Map();
   for (const activity of activities) {
@@ -100,9 +126,10 @@ async function getWeeklyDirection(DB, profileId, start) {
 
   for (const [goalId] of actualByGoal) {
     if (!totals.has(goalId)) {
+      const activity = activityByGoal.get(goalId);
       totals.set(goalId, {
         goal_id: goalId,
-        name: `Goal ${goalId}`,
+        name: activity?.goal_name || `Goal ${goalId}`,
         target_minutes: 0,
         minimum_minutes: 0
       });
@@ -130,13 +157,19 @@ async function getWeeklyDirection(DB, profileId, start) {
   );
 }
 
+async function getWeeklyDirection(DB, profileId, start) {
+  return getDirection(DB, profileId, start, addDays(start, 6));
+}
+
 export const todayContractV1 = Object.freeze({
   getWeeklyDirection,
+  getDirection,
 
-  async getDay(DB, profileId, date) {
-    const start = weekStart(date);
-    const [weeklyDirection, progress] = await Promise.all([
-      getWeeklyDirection(DB, profileId, start),
+  async getDay(DB, profileId, date, { period = 'week' } = {}) {
+    const selectedPeriod = TODAY_DIRECTION_PERIODS.includes(period) ? period : 'week';
+    const range = directionRange(date, selectedPeriod);
+    const [direction, progress] = await Promise.all([
+      getDirection(DB, profileId, range.start, range.end),
       progressContractV1.listHistory(DB, profileId, {
         from: date,
         to: date,
@@ -147,8 +180,12 @@ export const todayContractV1 = Object.freeze({
 
     return Object.freeze({
       date,
-      week_start: start,
-      weekly_direction: weeklyDirection,
+      week_start: weekStart(date),
+      direction_period: selectedPeriod,
+      direction_start: range.start,
+      direction_end: range.end,
+      direction,
+      weekly_direction: selectedPeriod === 'week' ? direction : Object.freeze([]),
       progress
     });
   }
