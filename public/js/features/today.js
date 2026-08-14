@@ -43,7 +43,7 @@ function periodSwitcher(model) {
 function summaryWidget(model) {
   if (!model) return '';
   return `<section class="time-reality-card" data-today-widget="${escapeHtml(model.id || '')}">
-    <header class="time-reality-head"><div><span class="section-kicker">${escapeHtml(model.title || '')}</span><h2>${escapeHtml(model.status || '')}</h2>${model.description ? `<p>${escapeHtml(model.description)}</p>` : ''}</div></header>
+    <header class="time-reality-head"><div><span class="section-kicker">${escapeHtml(model.title || '')}</span><h2>${escapeHtml(model.status || '')}</h2>${model.description ? `<p class="gc-sr-only">${escapeHtml(model.description)}</p>` : ''}</div></header>
     ${model.metrics?.length ? `<div class="time-reality-stats">${model.metrics.map(metricHtml).join('')}</div>` : ''}
   </section>`;
 }
@@ -52,7 +52,7 @@ function cardsWidget(model) {
   if (!model) return '';
   const cards = model.cards || [];
   return `<section class="os-section today-direction-section" data-today-widget="${escapeHtml(model.id || '')}">
-    <div class="os-section-head today-direction-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2>${model.detail ? `<small>${escapeHtml(model.detail)}</small>` : ''}</div>${periodSwitcher(model)}</div>
+    <div class="os-section-head today-direction-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2>${model.detail ? `<small class="gc-sr-only">${escapeHtml(model.detail)}</small>` : ''}</div>${periodSwitcher(model)}</div>
     <div class="today-goal-grid">${cards.length ? cards.map((card) => `<article class="today-goal-card"><div class="goal-card-top"><div><span class="goal-dot" aria-hidden="true"></span><strong>${escapeHtml(card.title || '')}</strong></div><span class="today-goal-status">${escapeHtml(card.status || '')}</span></div><div class="goal-progress-copy">${(card.metrics || []).map(metricHtml).join('')}</div>${thresholdHtml(card)}</article>`).join('') : `<div class="empty">${escapeHtml(model.empty || 'Nothing to show yet.')}</div>`}</div>
   </section>`;
 }
@@ -110,10 +110,10 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   }) || null;
 
   root.innerHTML = `<div class="today-layout gc-page-flow">
-    <section class="today-command gc-page-header gc-page-header--action"><div class="today-command-copy"><p class="eyebrow">${formatDateLabel(date)}</p><h2>Choose what fits today</h2><p>Log what actually happens.</p></div><button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Log or plan</button></section>
+    <section class="today-command gc-page-header gc-page-header--action" aria-label="Today actions"><div class="today-command-copy"><p class="eyebrow">${formatDateLabel(date)}</p><p class="gc-sr-only">Choose what fits today. Log what actually happens.</p></div><button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Add</button></section>
+    ${dailyPlanPanel}
     ${wellbeingState}
     ${renderModel(capacityModel)}
-    ${dailyPlanPanel}
     ${renderModel(directionModel)}
     ${renderModel(recentModel)}
     ${journalPreview}

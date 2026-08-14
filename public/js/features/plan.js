@@ -6,6 +6,12 @@ import { bindLegacyPlan, legacyPlanHtml } from './plan/legacy.js';
 
 const registry = createFrontendModuleRegistry(frontendModules);
 const EXPERIENCE_ORDER = Object.freeze({ goals: 10, areas: 20, plans: 30, capacity: 40 });
+const PLAN_SECTION_LABELS = Object.freeze({
+  goals: 'Goals',
+  areas: 'Life areas',
+  plans: 'Plan structure',
+  capacity: 'Time & capacity'
+});
 
 function slotOrder(module, slotName) {
   return EXPERIENCE_ORDER[module.id] ?? module.slots.find((slot) => slot.name === slotName)?.order ?? 100;
@@ -67,11 +73,11 @@ function planOverview(enabled, results) {
     .map((item) => `<div data-summary-module="${escapeHtml(item.moduleId)}" data-summary-id="${escapeHtml(item.id)}"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong><small>${escapeHtml(item.detail)}</small></div>`)
     .join('');
 
-  return `<section class="plan-overview gc-page-header gc-page-header--with-stats">
+  return `<section class="plan-overview gc-page-header gc-page-header--with-stats" aria-label="Plan at a glance">
     <div class="plan-overview-copy">
-      <span class="section-kicker">Plan at a glance</span>
-      <h2>Plan around the life you have</h2>
-      <p>Set direction, then fit it to your time.</p>
+      <span class="gc-sr-only">Plan at a glance</span>
+      <h2>Your plan</h2>
+      <p class="gc-sr-only">Set direction, then fit it to your time.</p>
     </div>
     <div class="plan-overview-grid gc-stat-grid">${cards}</div>
   </section>`;
@@ -84,6 +90,10 @@ function planNavigation() {
     <button type="button" data-plan-scroll="commitmentEditor"><span>03</span><b>Schedule</b><small>Commitments</small></button>
     <button type="button" data-plan-scroll="compassSection"><span>04</span><b>Compass</b><small>Long term</small></button>
   </nav>`;
+}
+
+function planModuleLabel(module) {
+  return PLAN_SECTION_LABELS[module.id] || module.id.replaceAll('-', ' ').replace(/^./, (value) => value.toUpperCase());
 }
 
 export async function renderPlan({ reload }) {
@@ -121,12 +131,15 @@ export async function renderPlan({ reload }) {
     const result = results[module.id];
     if (!result || result.status !== 'ready') return moduleErrorHtml(module, result?.error || 'Section unavailable.');
     try {
-      return `<section class="plan-module-block" id="plan-module-${module.id}" data-module="${module.id}">${module.render({
-        model: result.model,
-        models: dependencyModelsFor(module, results),
-        date: state.date,
-        dependencies: dependenciesFor(module)
-      })}</section>`;
+      return `<details class="plan-module-block plan-module-disclosure" id="plan-module-${module.id}" data-module="${module.id}" ${module.id === 'goals' ? 'open' : ''}>
+        <summary class="plan-module-summary"><strong>${escapeHtml(planModuleLabel(module))}</strong><span aria-hidden="true">⌄</span></summary>
+        <div class="plan-module-content">${module.render({
+          model: result.model,
+          models: dependencyModelsFor(module, results),
+          date: state.date,
+          dependencies: dependenciesFor(module)
+        })}</div>
+      </details>`;
     } catch (error) {
       results[module.id] = { status: 'failed', error: error?.message || 'Could not display this section.' };
       return moduleErrorHtml(module, results[module.id].error);
@@ -137,14 +150,15 @@ export async function renderPlan({ reload }) {
     ${planOverview(enabled, results)}
     ${planNavigation()}
     <div class="plan-module-stack">${panels}</div>
-    <section id="compassSection" class="compass-section">
-      <div class="os-section-head"><div><span class="section-kicker">Long-term direction</span><h2>Compass</h2></div><small>Directional, editable, never contractual</small></div>
-      ${legacyPlanHtml()}
-    </section>
+    <details id="compassSection" class="compass-section plan-module-disclosure">
+      <summary class="plan-module-summary"><strong>Compass</strong><span aria-hidden="true">⌄</span></summary>
+      <div class="plan-module-content"><div class="gc-sr-only">Long-term direction. Directional, editable, never contractual.</div>${legacyPlanHtml()}</div>
+    </details>
   `;
 
   root.querySelectorAll('[data-plan-scroll]').forEach((button) => button.addEventListener('click', () => {
     const target = document.getElementById(button.dataset.planScroll);
+    if (target?.matches('details')) target.open = true;
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
 
