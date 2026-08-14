@@ -13,17 +13,17 @@ const wellbeingCss = await readFile(new URL('../public/css/modules/wellbeing.css
 const capacityCss = await readFile(new URL('../public/css/modules/capacity.css', import.meta.url), 'utf8');
 const progressCss = await readFile(new URL('../public/css/modules/progress-today.css', import.meta.url), 'utf8');
 
-test('Today keeps the approved command state capacity plan direction recent journal energy order', () => {
+test('Revision C Today puts immediate plan action before supporting state capacity direction history and reflection', () => {
   const render = todayJs.slice(todayJs.indexOf('root.innerHTML'));
   const command = render.indexOf('today-command');
+  const dailyPlan = render.indexOf('${dailyPlanPanel}');
   const state = render.indexOf('${wellbeingState}');
   const capacity = render.indexOf('${renderModel(capacityModel)}');
-  const dailyPlan = render.indexOf('${dailyPlanPanel}');
   const direction = render.indexOf('${renderModel(directionModel)}');
   const recent = render.indexOf('${renderModel(recentModel)}');
   const journal = render.indexOf('${journalPreview}');
   const energy = render.indexOf('${wellbeingDetails}');
-  assert.ok(command >= 0 && command < state && state < capacity && capacity < dailyPlan && dailyPlan < direction && direction < recent && recent < journal && journal < energy);
+  assert.ok(command >= 0 && command < dailyPlan && dailyPlan < state && state < capacity && capacity < direction && direction < recent && recent < journal && journal < energy);
 });
 
 test('Today remains a composition surface and uses the platform threshold primitive', () => {

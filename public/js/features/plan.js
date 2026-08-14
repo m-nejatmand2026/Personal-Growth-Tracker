@@ -75,7 +75,6 @@ function planOverview(enabled, results) {
 
   return `<section class="plan-overview gc-page-header gc-page-header--with-stats" aria-label="Plan at a glance">
     <div class="plan-overview-copy">
-      <span class="gc-sr-only">Plan at a glance</span>
       <h2>Your plan</h2>
       <p class="gc-sr-only">Set direction, then fit it to your time.</p>
     </div>
@@ -158,7 +157,10 @@ export async function renderPlan({ reload }) {
 
   root.querySelectorAll('[data-plan-scroll]').forEach((button) => button.addEventListener('click', () => {
     const target = document.getElementById(button.dataset.planScroll);
-    if (target?.matches('details')) target.open = true;
+    const disclosure = target?.matches('details.plan-module-disclosure')
+      ? target
+      : target?.closest('details.plan-module-disclosure');
+    if (disclosure) disclosure.open = true;
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
 

@@ -39,6 +39,15 @@ async function selectView(page, view, expectedTitle, selectorPrefix = '.rail-nav
   assert.equal(await page.title(), `${expectedTitle} — Growth Compass`);
 }
 
+async function validatePlanDisclosure(page, browserName) {
+  const capacity = page.locator('#plan-module-capacity');
+  await capacity.waitFor({ state: 'attached' });
+  assert.equal(await capacity.getAttribute('open'), null, `${browserName}: supporting Plan modules should start collapsed`);
+  await page.locator('[data-plan-scroll="capacityPanel"]').click();
+  await page.waitForFunction(() => document.querySelector('#plan-module-capacity')?.open === true);
+  await page.locator('#capacityPanel').waitFor({ state: 'visible' });
+}
+
 async function exerciseDesktop(browserType, browserName) {
   const browser = await browserType.launch();
   try {
@@ -64,6 +73,7 @@ async function exerciseDesktop(browserType, browserName) {
     ]) {
       await selectView(page, view, title);
       await assertNoHorizontalOverflow(page, `${browserName} desktop ${title}`);
+      if (view === 'plan') await validatePlanDisclosure(page, `${browserName} desktop`);
     }
 
     const opener = page.locator('[data-open-logger]:visible').first();
@@ -107,6 +117,7 @@ async function exerciseMobile(browserType, browserName) {
 
     await selectView(page, 'plan', 'Plan', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Plan`);
+    await validatePlanDisclosure(page, `${browserName} 375px`);
     await selectView(page, 'progress', 'Progress', '.bottom-nav .nav-btn');
     await assertNoHorizontalOverflow(page, `${browserName} 375px Progress`);
     await selectView(page, 'wellness-boost', 'Wellness Boost', '.bottom-nav .nav-btn');
@@ -130,11 +141,11 @@ async function exerciseMobile(browserType, browserName) {
 }
 
 for (const [browserName, browserType] of BROWSERS) {
-  test(`${browserName} desktop validates navigation keyboard modal and reflow contracts`, async () => {
+  test(`${browserName} desktop validates navigation keyboard modal disclosure and reflow contracts`, async () => {
     await exerciseDesktop(browserType, browserName);
   });
 
-  test(`${browserName} 375px validates touch navigation Logger fit and reflow contracts`, async () => {
+  test(`${browserName} 375px validates touch navigation Logger disclosure fit and reflow contracts`, async () => {
     await exerciseMobile(browserType, browserName);
   });
 }

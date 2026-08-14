@@ -43,10 +43,11 @@ test('major first-class views share the same calm header contract', () => {
   assert.match(journal, /class="journal-hero"/);
 });
 
-test('major page introductions use short human-facing copy rather than dashboard explanations', () => {
-  assert.match(today, /Choose what fits today/);
-  assert.match(today, /Log what actually happens\./);
-  assert.match(plan, /Plan around the life you have/);
+test('Revision C makes primary Today and Plan introductions action-first and concise', () => {
+  assert.match(today, /<p class="eyebrow">\$\{formatDateLabel\(date\)\}<\/p>/);
+  assert.match(today, /id="todayLogButton"[^>]*><span aria-hidden="true">＋<\/span> Add<\/button>/);
+  assert.match(today, /class="gc-sr-only">Choose what fits today\. Log what actually happens\.<\/p>/);
+  assert.match(plan, /<h2>Your plan<\/h2>/);
   assert.match(plan, /Set direction, then fit it to your time\./);
   assert.match(progress, /Your history first\. Targets are guidance, not debt\./);
   assert.match(insights, /Patterns, when the evidence is ready/);
