@@ -1,0 +1,22 @@
+/* Today composition surface only. Module-owned cards keep their own CSS. */
+#todayView{min-width:0}
+.today-layout{display:grid;gap:14px;min-width:0}
+.today-layout>*{margin-bottom:0!important}
+.today-command{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:center;padding:22px;border:1px solid color-mix(in srgb,var(--gc-brand) 18%,var(--gc-border));border-radius:var(--gc-radius-xl);background:linear-gradient(135deg,var(--gc-brand-soft) 0%,var(--gc-surface) 62%,var(--gc-surface) 100%);box-shadow:var(--gc-shadow-md)}
+.today-command-copy{min-width:0}
+.today-command .eyebrow{margin:0;color:var(--gc-brand-strong);font-size:var(--gc-text-xs);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.today-command h2{margin:5px 0 7px;color:var(--gc-text);font-size:clamp(1.65rem,5vw,2.15rem);line-height:1.04;letter-spacing:-.025em}
+.today-command p:not(.eyebrow){max-width:610px;margin:0;color:var(--gc-text-muted);font-size:var(--gc-text-sm)}
+.command-log-btn{min-width:142px;white-space:nowrap;box-shadow:0 10px 24px rgba(15,119,117,.20)}
+.command-log-btn>span{font-size:1.25rem;line-height:1}
+
+@media (max-width:600px){
+  .today-layout{gap:12px}
+  .today-command{grid-template-columns:1fr;gap:16px;padding:18px}
+  .command-log-btn{width:100%;min-width:0}
+}
+
+@media (min-width:900px){
+  .today-layout{gap:16px}
+  .today-command{padding:26px 28px}
+}
