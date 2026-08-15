@@ -29,6 +29,37 @@ function itemHtml(item) {
   </article>`;
 }
 
+function sanctuaryTime(item) {
+  if (!item.planned_time) return '';
+  const [hours, minutes] = item.planned_time.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return item.planned_time;
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const hour = hours % 12 || 12;
+  return `${hour}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+function sanctuaryItemHtml(item, index) {
+  const active = item.status === 'in_progress';
+  const meta = item.note || item.activity_label || (item.planned_minutes ? `${formatMinutes(item.planned_minutes)} planned` : '');
+  return `<article class="sanctuary-agenda-item ${active ? 'is-active' : ''}" data-agenda-index="${index}">
+    <button type="button" class="daily-plan-check sanctuary-agenda-check" data-plan-done="${item.id}" aria-label="Mark ${escapeHtml(item.title)} done"><span aria-hidden="true">${active ? '●' : ''}</span></button>
+    <div class="sanctuary-agenda-copy"><div class="sanctuary-agenda-title"><strong>${escapeHtml(item.title)}</strong>${item.planned_time ? `<time datetime="${escapeHtml(item.planned_time)}">${escapeHtml(sanctuaryTime(item))}</time>` : ''}</div>${meta ? `<p>${escapeHtml(meta)}</p>` : ''}
+      <div class="daily-plan-actions sanctuary-agenda-actions">${item.status === 'planned' ? `<button type="button" data-plan-start="${item.id}"><span aria-hidden="true">▷</span> Start</button>` : ''}<button type="button" data-plan-review="${item.id}">Plans changed?</button><button type="button" data-plan-edit="${item.id}" aria-label="Edit ${escapeHtml(item.title)}">Edit</button></div>
+    </div>
+  </article>`;
+}
+
+function sanctuaryPanelHtml(model) {
+  const items = model.today || [];
+  const focus = items.find((item) => item.status === 'in_progress') || items[0] || null;
+  return `<section class="daily-plan-sanctuary" id="dailyPlanSection" aria-labelledby="agendaTitle">
+    ${focus ? `<article class="sanctuary-focus-card"><div class="sanctuary-focus-copy"><p><span aria-hidden="true">⊙</span> Primary Focus</p><h3>${escapeHtml(focus.title)}</h3>${focus.note || focus.activity_label ? `<div>${escapeHtml(focus.note || focus.activity_label)}</div>` : ''}</div><button type="button" class="sanctuary-focus-action" data-plan-start="${focus.id}" ${focus.status === 'in_progress' ? 'disabled' : ''}><span aria-hidden="true">▷</span>${focus.status === 'in_progress' ? 'In Focus' : 'Start Focus'}</button></article>` : `<article class="sanctuary-focus-card is-empty"><div class="sanctuary-focus-copy"><p><span aria-hidden="true">⊙</span> Primary Focus</p><h3>Choose what matters most today</h3><div>Keep the day intentional and light.</div></div><button type="button" class="sanctuary-focus-action" data-plan-add="${model.date}"><span aria-hidden="true">＋</span>Add Focus</button></article>`}
+    <header class="sanctuary-agenda-head"><h3 id="agendaTitle">Agenda</h3><span>${items.length} ${items.length === 1 ? 'Task' : 'Tasks'}</span></header>
+    <div class="sanctuary-agenda-list">${items.length ? items.map(sanctuaryItemHtml).join('') : `<div class="daily-plan-empty sanctuary-agenda-empty"><strong>A clear day.</strong><span>Add only what genuinely matters.</span></div>`}</div>
+    <button type="button" class="daily-plan-add sanctuary-agenda-add" data-plan-add="${model.date}">＋ Add to Today</button>
+  </section>`;
+}
+
 function panelHtml(items, date, label, hidden = false) {
   return `<div class="daily-plan-panel" data-plan-panel="${date}" ${hidden ? 'hidden' : ''}>
     ${items.length ? `<div class="daily-plan-list">${items.map(itemHtml).join('')}</div>` : `<div class="daily-plan-empty"><strong>No ${label.toLowerCase()} items yet.</strong><span>Add only what genuinely matters. Unfinished items do not become debt tomorrow.</span></div>`}
@@ -89,7 +120,8 @@ export const dailyPlanModule = Object.freeze({
     return { date, tomorrow, today: a.items || [], tomorrowItems: b.items || [] };
   },
 
-  render({ model }) {
+  render({ model, variant = 'default' }) {
+    if (variant === 'today-sanctuary') return sanctuaryPanelHtml(model);
     const total = model.today.length + model.tomorrowItems.length;
     return `<section class="os-section daily-plan-section" id="dailyPlanSection"><div class="os-section-head daily-plan-head"><div><span class="section-kicker">Short-term plan</span><h2>Today & tomorrow</h2></div><small>${total ? `${total} active` : 'Plan lightly'}</small></div><div class="daily-plan-tabs" role="tablist" aria-label="Daily plan date"><button type="button" class="active" role="tab" aria-selected="true" data-plan-tab="${model.date}">Today <b>${model.today.length}</b></button><button type="button" role="tab" aria-selected="false" data-plan-tab="${model.tomorrow}">Tomorrow <b>${model.tomorrowItems.length}</b></button></div>${panelHtml(model.today, model.date, 'Today')}${panelHtml(model.tomorrowItems, model.tomorrow, 'Tomorrow', true)}</section>`;
   },

@@ -50,7 +50,7 @@ async function renderTodayView() {
       dailyPlanModel = dailyPlanResult.value;
       if (dailyPlanModel) {
         try {
-          dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date });
+          dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date, variant: 'today-sanctuary' });
         } catch (error) {
           dailyPlanPanel = dailyPlanUnavailable(error);
         }

@@ -35,7 +35,7 @@ test('framework owns reusable calm page, feature, choice, stat and tone primitiv
 });
 
 test('major first-class views share the same calm header contract', () => {
-  assert.match(today, /today-command gc-page-header gc-page-header--action/);
+  assert.match(today, /today-sanctuary-heading/);
   assert.match(plan, /plan-overview gc-page-header gc-page-header--with-stats/);
   assert.match(progress, /progress-dashboard gc-page-header gc-page-header--with-stats/);
   assert.match(insights, /insights-hero gc-page-header gc-page-header--aside/);
@@ -43,10 +43,9 @@ test('major first-class views share the same calm header contract', () => {
   assert.match(journal, /class="journal-hero journal-action-hero"/);
 });
 
-test('Revision C makes primary first-class introductions action-first and concise', () => {
-  assert.match(today, /<p class="eyebrow">\$\{formatDateLabel\(date\)\}<\/p>/);
-  assert.match(today, /id="todayLogButton"[^>]*><span aria-hidden="true">＋<\/span> Add<\/button>/);
-  assert.match(today, /class="gc-sr-only">Choose what fits today\. Log what actually happens\.<\/p>/);
+test('Stitch Today and the other first-class introductions remain concise', () => {
+  assert.match(today, /<h2 id="todaySanctuaryTitle">Today<\/h2><p>\$\{formatDateLabel\(date\)\}<\/p>/);
+  assert.match(today, /\$\{dailyPlanPanel\}/);
   assert.match(plan, /<h2>Your plan<\/h2>/);
   assert.match(plan, /Set direction, then fit it to your time\./);
   assert.match(progress, /<h2>This week<\/h2>/);

@@ -14,10 +14,11 @@ const capacityCss = await readFile(new URL('../public/css/modules/capacity.css',
 const progressCss = await readFile(new URL('../public/css/modules/progress-today.css', import.meta.url), 'utf8');
 const dailyPlanTodayCss = await readFile(new URL('../public/css/modules/daily-plan-today.css', import.meta.url), 'utf8');
 const wellbeingTodayCss = await readFile(new URL('../public/css/modules/wellbeing-today-sanctuary.css', import.meta.url), 'utf8');
+const dailyPlanJs = await readFile(new URL('../public/js/modules/daily-plan/module.js', import.meta.url), 'utf8');
 
-test('Revision C Today puts immediate plan action before supporting state capacity direction history and reflection', () => {
+test('Stitch Today Sanctuary puts the editorial heading and agenda before supporting context', () => {
   const render = todayJs.slice(todayJs.indexOf('root.innerHTML'));
-  const command = render.indexOf('today-command');
+  const heading = render.indexOf('today-sanctuary-heading');
   const dailyPlan = render.indexOf('${dailyPlanPanel}');
   const state = render.indexOf('${wellbeingState}');
   const capacity = render.indexOf('${renderModel(capacityModel)}');
@@ -25,7 +26,16 @@ test('Revision C Today puts immediate plan action before supporting state capaci
   const recent = render.indexOf('${renderModel(recentModel)}');
   const journal = render.indexOf('${journalPreview}');
   const energy = render.indexOf('${wellbeingDetails}');
-  assert.ok(command >= 0 && command < dailyPlan && dailyPlan < state && state < capacity && capacity < direction && direction < recent && recent < journal && journal < energy);
+  assert.ok(heading >= 0 && heading < dailyPlan && dailyPlan < state && state < capacity && capacity < direction && direction < recent && recent < journal && journal < energy);
+});
+
+test('Daily Plan owns the Stitch focus card agenda and existing actions', () => {
+  assert.match(dailyPlanJs, /variant === 'today-sanctuary'/);
+  assert.match(dailyPlanJs, /sanctuary-focus-card/);
+  assert.match(dailyPlanJs, /sanctuary-agenda-list/);
+  assert.match(dailyPlanJs, /data-plan-start/);
+  assert.match(dailyPlanJs, /data-plan-done/);
+  assert.match(dailyPlanJs, /data-plan-edit/);
 });
 
 test('Today remains a composition surface and uses the platform threshold primitive', () => {
@@ -81,7 +91,8 @@ test('Wellbeing owns visible Daily State and accessible progressive Energy selec
 
 test('Today is phone-first and its contributor styles stay module-owned', () => {
   assert.match(todayCss, /@media \(max-width:600px\)/);
-  assert.match(todayCss, /grid-template-columns:1fr/);
+  assert.match(todayCss, /today-sanctuary-heading/);
+  assert.match(todayCss, /Georgia,serif/);
   assert.doesNotMatch(todayCss, /daily-state-grid|time-reality-card|today-goal-card|daily-plan|journal-preview|energy-grid/);
 
   assert.match(wellbeingCss, /daily-state-grid/);
@@ -98,7 +109,9 @@ test('Today is phone-first and its contributor styles stay module-owned', () => 
 });
 
 test('Today sanctuary variants remain scoped to their owning modules', () => {
-  assert.match(dailyPlanTodayCss, /#todayView \.daily-plan-section/);
+  assert.match(dailyPlanTodayCss, /#todayView \.daily-plan-sanctuary/);
+  assert.match(dailyPlanTodayCss, /#todayView \.sanctuary-focus-card/);
+  assert.match(dailyPlanTodayCss, /#todayView \.sanctuary-agenda-item/);
   assert.doesNotMatch(dailyPlanTodayCss, /daily-state-grid|energy-grid|time-reality-card|today-goal-card|journal-preview/);
   assert.match(wellbeingTodayCss, /#todayView \.daily-state-grid/);
   assert.doesNotMatch(wellbeingTodayCss, /daily-plan|time-reality-card|today-goal-card|journal-preview/);

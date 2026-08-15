@@ -1,72 +1,47 @@
-/* Daily Plan-owned Today treatment for the sanctuary prototype. */
-#todayView .daily-plan-section{
-  margin:0;
-  padding:18px;
-  overflow:hidden;
-  border:1px solid #e6e7e3;
-  border-radius:24px;
-  background:#fff;
-  box-shadow:0 14px 42px rgba(31,38,43,.055);
-}
-#todayView .daily-plan-head{margin-bottom:12px}
-#todayView .daily-plan-head h2{margin:0;color:#17202b;font-size:1.12rem;font-weight:760;letter-spacing:-.025em}
-#todayView .daily-plan-head>small{color:#6f777d;font-size:.72rem;font-weight:600}
-#todayView .daily-plan-tabs{
-  width:max-content;
-  max-width:100%;
-  display:flex;
-  gap:3px;
-  margin:0 0 15px;
-  padding:3px;
-  border:1px solid #e6e7e3;
-  border-radius:999px;
-  background:#fbfaf7;
-}
-#todayView .daily-plan-tabs button{min-width:98px;min-height:40px;padding:0 13px;border-radius:999px;color:#6f777d;font-size:.74rem;font-weight:720}
-#todayView .daily-plan-tabs button.active{background:#17202b;color:#fff;box-shadow:none}
-#todayView .daily-plan-tabs button b{min-width:20px;height:20px;background:rgba(255,255,255,.14);color:inherit}
-#todayView .daily-plan-list{gap:0}
-#todayView .daily-plan-item{
-  position:relative;
-  display:grid;
-  grid-template-columns:42px minmax(0,1fr) auto;
-  gap:11px;
-  align-items:center;
-  margin:0;
-  padding:13px 0;
-  border:0;
-  border-bottom:1px solid #e6e7e3;
-  border-radius:0;
-  background:transparent;
-  box-shadow:none;
-}
-#todayView .daily-plan-item:last-child{border-bottom:0}
-#todayView .daily-plan-item.is-active{
-  margin:0 0 10px;
-  padding:16px;
-  border:1px solid #cfe7dd;
-  border-radius:18px;
-  background:linear-gradient(135deg,#f2faf6 0%,#fff 76%);
-}
-#todayView .daily-plan-check{width:40px;height:40px;border:1.5px solid #c9cfcc;background:#fff;color:#256b5e}
-#todayView .daily-plan-item.is-active .daily-plan-check{border-color:#87bbaa;background:#dff3ea}
-#todayView .daily-plan-status{margin:0 0 2px;color:#256b5e;font-size:.62rem!important;font-weight:760;letter-spacing:.08em}
-#todayView .daily-plan-main strong{color:#17202b;font-size:.98rem;font-weight:720;line-height:1.28}
-#todayView .daily-plan-main>span:not(.daily-plan-status),#todayView .daily-plan-main small{margin-top:3px;color:#6f777d;font-size:.72rem;line-height:1.35}
-#todayView .daily-plan-actions{gap:2px;justify-content:flex-end}
-#todayView .daily-plan-actions button{min-height:40px;padding:0 8px;border-radius:10px;background:transparent;color:#6f777d;font-size:.69rem;font-weight:680}
-#todayView .daily-plan-actions [data-plan-start]{padding-inline:12px;background:#17202b;color:#fff}
-#todayView .daily-plan-actions [data-plan-review]{background:transparent;color:#6f777d}
-#todayView .daily-plan-add{min-height:46px;margin-top:12px;border:1px solid #e6e7e3;border-radius:14px;background:#fbfaf7;color:#17202b;font-size:.76rem;font-weight:720}
-#todayView .daily-plan-add:hover{background:#f3eee4}
-#todayView .daily-plan-empty{min-height:128px;display:grid;align-content:center;justify-items:start;gap:5px;padding:10px 4px}
-#todayView .daily-plan-empty strong{color:#17202b;font-size:1.08rem;font-weight:720;letter-spacing:-.02em}
-#todayView .daily-plan-empty span{display:block;max-width:420px;color:#6f777d;font-size:.78rem;line-height:1.5}
+/* Daily Plan presentation for the Stitch Today Sanctuary composition. */
+#todayView .daily-plan-sanctuary{font-family:Inter,system-ui,sans-serif}
+#todayView .sanctuary-focus-card{position:relative;min-height:360px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:24px;overflow:hidden;padding:36px 34px 34px;border:0;border-radius:12px;background:#fff;box-shadow:0 16px 44px rgba(15,23,42,.055)}
+#todayView .sanctuary-focus-card::after{content:"";position:absolute;right:-72px;top:-76px;width:210px;height:210px;border-radius:50%;background:#f3f5fb;pointer-events:none}
+#todayView .sanctuary-focus-copy{position:relative;z-index:1;max-width:650px}
+#todayView .sanctuary-focus-copy>p{display:flex;align-items:center;gap:10px;margin:0 0 20px;color:#171820;font-size:.76rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+#todayView .sanctuary-focus-copy>p span{color:var(--today-violet);font-size:1.08rem}
+#todayView .sanctuary-focus-copy h3{margin:0;color:var(--today-ink);font-family:"Playfair Display",Georgia,serif;font-size:clamp(1.78rem,7vw,2.45rem);font-weight:600;line-height:1.22;letter-spacing:-.025em}
+#todayView .sanctuary-focus-copy>div{margin-top:14px;color:var(--today-copy);font-size:1rem;line-height:1.63}
+#todayView .sanctuary-focus-action{position:relative;z-index:1;min-height:49px;display:inline-flex;align-items:center;gap:11px;padding:0 26px;border:0;border-radius:12px;background:#000;color:#fff;font:inherit;font-size:.86rem;font-weight:500;cursor:pointer}
+#todayView .sanctuary-focus-action:hover{background:#202126}
+#todayView .sanctuary-focus-action:disabled{opacity:.72;cursor:default}
+
+#todayView .sanctuary-agenda-head{display:flex;align-items:center;gap:13px;margin:139px 0 0;padding:0 0 17px;border-bottom:1px solid var(--today-line)}
+#todayView .sanctuary-agenda-head h3{margin:0;color:var(--today-ink);font-family:"Playfair Display",Georgia,serif;font-size:1.72rem;font-weight:600;letter-spacing:-.025em}
+#todayView .sanctuary-agenda-head>span{padding:7px 14px;border-radius:999px;background:#e8efff;color:#171820;font-size:.69rem;font-weight:500;letter-spacing:.13em}
+#todayView .sanctuary-agenda-list{padding:27px 0 0}
+#todayView .sanctuary-agenda-item{position:relative;display:grid;grid-template-columns:38px minmax(0,1fr);gap:22px;padding:13px 0 27px}
+#todayView .sanctuary-agenda-item:not(:last-child)::after{content:"";position:absolute;left:18px;top:50px;bottom:-2px;width:1px;background:#dfe1e6}
+#todayView .sanctuary-agenda-check{position:relative;z-index:1;width:28px;height:28px;min-height:28px;margin:0;border:1px solid #bfc2c9;border-radius:50%;background:var(--today-canvas);color:#fff;font-size:.66rem;box-shadow:none}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-check{border:8px solid var(--today-violet);background:#fff;box-shadow:0 0 20px rgba(139,85,255,.32)}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-check span{display:none}
+#todayView .sanctuary-agenda-copy{min-width:0}
+#todayView .sanctuary-agenda-title{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:baseline}
+#todayView .sanctuary-agenda-title strong{color:var(--today-ink);font-size:1.03rem;font-weight:400;line-height:1.4}
+#todayView .sanctuary-agenda-title time{color:#202126;font-size:.76rem;font-weight:500;white-space:nowrap}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-title strong,#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-title time{color:var(--today-violet)}
+#todayView .sanctuary-agenda-copy>p{margin:8px 0 0;color:#292b31;font-size:.83rem;line-height:1.52}
+#todayView .sanctuary-agenda-actions{display:flex;gap:7px;margin-top:13px;opacity:0;transition:opacity .15s ease}
+#todayView .sanctuary-agenda-item:hover .sanctuary-agenda-actions,#todayView .sanctuary-agenda-item:focus-within .sanctuary-agenda-actions,#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-actions{opacity:1}
+#todayView .sanctuary-agenda-actions button{min-height:38px;padding:0 12px;border:1px solid #d2d4da;border-radius:11px;background:transparent;color:#353740;font:inherit;font-size:.72rem;font-weight:500}
+#todayView .sanctuary-agenda-actions [data-plan-start]{border-color:var(--today-violet);color:var(--today-violet)}
+#todayView .sanctuary-agenda-add{width:100%;min-height:48px;margin-top:8px;border:1px dashed #c9cbd2;border-radius:12px;background:transparent;color:#383a41;font:inherit;font-size:.78rem;font-weight:500}
+#todayView .sanctuary-agenda-empty{min-height:130px;padding:24px 0}
 
 @media (max-width:600px){
-  #todayView .daily-plan-section{padding:15px;border-radius:21px}
-  #todayView .daily-plan-tabs{width:100%}
-  #todayView .daily-plan-tabs button{flex:1;min-width:0}
-  #todayView .daily-plan-item,#todayView .daily-plan-item.is-active{grid-template-columns:40px minmax(0,1fr)}
-  #todayView .daily-plan-actions{grid-column:2;justify-content:flex-start}
+  #todayView .sanctuary-focus-card{min-height:360px;padding:35px 34px 34px}
+  #todayView .sanctuary-agenda-head{margin-top:139px}
+  #todayView .sanctuary-agenda-actions{opacity:1;flex-wrap:wrap}
+  #todayView .sanctuary-agenda-actions button{min-height:44px}
+  #todayView .sanctuary-agenda-title{gap:8px}
+}
+
+@media (min-width:720px){
+  #todayView .sanctuary-focus-card{min-height:250px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end}
+  #todayView .sanctuary-agenda-head{margin-top:108px}
 }

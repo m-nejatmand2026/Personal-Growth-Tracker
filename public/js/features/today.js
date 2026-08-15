@@ -110,12 +110,12 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   }) || null;
 
   root.innerHTML = `<div class="today-layout gc-page-flow">
-    <section class="today-command gc-page-header gc-page-header--action" aria-label="Today actions"><div class="today-command-copy"><p class="eyebrow">${formatDateLabel(date)}</p><p class="gc-sr-only">Choose what fits today. Log what actually happens.</p></div><button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Add</button></section>
+    <section class="today-sanctuary-heading" aria-labelledby="todaySanctuaryTitle"><h2 id="todaySanctuaryTitle">Today</h2><p>${formatDateLabel(date)}</p></section>
     <div class="today-primary-flow">
       ${dailyPlanPanel}
-      ${wellbeingState}
     </div>
-    <details class="today-context-disclosure"><summary><span><strong>More for today</strong><small>Capacity, progress and reflection</small></span><span class="today-context-chevron" aria-hidden="true">⌄</span></summary><div class="today-context-body">
+    <details class="today-context-disclosure"><summary><span><strong>Daily context</strong><small>Wellbeing, capacity, progress and reflection</small></span><span class="today-context-chevron" aria-hidden="true">⌄</span></summary><div class="today-context-body">
+      ${wellbeingState}
       ${renderModel(capacityModel)}
       ${renderModel(directionModel)}
       ${renderModel(recentModel)}
@@ -124,7 +124,6 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
     </div></details>
   </div>`;
 
-  $('#todayLogButton')?.addEventListener('click', () => void openLogger?.());
   root.querySelectorAll('[data-direction-period]').forEach((button) => {
     button.addEventListener('click', () => {
       const next = button.dataset.directionPeriod;

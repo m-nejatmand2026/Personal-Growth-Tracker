@@ -23,8 +23,8 @@ test('Revision C presentation layer loads after shared experience styling and be
   assert.ok(framework >= 0 && framework < reset && reset < accessibility);
 });
 
-test('Revision C keeps Today action-first without moving business logic into composition', () => {
-  assert.match(today, /<span aria-hidden="true">＋<\/span> Add<\/button>/);
+test('Stitch Today keeps the agenda first without moving business logic into composition', () => {
+  assert.match(today, /today-sanctuary-heading/);
   assert.match(today, /\$\{dailyPlanPanel\}[\s\S]*\$\{wellbeingState\}[\s\S]*\$\{renderModel\(capacityModel\)\}/);
   assert.doesNotMatch(today, /\/api\/v1\/|fetch\(/);
 });

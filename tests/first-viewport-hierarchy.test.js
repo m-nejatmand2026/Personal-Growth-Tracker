@@ -13,7 +13,8 @@ test('shell owns first-class destination identity while view headers add context
 
   // Today keeps only its date as useful context; Plan uses the shell title plus
   // a concise content heading instead of repeating another destination eyebrow.
-  assert.match(today, /<p class="eyebrow">\$\{formatDateLabel\(date\)\}<\/p>/);
+  assert.match(today, /today-sanctuary-heading/);
+  assert.match(today, /<p>\$\{formatDateLabel\(date\)\}<\/p>/);
   assert.match(plan, /aria-label="Plan at a glance"/);
   assert.match(plan, /<h2>Your plan<\/h2>/);
   assert.doesNotMatch(plan, /<span class="section-kicker">Plan at a glance<\/span>/);
