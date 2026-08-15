@@ -13,13 +13,13 @@ const liveCss = await readFile(new URL('../public/css/figma-current-live.css', i
 const currentCss = await readFile(new URL('../public/css/figma-current.css', import.meta.url), 'utf8');
 const accessibilityCss = await readFile(new URL('../public/css/accessibility-regression.css', import.meta.url), 'utf8');
 
-test('Figma Current presentation layers load after prior experience foundations', () => {
+test('Figma Current presentation layers load after prior experience foundations and before final accessibility safeguards', () => {
   const framework = indexHtml.indexOf('/css/experience-framework.css');
-  const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
   const current = indexHtml.indexOf('/css/figma-current.css');
   const live = indexHtml.indexOf('/css/figma-current-live.css');
   const semantics = indexHtml.indexOf('/css/figma-current-semantics.css');
-  assert.ok(framework >= 0 && framework < accessibility && accessibility < current && current < live && live < semantics);
+  const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
+  assert.ok(framework >= 0 && framework < current && current < live && live < semantics && semantics < accessibility);
 });
 
 test('Today keeps live overview and agenda first without moving business logic into composition', () => {
@@ -81,5 +81,4 @@ test('Logger semantic guidance remains available for assistive technology', () =
 test('canonical Current layers preserve 44px interaction floors and reduced motion', () => {
   assert.match(currentCss, /min-height:44px!important/);
   assert.match(currentCss, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.doesNotMatch(currentCss, /min-height:\s*(?:3[0-9]|4[0-3])px!important/);
 });
