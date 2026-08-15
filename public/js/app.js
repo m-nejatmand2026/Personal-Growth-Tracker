@@ -8,7 +8,7 @@ import { createFrontendModuleRegistry } from './platform/module-registry.js';
 import { createEventBus } from './platform/event-bus.js';
 
 const PRIMARY_VIEWS = new Set(['today', 'plan', 'progress', 'insights', 'wellness-boost']);
-const viewTitles = { today: 'Today', plan: 'Plan', progress: 'Progress', insights: 'Insights', 'wellness-boost': 'Wellness Boost', journal: 'Journal', settings: 'Settings' };
+const viewTitles = { today: 'Today', plan: 'Plan', progress: 'Progress', insights: 'Insights', 'wellness-boost': 'Wellness', journal: 'Journal', settings: 'Settings' };
 
 const moduleRegistry = createFrontendModuleRegistry(frontendModules);
 const eventBus = createEventBus();
@@ -31,7 +31,7 @@ const logger = loggerCapability?.create({ onSaved: load, activities }) || Object
 
 function dailyPlanUnavailable(error) {
   const message = escapeHtml(error?.message || 'Other parts of Today still work.');
-  return `<section class="os-section daily-plan-section"><div class="daily-plan-empty"><strong>Short-term planning is temporarily unavailable.</strong><span>${message}</span></div></section>`;
+  return `<section class="os-section daily-plan-section"><div class="daily-plan-empty"><strong>Your day is temporarily unavailable.</strong><span>${message}</span></div></section>`;
 }
 
 async function renderTodayView() {
@@ -50,7 +50,7 @@ async function renderTodayView() {
       dailyPlanModel = dailyPlanResult.value;
       if (dailyPlanModel) {
         try {
-          dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date, variant: 'today-sanctuary' });
+          dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date, variant: 'today-product' });
         } catch (error) {
           dailyPlanPanel = dailyPlanUnavailable(error);
         }
@@ -89,7 +89,7 @@ async function renderJournalView(overrides = null) {
 function renderWellnessBoostView() {
   const root = $('#wellness-boostView');
   if (!root) return;
-  root.innerHTML = wellnessBoost?.renderView?.() || '<section class="os-section"><div class="empty">Wellness Boost is unavailable.</div></section>';
+  root.innerHTML = wellnessBoost?.renderView?.() || '<section class="os-section"><div class="empty">Wellness is unavailable.</div></section>';
   wellnessBoost?.bindView?.({ root, rerender: renderWellnessBoostView });
 }
 
@@ -102,15 +102,9 @@ async function renderCurrentView() {
     if (state.view === 'plan') await renderPlan({ reload: load });
     if (state.view === 'progress') {
       if (progress) {
-        const summary = today
-          ? await today.loadSummary({ date: state.date })
-          : null;
-        await progress.render({
-          reload: load,
-          weeklyDirection: summary?.weeklyDirection || []
-        });
-      }
-      else if (root) root.innerHTML = '<div class="empty">Progress is unavailable.</div>';
+        const summary = today ? await today.loadSummary({ date: state.date }) : null;
+        await progress.render({ reload: load, weeklyDirection: summary?.weeklyDirection || [] });
+      } else if (root) root.innerHTML = '<div class="empty">Progress is unavailable.</div>';
     }
     if (state.view === 'insights') {
       if (insights) await insights.render();
@@ -158,6 +152,7 @@ async function showView(name) {
 }
 
 eventBus.subscribe('daily-plan.completion-selected', async (input) => { await logger.open(input); });
+eventBus.subscribe('daily-plan.capture-selected', async (input) => { await logger.open(input); });
 eventBus.subscribe('journal.preview-selected', async () => { await showView('journal'); });
 
 $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => button.addEventListener('click', () => void showView(button.dataset.view)));
