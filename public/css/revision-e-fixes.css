@@ -1,0 +1,66 @@
+/* Revision E follow-up: keep decorative elements non-semantic and make Progress visuals data-driven. */
+
+.plan-overview::after {
+  width: 112px;
+  height: 112px;
+  right: 10px;
+  top: 8px;
+  border: 0;
+  background:
+    radial-gradient(circle at 35% 35%, rgba(34, 199, 184, 0.24), transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(109, 77, 247, 0.28), transparent 46%);
+  filter: blur(2px);
+  opacity: 0.72;
+}
+
+#progressView .progress-primary-stat {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding-right: 96px;
+}
+
+#progressView .progress-primary-stat::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: 16px;
+  top: 50%;
+  width: 62px;
+  height: 62px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #0c1626 0 55%, transparent 57%),
+    conic-gradient(#8b6cff calc(var(--gc-progress-pct, 0) * 1%), rgba(255,255,255,0.08) 0);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+#progressView .progress-primary-stat::after {
+  content: "";
+  position: absolute;
+  right: 35px;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 199, 184, 0.44), rgba(109, 77, 247, 0.08) 72%);
+  filter: blur(5px);
+}
+
+@media (max-width: 359px) {
+  #progressView .progress-primary-stat {
+    padding-right: 74px;
+  }
+
+  #progressView .progress-primary-stat::before {
+    right: 10px;
+    width: 52px;
+    height: 52px;
+  }
+
+  #progressView .progress-primary-stat::after {
+    right: 25px;
+  }
+}
