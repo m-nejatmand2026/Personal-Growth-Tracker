@@ -12,7 +12,7 @@ function addDays(dateText, amount) {
 
 function itemMeta(item) {
   const parts = [];
-  if (item.activity_label) parts.push(item.activity_label);
+  if (item.activity_label && item.activity_label !== item.title) parts.push(item.activity_label);
   if (item.subtype && item.subtype !== item.title) parts.push(item.subtype);
   if (item.planned_time) parts.push(item.planned_time);
   if (item.planned_minutes) parts.push(`${formatMinutes(item.planned_minutes)} planned`);
@@ -29,33 +29,55 @@ function itemHtml(item) {
   </article>`;
 }
 
-function sanctuaryTime(item) {
-  if (!item.planned_time) return '';
-  const [hours, minutes] = item.planned_time.split(':').map(Number);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return item.planned_time;
-  const suffix = hours >= 12 ? 'PM' : 'AM';
-  const hour = hours % 12 || 12;
-  return `${hour}:${String(minutes).padStart(2, '0')} ${suffix}`;
+function activityGlyph(item) {
+  const source = String(item.activity_label || item.title || 'A').trim();
+  return escapeHtml((source[0] || 'A').toUpperCase());
 }
 
-function sanctuaryItemHtml(item, index) {
-  const active = item.status === 'in_progress';
-  const meta = item.note || item.activity_label || (item.planned_minutes ? `${formatMinutes(item.planned_minutes)} planned` : '');
-  return `<article class="sanctuary-agenda-item living-activity ${active ? 'is-active' : ''}" data-agenda-index="${index}">
-    <div class="living-activity-icon" aria-hidden="true">${active ? '◉' : '◇'}</div>
-    <div class="sanctuary-agenda-copy living-activity-copy"><div class="sanctuary-agenda-title"><strong>${escapeHtml(item.title)}</strong></div><p>${escapeHtml(meta || (active ? 'In focus now' : 'Ready when you are'))}</p></div>
-    <div class="daily-plan-actions sanctuary-agenda-actions living-activity-actions">${item.status === 'planned' ? `<button type="button" data-plan-start="${item.id}" aria-label="Start ${escapeHtml(item.title)}"><span aria-hidden="true">▶</span></button>` : ''}<button type="button" class="daily-plan-check sanctuary-agenda-check" data-plan-done="${item.id}" aria-label="Mark ${escapeHtml(item.title)} done"><span aria-hidden="true">✓</span></button><button type="button" data-plan-review="${item.id}" aria-label="Review ${escapeHtml(item.title)}">↻</button><button type="button" data-plan-edit="${item.id}" aria-label="Edit ${escapeHtml(item.title)}">•••</button></div>
+function todayPlanRow(item) {
+  const meta = itemMeta(item) || (item.activity_key ? 'Activity' : 'One-off plan');
+  return `<article class="gc-day-item" data-plan-item="${item.id}">
+    <span class="gc-day-item-mark" aria-hidden="true">${activityGlyph(item)}</span>
+    <div class="gc-day-item-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(meta)}</small></div>
+    <div class="gc-day-item-actions">
+      ${item.status === 'planned' ? `<button type="button" class="gc-day-start" data-plan-start="${item.id}">Start</button>` : ''}
+      <button type="button" class="gc-day-more" data-plan-review="${item.id}" aria-label="Plans changed for ${escapeHtml(item.title)}">•••</button>
+    </div>
   </article>`;
 }
 
-function sanctuaryPanelHtml(model) {
+function todayNow(active) {
+  if (!active) {
+    return `<section class="gc-now-card" aria-labelledby="gcNowTitle">
+      <span class="gc-kicker">Now</span>
+      <h3 id="gcNowTitle">Nothing running</h3>
+      <p>Choose something and begin. Progress is recorded only when you finish.</p>
+      <button type="button" class="gc-primary-action gc-primary-action--compact" data-plan-capture="in_progress">Start an activity</button>
+    </section>`;
+  }
+  const meta = itemMeta(active) || 'In focus now';
+  return `<section class="gc-now-card is-active" aria-labelledby="gcNowTitle">
+    <span class="gc-kicker">Now</span>
+    <div class="gc-now-active">
+      <span class="gc-now-mark" aria-hidden="true">${activityGlyph(active)}</span>
+      <div><h3 id="gcNowTitle">${escapeHtml(active.title)}</h3><p>${escapeHtml(meta)}</p></div>
+    </div>
+    <div class="gc-now-actions"><button type="button" class="gc-primary-action gc-primary-action--compact" data-plan-done="${active.id}">Done</button><button type="button" class="gc-secondary-action" data-plan-review="${active.id}">Plans changed?</button></div>
+  </section>`;
+}
+
+function todayProductHtml(model) {
   const items = model.today || [];
-  const inFocus = items.filter((item) => item.status === 'in_progress').length;
-  const momentum = items.length ? Math.max(15, Math.min(100, Math.round((inFocus / items.length) * 100))) : 0;
-  return `<section class="daily-plan-sanctuary" id="dailyPlanSection" aria-labelledby="agendaTitle">
-    <section class="living-momentum sanctuary-focus-card" aria-label="Daily momentum"><div><strong>Daily Momentum</strong><span>${momentum}%</span></div><div class="living-momentum-track"><i style="width:${momentum}%"></i></div></section>
-    <header class="sanctuary-agenda-head"><h3 id="agendaTitle">Today’s rhythm</h3><span>${items.length} ${items.length === 1 ? 'intention' : 'intentions'}</span></header>
-    <div class="sanctuary-agenda-list living-activity-list">${items.length ? items.map(sanctuaryItemHtml).join('') : `<button type="button" class="daily-plan-empty sanctuary-agenda-empty" data-plan-add="${model.date}"><span aria-hidden="true">＋</span><strong>Add your first intention</strong><small>Begin with one meaningful thing.</small></button>`}</div>
+  const active = items.find((item) => item.status === 'in_progress') || null;
+  const planned = items.filter((item) => item.status === 'planned');
+  const plannedMinutes = items.reduce((sum, item) => sum + Math.max(0, Number(item.planned_minutes) || 0), 0);
+  const countText = `${items.length} ${items.length === 1 ? 'item' : 'items'}${plannedMinutes ? ` · ${formatMinutes(plannedMinutes)}` : ''}`;
+  return `<section class="gc-today-plan" id="dailyPlanSection">
+    ${todayNow(active)}
+    <div class="gc-your-day-head"><h3>Your day</h3><span>${escapeHtml(countText)}</span></div>
+    <div class="gc-day-list">${planned.length ? planned.map(todayPlanRow).join('') : `<div class="gc-day-empty"><strong>No other plans yet.</strong><span>Add only what is useful today.</span></div>`}</div>
+    <button type="button" class="gc-primary-action gc-add-activity" data-plan-capture="planned"><span aria-hidden="true">＋</span> Add activity</button>
+    <button type="button" class="gc-one-off-action" data-plan-add="${model.date}">Add a one-off item</button>
   </section>`;
 }
 
@@ -71,13 +93,13 @@ function editorHtml(item, defaultDate, todayDate) {
   const date = item?.planned_for || defaultDate || todayDate;
   return `<div class="module-modal-backdrop" data-daily-plan-close></div>
     <section class="module-sheet daily-plan-editor" role="dialog" aria-modal="true" aria-labelledby="dailyPlanEditorTitle" tabindex="-1">
-      <header class="module-sheet-head"><div><span class="section-kicker">Daily plan</span><h2 id="dailyPlanEditorTitle">${item?.id ? 'Edit plan item' : 'Add a short-term plan'}</h2></div><button type="button" class="module-sheet-close" data-daily-plan-close aria-label="Close">×</button></header>
+      <header class="module-sheet-head"><div><span class="section-kicker">Daily plan</span><h2 id="dailyPlanEditorTitle">${item?.id ? 'Edit plan item' : 'Add a one-off item'}</h2></div><button type="button" class="module-sheet-close" data-daily-plan-close aria-label="Close">×</button></header>
       <form id="dailyPlanForm" class="daily-plan-form">
-        <label class="daily-plan-field"><span>What do you want to do?</span><input id="dailyPlanTitle" maxlength="160" required autocomplete="off" value="${escapeHtml(item?.title || '')}" placeholder="e.g. Evening walk, call a friend, prepare a presentation"></label>
+        <label class="daily-plan-field"><span>What do you want to do?</span><input id="dailyPlanTitle" maxlength="160" required autocomplete="off" value="${escapeHtml(item?.title || '')}" placeholder="e.g. Call a friend, prepare a presentation"></label>
         <fieldset class="day-choice-fieldset"><legend>When?</legend><div class="day-choice-grid"><button type="button" data-plan-date-preset="${todayDate}" class="${date === todayDate ? 'selected' : ''}">Today</button><button type="button" data-plan-date-preset="${tomorrow}" class="${date === tomorrow ? 'selected' : ''}">Tomorrow</button></div><input id="dailyPlanDate" type="date" value="${escapeHtml(date)}" required aria-label="Plan date"></fieldset>
         <details class="daily-plan-details" ${item && (item.planned_time || item.planned_minutes || item.note) ? 'open' : ''}><summary>Optional details</summary><div class="daily-plan-details-grid"><label class="daily-plan-field"><span>Time</span><input id="dailyPlanTime" type="time" value="${escapeHtml(item?.planned_time || '')}"></label><label class="daily-plan-field"><span>Expected duration</span><div class="inline-unit"><input id="dailyPlanMinutes" type="number" min="1" max="1440" inputmode="numeric" value="${item?.planned_minutes || ''}" placeholder="optional"><b>min</b></div></label><label class="daily-plan-field full"><span>Note</span><textarea id="dailyPlanNote" maxlength="500" placeholder="Optional context">${escapeHtml(item?.note || '')}</textarea></label></div></details>
-        <p class="daily-plan-principle">This is a plan, not completed Progress. It will never roll into the next day automatically.</p>
-        <button type="submit" class="daily-plan-save">${item?.id ? 'Save changes' : 'Add to plan'}</button>
+        <p class="daily-plan-principle">This is a plan, not completed Progress. It never rolls into the next day automatically.</p>
+        <button type="submit" class="daily-plan-save">${item?.id ? 'Save changes' : 'Add to day'}</button>
         ${item?.id ? '<button type="button" class="daily-plan-dismiss" id="dailyPlanDismiss">Drop from plan</button>' : ''}
       </form>
     </section>`;
@@ -95,7 +117,7 @@ function recoveryHtml(item) {
         <button type="button" class="daily-plan-recovery-choice" id="dailyPlanKeep"><strong>Keep</strong><span>Leave it exactly where it is.</span></button>
         <div class="daily-plan-recovery-choice recovery-choice-form"><div><strong>Move</strong><span>Choose a different day.</span></div><input id="dailyPlanMoveDate" type="date" value="${escapeHtml(nextDate)}" aria-label="Move plan item to date"><button type="button" id="dailyPlanMove">Move</button></div>
         <div class="daily-plan-recovery-choice recovery-choice-form"><div><strong>Reduce</strong><span>${plannedMinutes > 1 ? `Current plan: ${formatMinutes(plannedMinutes)}. Choose a smaller duration.` : 'Add a smaller expected duration that feels more realistic.'}</span></div><div class="inline-unit"><input id="dailyPlanReduceMinutes" type="number" min="1" max="${reduceMax}" inputmode="numeric" placeholder="minutes" aria-label="Reduced expected duration"><b>min</b></div><button type="button" id="dailyPlanReduce">Reduce</button></div>
-        <button type="button" class="daily-plan-recovery-choice" id="dailyPlanComplete"><strong>Complete</strong><span>${item.activity_key ? 'Confirm what actually happened before recording Progress.' : 'Mark this generic plan item complete.'}</span></button>
+        <button type="button" class="daily-plan-recovery-choice" id="dailyPlanComplete"><strong>Complete</strong><span>${item.activity_key ? 'Confirm what actually happened before recording Progress.' : 'Mark this one-off plan item complete.'}</span></button>
         <button type="button" class="daily-plan-recovery-choice is-drop" id="dailyPlanDrop"><strong>Drop</strong><span>Remove it from the active plan without creating Progress.</span></button>
       </div>
     </section>`;
@@ -106,7 +128,7 @@ export const dailyPlanModule = Object.freeze({
   contractVersion: 1,
   dependsOn: [],
   defaultEnabled: true,
-  publishes: Object.freeze(['daily-plan.completion-selected']),
+  publishes: Object.freeze(['daily-plan.completion-selected', 'daily-plan.capture-selected']),
   subscribes: Object.freeze([]),
   slots: Object.freeze([{ name: 'today-after-capacity', order: 10 }]),
 
@@ -120,7 +142,7 @@ export const dailyPlanModule = Object.freeze({
   },
 
   render({ model, variant = 'default' }) {
-    if (variant === 'today-sanctuary') return sanctuaryPanelHtml(model);
+    if (variant === 'today-sanctuary' || variant === 'today-product') return todayProductHtml(model);
     const total = model.today.length + model.tomorrowItems.length;
     return `<section class="os-section daily-plan-section" id="dailyPlanSection"><div class="os-section-head daily-plan-head"><div><span class="section-kicker">Short-term plan</span><h2>Today & tomorrow</h2></div><small>${total ? `${total} active` : 'Plan lightly'}</small></div><div class="daily-plan-tabs" role="tablist" aria-label="Daily plan date"><button type="button" class="active" role="tab" aria-selected="true" data-plan-tab="${model.date}">Today <b>${model.today.length}</b></button><button type="button" role="tab" aria-selected="false" data-plan-tab="${model.tomorrow}">Tomorrow <b>${model.tomorrowItems.length}</b></button></div>${panelHtml(model.today, model.date, 'Today')}${panelHtml(model.tomorrowItems, model.tomorrow, 'Tomorrow', true)}</section>`;
   },
@@ -208,7 +230,7 @@ export const dailyPlanModule = Object.freeze({
           item?.id
             ? await this.update(item.id, payload)
             : await this.create({ ...payload, status: 'planned', source: 'manual' });
-          toast(item?.id ? 'Plan item updated' : 'Added to your plan');
+          toast(item?.id ? 'Plan item updated' : 'Added to your day');
           close();
           await reload?.();
         } catch (error) {
@@ -284,6 +306,12 @@ export const dailyPlanModule = Object.freeze({
       });
     };
 
+    $$('[data-plan-capture]').forEach((button) => button.addEventListener('click', () => {
+      void events?.publish('daily-plan.capture-selected', {
+        entryMode: button.dataset.planCapture,
+        date: model.date
+      });
+    }));
     $$('[data-plan-add]').forEach((button) => button.addEventListener('click', () => openEditor(null, button.dataset.planAdd)));
     $$('[data-plan-edit]').forEach((button) => button.addEventListener('click', () => {
       const item = allItems.find((candidate) => Number(candidate.id) === Number(button.dataset.planEdit));
@@ -296,7 +324,7 @@ export const dailyPlanModule = Object.freeze({
     $$('[data-plan-start]').forEach((button) => button.addEventListener('click', async () => {
       try {
         await this.setStatus(Number(button.dataset.planStart), 'in_progress');
-        toast('Marked as doing now');
+        toast('Started');
         await reload?.();
       } catch (error) {
         toast(error.message || 'Could not start this item');
