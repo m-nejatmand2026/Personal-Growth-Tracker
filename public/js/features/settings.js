@@ -1,16 +1,1 @@
-import { $ } from '../core/dom.js';
-
-export function renderSettings() {
-  const root = $('#settingsView');
-  if (!root) return;
-
-  root.innerHTML = `<section class="gc-settings-rebuild" aria-labelledby="settingsCurrentTitle">
-    <header class="gc-product-page-header"><div><h2 id="settingsCurrentTitle">Settings</h2><p>Real controls only. Planning belongs in Plan; future account features stay out until they actually exist.</p></div></header>
-
-    <section class="gc-settings-section"><div class="gc-section-title"><div><span>Access</span><h3>Private Beta</h3></div></div><div class="gc-settings-card"><div class="gc-settings-row"><span class="gc-settings-mark" aria-hidden="true">P</span><div><strong>Protected access</strong><small>Growth Compass is currently behind the private Beta access boundary.</small></div><b>Active</b></div></div></section>
-
-    <section class="gc-settings-section"><div class="gc-section-title"><div><span>Your data</span><h3>Ownership</h3></div></div><div class="gc-settings-card"><a class="gc-settings-row" href="/api/export" target="_blank" rel="noopener"><span class="gc-settings-mark" aria-hidden="true">↓</span><div><strong>Export everything</strong><small>Download your current Growth Compass records as JSON.</small></div><b aria-hidden="true">↗</b></a></div></section>
-
-    <section class="gc-settings-section"><div class="gc-section-title"><div><span>Planning</span><h3>Managed in context</h3></div></div><div class="gc-settings-note"><strong>Goals, time budgets and capacity live in Plan.</strong><p>Growth Compass keeps planning controls next to the information they change instead of duplicating them here.</p></div></section>
-  </section>`;
-}
+import{$}from'../core/dom.js';export function renderSettings(){const root=$('#settingsView');if(!root)return;root.innerHTML=`<section class="gc-settings-rebuild" aria-labelledby="settingsCurrentTitle"><header class="gc-product-page-header"><div><h2 id="settingsCurrentTitle">Settings</h2><p>Access, data ownership, and controls that actually exist today.</p></div></header><section class="gc-settings-section"><div class="gc-section-title"><div><span>Access</span><h3>Private Beta</h3></div></div><div class="gc-settings-card"><div class="gc-settings-row"><span class="gc-settings-mark" aria-hidden="true">P</span><div><strong>Protected access</strong><small>Growth Compass is currently behind the private Beta access boundary.</small></div><b>Active</b></div></div></section><section class="gc-settings-section"><div class="gc-section-title"><div><span>Your data</span><h3>Ownership</h3></div></div><div class="gc-settings-card"><a class="gc-settings-row gc-live-tile" href="/api/export" target="_blank" rel="noopener"><span class="gc-settings-mark" aria-hidden="true">↓</span><div><strong>Export everything</strong><small>Download your current Growth Compass records as JSON.</small></div><b aria-hidden="true">↗</b></a></div></section><section class="gc-settings-section"><div class="gc-section-title"><div><span>Planning</span><h3>Managed in context</h3></div></div><div class="gc-settings-note"><strong>Goals, time budgets and capacity live in Plan.</strong><p>Planning controls stay beside the information they change instead of being duplicated here.</p></div></section></section>`}
