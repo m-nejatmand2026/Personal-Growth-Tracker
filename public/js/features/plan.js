@@ -1,5 +1,4 @@
 import { $, escapeHtml } from '../core/dom.js';
-import { formatMinutes } from '../core/format.js';
 import { state } from '../core/state.js';
 import { createFrontendModuleRegistry } from '../platform/module-registry.js';
 import { frontendModules } from '../modules/catalog.js';
@@ -25,6 +24,19 @@ function moduleErrorHtml(module, message) {
   return `<section class="plan-module-block" data-module="${module.id}"><div class="card module-error"><div class="section-head"><div><h2>This section is temporarily unavailable</h2><p>${escapeHtml(message)}</p></div></div><p class="small muted">The rest of your Plan is still available.</p></div></section>`;
 }
 
+function normalizePresentationItem(module, item, index) {
+  if (!item || typeof item !== 'object') return null;
+  return {
+    moduleId: module.id,
+    id: String(item.id || `${module.id}.${index}`),
+    order: Number.isFinite(Number(item.order)) ? Number(item.order) : 100,
+    label: item.label ?? '',
+    value: item.value ?? '—',
+    detail: item.detail ?? '',
+    actionLabel: item.actionLabel ?? 'Open'
+  };
+}
+
 function planSummaryItems(enabled, results) {
   const items = [];
   for (const module of enabled) {
@@ -33,12 +45,31 @@ function planSummaryItems(enabled, results) {
     try {
       const contribution = module.planSummary({ model: result.model, models: dependencyModelsFor(module, results), date: state.date, dependencies: dependenciesFor(module) });
       const list = Array.isArray(contribution) ? contribution : [contribution];
-      for (const item of list) {
-        if (!item || typeof item !== 'object') continue;
-        items.push({ moduleId: module.id, id: String(item.id || `${module.id}.${items.length}`), order: Number.isFinite(Number(item.order)) ? Number(item.order) : 100, label: item.label ?? '', value: item.value ?? '—', detail: item.detail ?? '' });
-      }
+      list.forEach((item, index) => {
+        const normalized = normalizePresentationItem(module, item, index);
+        if (normalized) items.push(normalized);
+      });
     } catch (error) {
       console.error(`Failed to summarize module ${module.id}`, error);
+    }
+  }
+  return items.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
+function planWorkingItems(enabled, results) {
+  const items = [];
+  for (const module of enabled) {
+    const result = results[module.id];
+    if (result?.status !== 'ready' || typeof module.planWorkingSummary !== 'function') continue;
+    try {
+      const contribution = module.planWorkingSummary({ model: result.model, models: dependencyModelsFor(module, results), date: state.date, dependencies: dependenciesFor(module) });
+      const list = Array.isArray(contribution) ? contribution : [contribution];
+      list.forEach((item, index) => {
+        const normalized = normalizePresentationItem(module, item, index);
+        if (normalized) items.push(normalized);
+      });
+    } catch (error) {
+      console.error(`Failed to build working summary for module ${module.id}`, error);
     }
   }
   return items.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
@@ -53,35 +84,13 @@ function planOverview(enabled, results) {
   </section>`;
 }
 
-function budgetForGoal(planModel, goalId) {
-  return (planModel?.values || []).find((value) => Number(value.goal_id) === Number(goalId)) || null;
-}
-
-function goalAttention(goal, planModel) {
-  const budget = budgetForGoal(planModel, goal.id);
-  if (!budget || budget.time_target_minutes == null) return 'No time budget set';
-  const target = formatMinutes(Math.max(0, Number(budget.time_target_minutes) || 0));
-  const minimum = budget.time_minimum_minutes == null ? null : formatMinutes(Math.max(0, Number(budget.time_minimum_minutes) || 0));
-  const period = String(budget.period || 'weekly').replace(/ly$/, '');
-  return `${target} target${minimum ? ` · ${minimum} minimum` : ''} · ${period}`;
-}
-
-function priorityRank(value) {
-  return ({ high: 0, medium: 1, low: 2 })[value] ?? 1;
-}
-
-function planWorkingSurface(results) {
-  const goalsModel = results.goals?.status === 'ready' ? results.goals.model : null;
-  const planModel = results.plans?.status === 'ready' ? results.plans.model : null;
-  const active = (goalsModel?.goals || [])
-    .filter((goal) => goal.status !== 'archived' && goal.status !== 'completed')
-    .sort((a, b) => priorityRank(a.priority) - priorityRank(b.priority) || Number(a.id) - Number(b.id));
-
-  const rows = active.length
-    ? active.slice(0, 6).map((goal) => `<article class="gc-plan-goal-focus">
-        <span class="gc-plan-goal-mark" aria-hidden="true">${escapeHtml((goal.name || 'G').slice(0, 1).toUpperCase())}</span>
-        <div><strong>${escapeHtml(goal.name || 'Goal')}</strong><small>${escapeHtml([goal.area_name, goalAttention(goal, planModel)].filter(Boolean).join(' · '))}</small></div>
-        <button type="button" data-plan-scroll="plan-module-goals">Open</button>
+function planWorkingSurface(enabled, results) {
+  const items = planWorkingItems(enabled, results);
+  const rows = items.length
+    ? items.map((item) => `<article class="gc-plan-goal-focus" data-working-module="${escapeHtml(item.moduleId)}" data-working-id="${escapeHtml(item.id)}">
+        <span class="gc-plan-goal-mark" aria-hidden="true">${escapeHtml(String(item.label || 'G').slice(0, 1).toUpperCase())}</span>
+        <div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml([item.value, item.detail].filter(Boolean).join(' · '))}</small></div>
+        <button type="button" data-plan-scroll="plan-module-${escapeHtml(item.moduleId)}">${escapeHtml(item.actionLabel)}</button>
       </article>`).join('')
     : `<div class="gc-plan-working-empty"><strong>No active Goals yet.</strong><span>Add one direction that matters, then give it realistic time.</span><button type="button" data-plan-scroll="goalEditor">＋ Add goal</button></div>`;
 
@@ -143,7 +152,7 @@ export async function renderPlan({ reload, openLogger } = {}) {
     }
   }).join('');
 
-  root.innerHTML = `${planOverview(enabled, results)}${planWorkingSurface(results)}${planNavigation()}<div class="plan-module-stack">${panels}</div><details id="compassSection" class="compass-section plan-module-disclosure"><summary class="plan-module-summary"><div><strong>Compass</strong><small>Long-range direction</small></div><span aria-hidden="true">⌄</span></summary><div class="plan-module-content"><div class="gc-sr-only">Long-term direction. Directional, editable, never contractual.</div>${legacyPlanHtml()}</div></details>`;
+  root.innerHTML = `${planOverview(enabled, results)}${planWorkingSurface(enabled, results)}${planNavigation()}<div class="plan-module-stack">${panels}</div><details id="compassSection" class="compass-section plan-module-disclosure"><summary class="plan-module-summary"><div><strong>Compass</strong><small>Long-range direction</small></div><span aria-hidden="true">⌄</span></summary><div class="plan-module-content"><div class="gc-sr-only">Long-term direction. Directional, editable, never contractual.</div>${legacyPlanHtml()}</div></details>`;
 
   $('#planActivityButton')?.addEventListener('click', () => void openLogger?.({ entryMode: 'planned', date: state.date }));
   root.querySelectorAll('[data-plan-scroll]').forEach((button) => button.addEventListener('click', () => {
