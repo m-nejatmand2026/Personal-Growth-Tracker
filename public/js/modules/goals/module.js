@@ -17,6 +17,22 @@ function planSummary(model, areas) {
   ]);
 }
 
+function workingSummary(model) {
+  const priorityRank = { high: 0, medium: 1, low: 2 };
+  return Object.freeze((model?.goals || [])
+    .filter((goal) => goal.status !== 'archived' && goal.status !== 'completed')
+    .sort((a, b) => (priorityRank[a.priority] ?? 1) - (priorityRank[b.priority] ?? 1) || Number(a.id) - Number(b.id))
+    .slice(0, 6)
+    .map((goal, index) => Object.freeze({
+      id: `goals.focus.${goal.id}`,
+      order: 10 + index,
+      label: goal.name || 'Goal',
+      value: goal.area_name || 'Goal',
+      detail: goal.priority ? `${goal.priority} priority` : 'Active',
+      actionLabel: 'Open'
+    })));
+}
+
 export const goalsModule = Object.freeze({
   id: 'goals',
   contractVersion: 1,
@@ -30,6 +46,9 @@ export const goalsModule = Object.freeze({
   },
   planSummary({ model, models }) {
     return planSummary(model, models.areas?.areas || []);
+  },
+  planWorkingSummary({ model }) {
+    return workingSummary(model);
   },
   render({ model, models }) {
     return goalsPanelHtml(model, models.areas?.areas || []);
