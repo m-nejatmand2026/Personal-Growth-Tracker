@@ -20,7 +20,8 @@ test('Quality tests the exact PR head SHA later supplied by workflow_run', () =>
   assert.doesNotMatch(quality, /npm ci/);
   assert.equal((quality.match(/npm install/g) || []).length, 1);
   assert.match(quality, /run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4\.123\.0 playwright@1\.62\.0/);
-  assert.match(quality, /run: npm test/);
+  assert.match(quality, /npm test/);
+  assert.match(quality, /\.artifacts\/test-output\.txt/);
   assert.match(quality, /GC_E2E_SCREENSHOT_DIR: \.artifacts\/ui/);
   assert.match(quality, /retention-days: 7/);
 });
