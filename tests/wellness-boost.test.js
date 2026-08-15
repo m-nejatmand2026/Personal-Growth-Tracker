@@ -44,16 +44,17 @@ test('Meditation starter library owns concise choice copy plus original guided c
   assert.ok(boostContent.every((item) => item.cues.every((cue) => cue.text && cue.atSeconds < item.durationMinutes * 60)));
 });
 
-test('Meditation landing page defers copy and secondary decisions', () => {
+test('Wellness Current landing page keeps a calm destination hierarchy and defers listening choices', () => {
   const html = wellnessBoostModule.renderView();
   assert.match(html, /data-module="wellness-boost"/);
   assert.match(html, /wellness-boost-library-view gc-page-frame gc-page-flow/);
-  assert.match(html, /class="gc-section-label"[^>]*>Meditation</);
-  assert.doesNotMatch(html, /Take a few minutes for yourself\./);
+  assert.match(html, /<h2 id="wellnessCurrentTitle">Wellness<\/h2>/);
+  assert.match(html, /Your sanctuary/);
+  assert.match(html, /Find your center/);
+  assert.match(html, /Immersive sessions/);
   assert.match(html, /Featured · Calm/);
   assert.match(html, /class="wellness-boost-featured gc-feature-card gc-tone--calm"[^>]*data-wb-open="meditation-steadier-breath"/);
   assert.match(html, />A steadier breath</);
-  assert.match(html, /More meditations/);
   assert.equal((html.match(/data-wb-open=/g) || []).length, 4);
   assert.equal((html.match(/class="wellness-boost-row gc-choice-row gc-tone--/g) || []).length, 3);
   assert.doesNotMatch(html, /wellness-boost-grid|class="os-section wellness-boost-type"/);
@@ -66,9 +67,7 @@ test('Wellness Boost landing presentation comes from the shared framework', () =
   assert.match(frameworkCss, /\.gc-page-frame\{/);
   assert.match(frameworkCss, /\.gc-feature-card\{/);
   assert.match(frameworkCss, /\.gc-choice-row\{/);
-  for (const tone of ['reset', 'calm', 'focus', 'restore']) {
-    assert.match(frameworkCss, new RegExp(`\\.gc-tone--${tone}\\{`));
-  }
+  for (const tone of ['reset', 'calm', 'focus', 'restore']) assert.match(frameworkCss, new RegExp(`\\.gc-tone--${tone}\\{`));
   assert.doesNotMatch(css, /wellness-boost-tone-|wellness-boost-featured-copy|wellness-boost-row-copy/);
   assert.doesNotMatch(css, /Take a few minutes/);
 });
@@ -124,10 +123,10 @@ test('Meditation player owns start pause resume end remaining-time and navigatio
   assert.match(app, /wellnessBoost\?\.deactivate/);
 });
 
-test('Wellness Boost is a first-class app section on both mobile and desktop', () => {
+test('Wellness is a first-class app section on both mobile and desktop', () => {
   const bottomNav = indexHtml.slice(indexHtml.indexOf('<nav class="bottom-nav"'), indexHtml.indexOf('</nav>', indexHtml.indexOf('<nav class="bottom-nav"')) + 6);
   assert.match(indexHtml, /data-view="wellness-boost"[^>]*class="rail-nav-btn"/);
-  assert.match(bottomNav, /data-view="wellness-boost"[^>]*class="nav-btn"[^>]*aria-label="Wellness Boost"|data-view="wellness-boost"[^>]*aria-label="Wellness Boost"[^>]*class="nav-btn"/);
+  assert.match(bottomNav, /data-view="wellness-boost"[^>]*class="nav-btn"[^>]*aria-label="Wellness"|data-view="wellness-boost"[^>]*aria-label="Wellness"[^>]*class="nav-btn"/);
   assert.match(bottomNav, />Wellness<\/button>/);
   assert.match(indexHtml, /id="wellness-boostView" class="view"/);
   assert.match(app, /moduleRegistry\.get\('wellness-boost'\)/);
@@ -151,7 +150,7 @@ test('module removal leaves unrelated capabilities available', () => {
   assert.equal(enabled.some((module) => module.id === 'journal'), true);
 });
 
-test('Wellness Boost destination and player remain phone-first accessible', () => {
+test('Wellness destination and player remain phone-first accessible', () => {
   assert.match(frameworkCss, /\.gc-feature-card\{[^}]*cursor:pointer/s);
   assert.match(frameworkCss, /\.gc-choice-row\{[^}]*min-height:72px/s);
   assert.match(frameworkCss, /@media\(max-width:760px\)/);
