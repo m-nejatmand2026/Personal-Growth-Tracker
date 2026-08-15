@@ -39,32 +39,23 @@ async function renderTodayView() {
   let dailyPlanPanel = '';
   let journalPreviewModel = null;
   let journalPreview = '';
-
   const [dailyPlanResult, journalPreviewResult] = await Promise.allSettled([
     dailyPlan ? dailyPlan.load({ date: state.date }) : null,
     journal ? journal.loadPreview({ date: state.date }) : null
   ]);
-
   if (dailyPlan) {
     if (dailyPlanResult.status === 'fulfilled') {
       dailyPlanModel = dailyPlanResult.value;
       if (dailyPlanModel) {
-        try {
-          dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date, variant: 'today-product' });
-        } catch (error) {
-          dailyPlanPanel = dailyPlanUnavailable(error);
-        }
+        try { dailyPlanPanel = dailyPlan.render({ model: dailyPlanModel, date: state.date, variant: 'today-product' }); }
+        catch (error) { dailyPlanPanel = dailyPlanUnavailable(error); }
       }
-    } else {
-      dailyPlanPanel = dailyPlanUnavailable(dailyPlanResult.reason);
-    }
+    } else dailyPlanPanel = dailyPlanUnavailable(dailyPlanResult.reason);
   }
-
   if (journal && journalPreviewResult.status === 'fulfilled') {
     journalPreviewModel = journalPreviewResult.value;
     if (journalPreviewModel) journalPreview = journal.renderPreview({ model: journalPreviewModel });
   }
-
   await renderToday({ reload: load, openLogger: logger.open, dailyPlanPanel, journalPreview });
   if (dailyPlan && dailyPlanModel) dailyPlan.bind({ model: dailyPlanModel, events: eventBus, reload: load });
   if (journal && journalPreviewModel) journal.bindPreview({ model: journalPreviewModel, events: eventBus, reload: load });
@@ -75,7 +66,6 @@ async function renderJournalView(overrides = null) {
   if (!root) return;
   if (!journal) { root.innerHTML = '<div class="empty">Journal is unavailable.</div>'; return; }
   if (overrides) journalFilters = { ...journalFilters, ...overrides };
-
   try {
     const model = await journal.loadView({ date: state.date, query: journalFilters.query, filterDate: journalFilters.filterDate });
     root.innerHTML = journal.renderView({ model });
@@ -96,10 +86,9 @@ function renderWellnessBoostView() {
 async function renderCurrentView() {
   const root = $(`#${state.view}View`);
   root?.setAttribute('aria-busy', 'true');
-
   try {
     if (state.view === 'today') await renderTodayView();
-    if (state.view === 'plan') await renderPlan({ reload: load });
+    if (state.view === 'plan') await renderPlan({ reload: load, openLogger: logger.open });
     if (state.view === 'progress') {
       if (progress) {
         const summary = today ? await today.loadSummary({ date: state.date }) : null;
@@ -113,14 +102,10 @@ async function renderCurrentView() {
     if (state.view === 'wellness-boost') renderWellnessBoostView();
     if (state.view === 'journal') await renderJournalView();
     if (state.view === 'settings') renderSettings({ reload: load });
-  } finally {
-    root?.removeAttribute('aria-busy');
-  }
+  } finally { root?.removeAttribute('aria-busy'); }
 }
 
-function closeTopMore() {
-  $('#topMore')?.removeAttribute('open');
-}
+function closeTopMore() { $('#topMore')?.removeAttribute('open'); }
 
 async function showView(name) {
   if (!viewTitles[name]) return;
@@ -137,15 +122,13 @@ async function showView(name) {
   $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => {
     const isCurrent = button.dataset.view === name;
     button.classList.toggle('active', isCurrent);
-    if (isCurrent) button.setAttribute('aria-current', 'page');
-    else button.removeAttribute('aria-current');
+    if (isCurrent) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
   });
   $('#journalBtn')?.classList.toggle('active', name === 'journal');
   $('#journalRailBtn')?.classList.toggle('active', name === 'journal');
   const insightsButton = $('#insightsBtn');
   insightsButton?.classList.toggle('active', name === 'insights');
-  if (name === 'insights') insightsButton?.setAttribute('aria-current', 'page');
-  else insightsButton?.removeAttribute('aria-current');
+  if (name === 'insights') insightsButton?.setAttribute('aria-current', 'page'); else insightsButton?.removeAttribute('aria-current');
   $('#pageTitle').textContent = viewTitles[name];
   document.title = `${viewTitles[name]} — Growth Compass`;
   await renderCurrentView();
