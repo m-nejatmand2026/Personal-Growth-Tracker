@@ -14,22 +14,10 @@ function addDays(dateText, amount) {
 function weeklySummary(items = []) {
   const targetTotal = items.reduce((sum, item) => sum + Math.max(0, Number(item.target_minutes) || 0), 0);
   const actualTotal = items.reduce((sum, item) => sum + Math.max(0, Number(item.actual_minutes) || 0), 0);
-  const cappedActual = items.reduce((sum, item) => sum + Math.min(Math.max(0, Number(item.actual_minutes) || 0), Math.max(0, Number(item.target_minutes) || 0)), 0);
-  const targetProgress = targetTotal ? Math.round((cappedActual / targetTotal) * 100) : 0;
   const measurableItems = items.filter((item) => Number(item.minimum_minutes || 0) > 0 || Number(item.target_minutes || 0) > 0);
   const minimumReached = measurableItems.filter((item) => Number(item.minimum_minutes || 0) > 0 && Number(item.actual_minutes || 0) >= Number(item.minimum_minutes || 0)).length;
   const itemsWithMinimum = measurableItems.filter((item) => Number(item.minimum_minutes || 0) > 0).length;
-  const allMinimums = itemsWithMinimum > 0 && minimumReached === itemsWithMinimum;
-  const status = allMinimums && targetProgress >= 90
-    ? 'Your set guidance is covered'
-    : allMinimums
-      ? 'Your good-enough minimums are met'
-      : itemsWithMinimum
-        ? 'Some minimums are still ahead — no catch-up needed'
-        : targetTotal
-          ? 'Progress recorded toward your targets'
-          : 'Progress recorded — targets are optional';
-  return { items, targetTotal, actualTotal, targetProgress, minimumReached, minimumCount: itemsWithMinimum, status };
+  return { items, targetTotal, actualTotal, minimumReached, minimumCount: itemsWithMinimum };
 }
 
 function goalRows(items) {
@@ -39,12 +27,9 @@ function goalRows(items) {
     const minimum = Math.max(0, Number(item.minimum_minutes) || 0);
     const target = Math.max(0, Number(item.target_minutes) || 0);
     const name = item.name || item.key;
-    if (!target && !minimum) {
-      return `<article class="amt-row"><div class="amt-name"><strong>${escapeHtml(name)}</strong><span class="amt-status good">Progress recorded</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>Not set</strong></div><div><span>Target</span><strong>Not set</strong></div></div></article>`;
-    }
-    const status = actual >= target && target > 0 ? 'Target reached' : minimum > 0 && actual >= minimum ? 'Good-enough minimum reached' : 'In progress';
-    const track = renderThresholdTrack({ label: name, actual, minimum, target, actualText: formatMinutes(actual), minimumText: minimum ? formatMinutes(minimum) : 'Not set', targetText: target ? formatMinutes(target) : 'Not set' });
-    return `<article class="amt-row"><div class="amt-name"><strong>${escapeHtml(name)}</strong><span class="amt-status ${minimum > 0 && actual >= minimum ? 'good' : ''}">${status}</span></div><div class="amt-values"><div><span>Actual</span><strong>${formatMinutes(actual)}</strong></div><div><span>Minimum</span><strong>${minimum ? formatMinutes(minimum) : 'Not set'}</strong></div><div><span>Target</span><strong>${target ? formatMinutes(target) : 'Not set'}</strong></div></div>${track}</article>`;
+    const status = target > 0 && actual >= target ? 'Target reached' : minimum > 0 && actual >= minimum ? 'Good-enough minimum reached' : actual > 0 ? 'Progress recorded' : 'No factual progress yet';
+    const track = minimum || target ? renderThresholdTrack({ label: name, actual, minimum, target, actualText: formatMinutes(actual), minimumText: minimum ? formatMinutes(minimum) : 'Not set', targetText: target ? formatMinutes(target) : 'Not set' }) : '';
+    return `<article class="gc-progress-goal-row"><div class="gc-progress-goal-head"><div><strong>${escapeHtml(name)}</strong><small>${escapeHtml(status)}</small></div><b>${formatMinutes(actual)}</b></div><div class="gc-progress-guidance"><span>Minimum <strong>${minimum ? formatMinutes(minimum) : '—'}</strong></span><span>Target <strong>${target ? formatMinutes(target) : '—'}</strong></span></div>${track}</article>`;
   }).join('');
 }
 
@@ -63,10 +48,11 @@ function factType(item) {
 }
 
 function recentRows(items) {
-  if (!items.length) return '<div class="empty">Nothing logged yet.</div>';
+  if (!items.length) return '<div class="gc-simple-empty">Nothing recorded yet. Use Add → Done when something actually happens.</div>';
   return items.slice(0, 20).map((item) => {
     const canonical = item.record_kind === 'progress';
-    return `<article class="progress-history-row"><span class="history-date">${escapeHtml(item.occurred_on)}</span><div><strong>${escapeHtml(item.activity_name || item.activity_key || 'Activity')}</strong><small>${escapeHtml(item.subtype || factType(item))}</small></div><span class="history-value">${escapeHtml(factValue(item))}</span>${canonical ? `<button type="button" class="history-delete" data-delete-progress="${item.id}" aria-label="Delete ${escapeHtml(item.activity_name || item.activity_key || 'progress record')}">Delete</button>` : '<small class="history-legacy" title="Read-only history from the earlier Beta version">Earlier Beta history</small>'}</article>`;
+    const name = item.activity_name || item.activity_key || 'Activity';
+    return `<article class="gc-progress-fact"><span class="gc-progress-fact-mark" aria-hidden="true">${escapeHtml(name.slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(name)}</strong><small>${escapeHtml(item.occurred_on)} · ${escapeHtml(item.subtype || factType(item))}</small></div><b>${escapeHtml(factValue(item))}</b>${canonical ? `<button type="button" data-delete-progress="${item.id}" aria-label="Delete ${escapeHtml(name)} progress record">•••</button>` : '<small class="history-legacy">Earlier Beta</small>'}</article>`;
   }).join('');
 }
 
@@ -92,17 +78,12 @@ export async function renderProgress({ reload, weeklyDirection = [] } = {}) {
   const records = weekHistory.length;
   const activeDays = activeDayCount(weekHistory);
   const minimumValue = week.minimumCount ? `${week.minimumReached} / ${week.minimumCount}` : '—';
-  const minimumDetail = week.minimumCount ? 'Good-enough minimums met' : 'No minimums set';
 
-  root.innerHTML = `<section class="progress-current" aria-labelledby="progressCurrentTitle">
-    <header class="progress-current-header"><h2 id="progressCurrentTitle">Progress</h2><p>What actually happened. Targets and minimums are guidance, not debt.</p></header>
-    <section class="progress-current-week" aria-labelledby="progressWeekTitle"><h3 id="progressWeekTitle">This week</h3><div class="progress-current-metrics">
-      <article class="progress-current-card"><span>Actual time</span><strong>${escapeHtml(formatMinutes(week.actualTotal))}</strong><small>Recorded this week</small></article>
-      <article class="progress-current-card"><span>Records</span><strong>${records}</strong><small>Across ${activeDays} active ${activeDays === 1 ? 'day' : 'days'}</small></article>
-      <article class="progress-current-card"><span>Minimums</span><strong>${escapeHtml(minimumValue)}</strong><small>${escapeHtml(minimumDetail)}</small></article>
-    </div></section>
-    <section class="progress-goals-section os-section" aria-labelledby="progressGoalsTitle"><div class="os-section-head"><div><h3 id="progressGoalsTitle">By goal</h3><p class="gc-sr-only">Your minimums and targets are guidance, not debt.</p></div></div><div class="amt-list">${goalRows(week.items)}</div></section>
-    <section class="os-section progress-history-section" aria-labelledby="progressHistoryTitle"><div class="os-section-head"><div><h3 id="progressHistoryTitle">Recent activity</h3><p class="gc-sr-only">Time, quantity and yes/no progress remain separate factual measurements.</p></div></div><div class="progress-history-list">${recentRows(history)}</div><p class="progress-boundary-note">Evidence only here. Patterns live in Insights.</p></section>
+  root.innerHTML = `<section class="gc-progress-rebuild" aria-labelledby="progressCurrentTitle">
+    <header class="gc-product-page-header"><div><h2 id="progressCurrentTitle">Progress</h2><p>What actually happened. Plans never appear here until you explicitly record them as done.</p></div></header>
+    <section class="gc-progress-history" aria-labelledby="progressHistoryTitle"><div class="gc-section-title"><div><span>Facts</span><h3 id="progressHistoryTitle">Recent activity</h3></div><small>Last 30 days</small></div><div class="gc-progress-fact-list">${recentRows(history)}</div></section>
+    <section class="gc-progress-week" aria-labelledby="progressWeekTitle"><div class="gc-section-title"><div><span>Summary</span><h3 id="progressWeekTitle">This week</h3></div></div><div class="gc-progress-stats"><article><span>Actual time</span><strong>${escapeHtml(formatMinutes(week.actualTotal))}</strong><small>Recorded facts</small></article><article><span>Records</span><strong>${records}</strong><small>${activeDays} active ${activeDays === 1 ? 'day' : 'days'}</small></article><article><span>Minimums</span><strong>${escapeHtml(minimumValue)}</strong><small>${week.minimumCount ? 'Good-enough minimums met' : 'No minimums set'}</small></article></div></section>
+    <details class="gc-progress-by-goal"><summary><span><strong>By goal</strong><small>Actual vs optional guidance</small></span><b aria-hidden="true">›</b></summary><div class="gc-progress-goal-list">${goalRows(week.items)}</div><p class="gc-progress-boundary">Evidence only here. Interpretation belongs in Insights.</p></details>
   </section>`;
 
   $$('[data-delete-progress]').forEach((button) => {
