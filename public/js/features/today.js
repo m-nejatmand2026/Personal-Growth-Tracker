@@ -108,9 +108,14 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   const recentModel = progress?.todayRecent({
     items: todayModel?.progress || []
   }) || null;
+  const energyLabel = wellbeingModel?.energy?.label || '';
+  const energyMessage = energyLabel
+    ? `Your energy feels ${energyLabel.toLowerCase()} today. Let’s build momentum.`
+    : 'Set your rhythm gently. Let’s build momentum.';
 
   root.innerHTML = `<div class="today-layout gc-page-flow">
-    <section class="today-sanctuary-heading" aria-labelledby="todaySanctuaryTitle"><h2 id="todaySanctuaryTitle">Today</h2><p>${formatDateLabel(date)}</p></section>
+    <!-- <h2 id="todaySanctuaryTitle">Today</h2><p>${formatDateLabel(date)}</p> -->
+    <section class="today-sanctuary-heading living-page-heading" aria-labelledby="todaySanctuaryTitle"><span>${formatDateLabel(date)}</span><h2 id="todaySanctuaryTitle">Good morning.</h2><p>${escapeHtml(energyMessage)}</p></section>
     <div class="today-primary-flow">
       ${dailyPlanPanel}
     </div>

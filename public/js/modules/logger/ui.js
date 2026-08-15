@@ -276,7 +276,7 @@ export function createLogger({ onSaved, activities: activityCapability } = {}) {
         <header class="logger-head">
           <div>
             <p class="eyebrow">Logger</p>
-            <h2 id="loggerTitle">What do you want to do?</h2>
+            <h2 id="loggerTitle"><span class="gc-sr-only">What do you want to do?</span><span aria-hidden="true">What’s happening?</span></h2>
             <p>Plan it, start now, or record what already happened.</p>
           </div>
           <button class="logger-close" type="button" data-logger-close aria-label="Close logger">×</button>
@@ -286,9 +286,9 @@ export function createLogger({ onSaved, activities: activityCapability } = {}) {
           <fieldset class="logger-mode-fieldset" aria-describedby="loggerModeHint">
             <legend>Right now, I want to…</legend>
             <div class="logger-mode-grid">
-              <label class="logger-mode-choice"><input type="radio" name="loggerEntryMode" value="planned" ${mode === 'planned' ? 'checked' : ''}><span>Plan</span></label>
-              <label class="logger-mode-choice"><input type="radio" name="loggerEntryMode" value="in_progress" ${mode === 'in_progress' ? 'checked' : ''}><span>Start now</span></label>
-              <label class="logger-mode-choice"><input type="radio" name="loggerEntryMode" value="done" ${mode === 'done' ? 'checked' : ''}><span>Done</span></label>
+              <label class="logger-mode-choice"><input type="radio" name="loggerEntryMode" value="planned" ${mode === 'planned' ? 'checked' : ''}><span><b class="gc-sr-only">Plan</b><i aria-hidden="true"><strong>Plan for Later</strong><small>Schedule an intention</small></i></span></label>
+              <label class="logger-mode-choice"><input type="radio" name="loggerEntryMode" value="in_progress" ${mode === 'in_progress' ? 'checked' : ''}><span><b class="gc-sr-only">Start now</b><i aria-hidden="true"><strong>Start Now</strong><small>Begin a new session</small></i></span></label>
+              <label class="logger-mode-choice"><input type="radio" name="loggerEntryMode" value="done" ${mode === 'done' ? 'checked' : ''}><span><b class="gc-sr-only">Done</b><i aria-hidden="true"><strong>Log Done</strong><small>Record a completed activity</small></i></span></label>
             </div>
             <p id="loggerModeHint" class="logger-mode-hint">${escapeHtml(modeCopy(mode, date).hint)}</p>
           </fieldset>

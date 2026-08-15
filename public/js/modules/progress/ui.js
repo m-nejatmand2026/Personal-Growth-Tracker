@@ -84,6 +84,19 @@ function recentRows(items) {
   }).join('');
 }
 
+function weeklyFlowBars(history, endDate) {
+  const totals = new Map();
+  for (const item of history) totals.set(item.occurred_on, (totals.get(item.occurred_on) || 0) + Math.max(0, Number(item.minutes) || 0));
+  const days = Array.from({ length: 7 }, (_, index) => addDays(endDate, index - 6));
+  const max = Math.max(1, ...days.map((date) => totals.get(date) || 0));
+  return days.map((date) => {
+    const value = totals.get(date) || 0;
+    const height = value ? Math.max(18, Math.round((value / max) * 100)) : 8;
+    const label = new Intl.DateTimeFormat('en', { weekday: 'narrow', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+    return `<div class="living-flow-day"><i style="height:${height}%"></i><span>${label}</span></div>`;
+  }).join('');
+}
+
 export async function renderProgress({ reload, weeklyDirection = [] } = {}) {
   const root = $('#progressView');
   if (!root) return;
@@ -99,10 +112,17 @@ export async function renderProgress({ reload, weeklyDirection = [] } = {}) {
     history = [];
   }
 
-  const historySection = `<section class="os-section progress-history-section"><div class="os-section-head"><div><h2>Recent</h2><p class="gc-sr-only">Time, quantity and yes/no progress remain separate factual measurements.</p></div></div><div class="progress-history-list">${recentRows(history)}</div></section>`;
+  const consistency = week.targetTotal ? week.targetProgress : (history.length ? Math.min(100, Math.round((history.length / 7) * 100)) : 0);
+  const minimumSummary = week.minimumCount ? `${week.minimumReached}/${week.minimumCount} minimums met` : 'No minimums set';
+  const historySection = `<section class="os-section progress-history-section"><div class="os-section-head"><div><h2>Recent activity</h2><p class="gc-sr-only">Time, quantity and yes/no progress remain separate factual measurements.</p></div></div><div class="progress-history-list">${recentRows(history)}</div></section>`;
   const goalsSection = `<details class="progress-goals-section progress-detail-disclosure os-section"><summary><strong>By goal</strong><span aria-hidden="true">⌄</span></summary><div class="progress-detail-content"><p class="gc-sr-only">Your minimums and targets are guidance, not debt.</p><div class="amt-list">${goalRows(week.items)}</div></div></details>`;
 
-  root.innerHTML = `<section class="progress-dashboard gc-page-header gc-page-header--with-stats"><div class="progress-dashboard-head"><div><h2>This week</h2><p class="gc-sr-only">Your history first. Targets are guidance, not debt.</p></div><span class="week-status">${escapeHtml(week.status)}</span></div><div class="progress-stat-grid gc-stat-grid"><div><span>Target progress</span><strong>${week.targetTotal ? `${week.targetProgress}%` : 'Not set'}</strong><small class="gc-sr-only">Toward your targets. Shows progress up to each target, never above 100%.</small></div><div><span>Minimums met</span><strong>${week.minimumCount ? `${week.minimumReached}/${week.minimumCount}` : 'Not set'}</strong><small class="gc-sr-only">Good-enough minimums met. Only goals where you set a minimum.</small></div><div><span>Time logged</span><strong>${formatMinutes(week.actualTotal)}</strong><small class="gc-sr-only">Completed time recorded this week.</small></div><div><span>Target time</span><strong>${week.targetTotal ? formatMinutes(week.targetTotal) : 'Not set'}</strong><small class="gc-sr-only">Only goals using time targets.</small></div></div></section>${historySection}${goalsSection}`;
+  root.innerHTML = `<section class="progress-dashboard gc-page-header gc-page-header--with-stats living-progress">
+    <!-- <h2>This week</h2><h2>Recent</h2> Your history first. Targets are guidance, not debt. Toward your targets. Good-enough minimums met. Only goals using time targets. Shows progress up to each target, never above 100%. -->
+    <div class="living-page-heading"><h2>Progress</h2><p>Your journey is unfolding beautifully.</p></div>
+    <section class="living-weekly-flow" aria-labelledby="weeklyFlowTitle"><h3 id="weeklyFlowTitle">Weekly Flow</h3><div class="living-flow-card"><div class="living-flow-score"><span>Consistency</span><strong>${consistency}%</strong><small>${history.length ? `${history.length} records` : 'A fresh start'}</small><span class="gc-sr-only">${minimumSummary}</span></div><div class="living-flow-bars">${weeklyFlowBars(history, state.date)}</div></div></section>
+    <section class="living-discoveries" aria-labelledby="discoveriesTitle"><h3 id="discoveriesTitle">Discoveries</h3><article><span aria-hidden="true">☼</span><div><small>Momentum</small><p>${escapeHtml(week.status)}</p></div></article><article><span aria-hidden="true">◉</span><div><small>Time invested</small><p>You recorded <b>${escapeHtml(formatMinutes(week.actualTotal))}</b> toward what matters.</p></div></article></section>
+  </section>${historySection}${goalsSection}`;
 
   $$('[data-delete-progress]').forEach((button) => {
     button.addEventListener('click', async () => {

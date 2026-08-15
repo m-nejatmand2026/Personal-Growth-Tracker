@@ -41,21 +41,21 @@ function sanctuaryTime(item) {
 function sanctuaryItemHtml(item, index) {
   const active = item.status === 'in_progress';
   const meta = item.note || item.activity_label || (item.planned_minutes ? `${formatMinutes(item.planned_minutes)} planned` : '');
-  return `<article class="sanctuary-agenda-item ${active ? 'is-active' : ''}" data-agenda-index="${index}">
-    <button type="button" class="daily-plan-check sanctuary-agenda-check" data-plan-done="${item.id}" aria-label="Mark ${escapeHtml(item.title)} done"><span aria-hidden="true">${active ? '●' : ''}</span></button>
-    <div class="sanctuary-agenda-copy"><div class="sanctuary-agenda-title"><strong>${escapeHtml(item.title)}</strong>${item.planned_time ? `<time datetime="${escapeHtml(item.planned_time)}">${escapeHtml(sanctuaryTime(item))}</time>` : ''}</div>${meta ? `<p>${escapeHtml(meta)}</p>` : ''}
-      <div class="daily-plan-actions sanctuary-agenda-actions">${item.status === 'planned' ? `<button type="button" data-plan-start="${item.id}"><span aria-hidden="true">▷</span> Start</button>` : ''}<button type="button" data-plan-review="${item.id}">Plans changed?</button><button type="button" data-plan-edit="${item.id}" aria-label="Edit ${escapeHtml(item.title)}">Edit</button></div>
-    </div>
+  return `<article class="sanctuary-agenda-item living-activity ${active ? 'is-active' : ''}" data-agenda-index="${index}">
+    <div class="living-activity-icon" aria-hidden="true">${active ? '◉' : '◇'}</div>
+    <div class="sanctuary-agenda-copy living-activity-copy"><div class="sanctuary-agenda-title"><strong>${escapeHtml(item.title)}</strong></div><p>${escapeHtml(meta || (active ? 'In focus now' : 'Ready when you are'))}</p></div>
+    <div class="daily-plan-actions sanctuary-agenda-actions living-activity-actions">${item.status === 'planned' ? `<button type="button" data-plan-start="${item.id}" aria-label="Start ${escapeHtml(item.title)}"><span aria-hidden="true">▶</span></button>` : ''}<button type="button" class="daily-plan-check sanctuary-agenda-check" data-plan-done="${item.id}" aria-label="Mark ${escapeHtml(item.title)} done"><span aria-hidden="true">✓</span></button><button type="button" data-plan-review="${item.id}" aria-label="Review ${escapeHtml(item.title)}">↻</button><button type="button" data-plan-edit="${item.id}" aria-label="Edit ${escapeHtml(item.title)}">•••</button></div>
   </article>`;
 }
 
 function sanctuaryPanelHtml(model) {
   const items = model.today || [];
-  const focus = items.find((item) => item.status === 'in_progress') || items[0] || null;
+  const inFocus = items.filter((item) => item.status === 'in_progress').length;
+  const momentum = items.length ? Math.max(15, Math.min(100, Math.round((inFocus / items.length) * 100))) : 0;
   return `<section class="daily-plan-sanctuary" id="dailyPlanSection" aria-labelledby="agendaTitle">
-    ${focus ? `<article class="sanctuary-focus-card"><div class="sanctuary-focus-copy"><p><span aria-hidden="true">⊙</span> Primary Focus</p><h3>${escapeHtml(focus.title)}</h3>${focus.note || focus.activity_label ? `<div>${escapeHtml(focus.note || focus.activity_label)}</div>` : ''}</div><button type="button" class="sanctuary-focus-action" data-plan-start="${focus.id}" ${focus.status === 'in_progress' ? 'disabled' : ''}><span aria-hidden="true">▷</span>${focus.status === 'in_progress' ? 'In Focus' : 'Start Focus'}</button></article>` : `<article class="sanctuary-focus-card is-empty"><div class="sanctuary-focus-copy"><p><span aria-hidden="true">⊙</span> Primary Focus</p><h3>Choose what matters most today</h3><div>Keep the day intentional and light.</div></div><button type="button" class="sanctuary-focus-action" data-plan-add="${model.date}"><span aria-hidden="true">＋</span>Add Focus</button></article>`}
-    <header class="sanctuary-agenda-head"><h3 id="agendaTitle">Agenda</h3><span>${items.length} ${items.length === 1 ? 'Task' : 'Tasks'}</span></header>
-    <div class="sanctuary-agenda-list">${items.length ? items.map(sanctuaryItemHtml).join('') : `<div class="daily-plan-empty sanctuary-agenda-empty"><strong>A clear day.</strong><span>Add only what genuinely matters.</span></div>`}</div>
+    <section class="living-momentum sanctuary-focus-card" aria-label="Daily momentum"><div><strong>Daily Momentum</strong><span>${momentum}%</span></div><div class="living-momentum-track"><i style="width:${momentum}%"></i></div></section>
+    <header class="sanctuary-agenda-head"><h3 id="agendaTitle">Today’s rhythm</h3><span>${items.length} ${items.length === 1 ? 'intention' : 'intentions'}</span></header>
+    <div class="sanctuary-agenda-list living-activity-list">${items.length ? items.map(sanctuaryItemHtml).join('') : `<button type="button" class="daily-plan-empty sanctuary-agenda-empty" data-plan-add="${model.date}"><span aria-hidden="true">＋</span><strong>Add your first intention</strong><small>Begin with one meaningful thing.</small></button>`}</div>
   </section>`;
 }
 

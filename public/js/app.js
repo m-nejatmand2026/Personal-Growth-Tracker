@@ -133,6 +133,7 @@ async function showView(name) {
   closeTopMore();
   if (state.view === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
   state.view = name;
+  window.scrollTo({ top: 0, behavior: 'instant' });
   if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
   $$('.view').forEach((view) => {
     const isCurrent = view.id === `${name}View`;

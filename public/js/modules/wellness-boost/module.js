@@ -40,8 +40,8 @@ function renderFeaturedPractice(item) {
 function renderPracticeRow(item) {
   return `<button type="button" class="wellness-boost-row gc-choice-row gc-tone--${toneFor(item)}" data-wb-open="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}, ${item.durationMinutes} minutes, ${escapeHtml(item.category)}">
     <span class="gc-choice-row__icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
-    <span class="gc-choice-row__copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.category)} · ${item.durationMinutes} min</span></span>
-    <span class="gc-choice-row__arrow" aria-hidden="true">→</span>
+    <span class="gc-choice-row__copy"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.summary)}</span><small>${item.durationMinutes} Min</small></span>
+    <span class="gc-choice-row__arrow" aria-hidden="true">▶</span>
   </button>`;
 }
 
@@ -49,13 +49,17 @@ function renderLibrary() {
   const featured = boostContent.find((item) => item.id === FEATURED_PRACTICE_ID) || boostContent[0];
   const more = boostContent.filter((item) => item.id !== featured.id);
   return `<div class="wellness-boost-view wellness-boost-library-view gc-page-frame gc-page-flow" data-module="wellness-boost" aria-label="Wellness Boost">
-    <section class="wellness-boost-featured-section" aria-labelledby="wellnessBoostMeditationTitle">
-      <div class="gc-section-label" id="wellnessBoostMeditationTitle">Meditation</div>
-      ${renderFeaturedPractice(featured)}
+    <section class="living-wellness-hero" aria-labelledby="wellnessBoostMeditationTitle">
+      <span class="gc-section-label" hidden>Meditation</span>
+      <span class="living-sanctuary-label">● Your sanctuary</span>
+      <h2 id="wellnessBoostMeditationTitle">Find Your Center</h2>
+      <p>Take a moment to reset. Follow the rhythm of the breathing orb to restore focus and calm.</p>
+      <div class="living-breathing-orb" aria-label="Breathing guide"><i></i><span>Breathe</span></div>
     </section>
     <section class="wellness-boost-more" aria-labelledby="wellnessBoostMoreTitle">
-      <h2 class="gc-section-heading" id="wellnessBoostMoreTitle">More meditations</h2>
-      <div class="gc-choice-list">${more.map(renderPracticeRow).join('')}</div>
+      <h2 class="gc-section-heading" id="wellnessBoostMoreTitle">Immersive Sessions<span class="gc-sr-only"> · More meditations</span></h2>
+      <p>Curated states for your current need.</p>
+      <div class="gc-choice-list">${renderFeaturedPractice(featured)}${more.map(renderPracticeRow).join('')}</div>
     </section>
   </div>`;
 }

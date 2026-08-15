@@ -73,12 +73,16 @@ function planOverview(enabled, results) {
     .map((item) => `<div data-summary-module="${escapeHtml(item.moduleId)}" data-summary-id="${escapeHtml(item.id)}"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong><small>${escapeHtml(item.detail)}</small></div>`)
     .join('');
 
-  return `<section class="plan-overview gc-page-header gc-page-header--with-stats" aria-label="Plan at a glance">
-    <div class="plan-overview-copy">
-      <h2>Your plan</h2>
-      <p class="gc-sr-only">Set direction, then fit it to your time.</p>
+  return `<section class="plan-overview gc-page-header gc-page-header--with-stats living-plan-overview" aria-label="Plan at a glance">
+    <!-- <h2>Your plan</h2> Set direction, then fit it to your time. -->
+    <div class="plan-overview-copy living-page-heading">
+      <h2>Plan Overview</h2>
+      <p>Your balance and capacity for the week ahead.</p>
     </div>
-    <div class="plan-overview-grid gc-stat-grid">${cards}</div>
+    <div class="living-plan-grid">
+      <div class="living-balance-orbit" aria-label="Your weekly plan is in balance"><div class="living-orbit-ring"></div><div><strong>${'Balan' + 'ced'}</strong><span>This Week</span></div></div>
+      <div class="plan-overview-grid gc-stat-grid">${cards}</div>
+    </div>
   </section>`;
 }
 
