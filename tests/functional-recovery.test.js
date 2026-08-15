@@ -81,7 +81,7 @@ test('Plan restores Schedule as a direct planning destination', () => {
 });
 
 test('Activities becomes a real module-owned Plan management surface', () => {
-  assert.match(activitiesJs, /slots:\s*Object\.freeze\(\[\{ name: 'plan', order: 15 \}\]\)/);
+  assert.match(activitiesJs, /slots:Object\.freeze\(\[\{name:'plan',order:15\}\]\)/);
   assert.match(activitiesJs, /activitiesPanelHtml/);
   assert.match(activitiesJs, /bindActivitiesPanel/);
   assert.match(activitiesJs, /this\.list\(\)/);
@@ -90,9 +90,9 @@ test('Activities becomes a real module-owned Plan management surface', () => {
   assert.match(activitiesUi, /id="activityManageForm"/);
   assert.match(activitiesUi, /data-activity-edit/);
   assert.match(activitiesUi, /data-activity-archive/);
-  assert.match(activitiesUi, /await create\?/);
-  assert.match(activitiesUi, /await update\?/);
-  assert.match(activitiesUi, /await archive\?/);
+  assert.match(activitiesUi, /await actions\.create\?\./);
+  assert.match(activitiesUi, /await actions\.update\?\./);
+  assert.match(activitiesUi, /await actions\.archive\?\./);
   assert.match(planJs, /data-plan-scroll="plan-module-activities"><span>Activities<\/span>/);
   assert.match(indexHtml, /\/css\/modules\/activities\.css/);
   assert.match(activitiesCss, /\.activities-panel/);
