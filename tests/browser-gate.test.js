@@ -26,17 +26,20 @@ test('browser acceptance runs only against an isolated local Worker and local D1
   assert.doesNotMatch(runner, /--remote|workers\.dev|1937971c|a182d8c8/);
 });
 
-test('browser acceptance proves the canonical Figma current UI across desktop and 375px browsers', () => {
+test('browser acceptance proves Product Rebuild workflows across desktop and 375px browsers', () => {
   assert.match(browserTest, /chromium/);
   assert.match(browserTest, /webkit/);
-  assert.match(browserTest, /width: 375, height: 812/);
-  assert.match(browserTest, /figma-current\.css/);
-  assert.match(browserTest, /figma-current-live\.css/);
-  assert.match(browserTest, /today-current-metric/);
-  assert.match(browserTest, /progress-current-card/);
+  assert.match(browserTest, /width:\s*375,\s*height:\s*812/);
+  assert.match(browserTest, /product-rebuild\.css/);
+  assert.match(browserTest, /product-rebuild-pages\.css/);
+  assert.match(browserTest, /gc-today-rebuild/);
+  assert.match(browserTest, /gc-add-activity-sheet/);
+  assert.match(browserTest, /gc-plan-rebuild/);
+  assert.match(browserTest, /gc-progress-rebuild/);
   assert.match(browserTest, /wellness-boost-library-view/);
+  assert.match(browserTest, /gc-insights-rebuild/);
   assert.match(browserTest, /#topMore > summary/);
-  assert.match(browserTest, /current UI must not overflow horizontally/);
+  assert.match(browserTest, /must not overflow horizontally/);
   assert.doesNotMatch(browserTest, /preview-empty\.css|body must have no rendered box|blank canvas/);
   assert.doesNotMatch(browserTest, /https:\/\//);
 });
