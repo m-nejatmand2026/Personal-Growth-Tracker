@@ -9,6 +9,7 @@ async function load(page) {
   const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15_000 });
   assert.ok(response?.ok(), `expected ${BASE_URL} to return a successful document`);
   await page.locator('link[href="/css/functional-recovery.css"]').waitFor({ state: 'attached' });
+  await page.locator('link[href="/css/modules/activities.css"]').waitFor({ state: 'attached' });
   await page.locator('#todayView .gc-today-rebuild').waitFor({ state: 'visible', timeout: 15_000 });
 }
 
@@ -17,6 +18,32 @@ async function assertNotBuriedInMore(page, selector, browserName, label) {
   await locator.waitFor({ state: 'visible' });
   const buried = await locator.evaluate((node) => Boolean(node.closest('details.gc-today-more')));
   assert.equal(buried, false, `${browserName}: ${label} must be visible on Today without opening More detail`);
+}
+
+async function assertActivityLibrary(page, browserName) {
+  const activitiesButton = page.locator('#planView button[data-plan-scroll="plan-module-activities"]').first();
+  await activitiesButton.click();
+  const disclosure = page.locator('#plan-module-activities');
+  await disclosure.waitFor({ state: 'visible' });
+  assert.equal(await disclosure.evaluate((node) => node.open), true, `${browserName}: Activities destination must open its module surface`);
+
+  const panel = page.locator('#activitiesPanel');
+  await panel.waitFor({ state: 'visible' });
+  assert.match(await panel.innerText(), /Activities/);
+  await page.locator('#activityEditor > summary').click();
+  await page.locator('#activityManageName').waitFor({ state: 'visible' });
+
+  const usableGoals = await page.locator('#activityManageGoal option').evaluateAll((options) => options.filter((option) => option.value).map((option) => option.value));
+  assert.ok(usableGoals.length > 0, `${browserName}: seeded recovery environment needs an active Goal for Activity creation`);
+
+  const activityName = `Recovery ${browserName} activity`;
+  await page.locator('#activityManageName').fill(activityName);
+  await page.locator('#activityManageGoal').selectOption(usableGoals[0]);
+  await page.locator('#activityManageDescription').fill('Created by the isolated browser recovery gate');
+  await page.locator('#activityManageSave').click();
+
+  await page.locator('#activitiesPanel').waitFor({ state: 'visible', timeout: 15_000 });
+  await page.getByText(activityName, { exact: true }).waitFor({ state: 'visible', timeout: 15_000 });
 }
 
 async function assertRecovery(page, browserName) {
@@ -43,6 +70,9 @@ async function assertRecovery(page, browserName) {
   await page.locator('#planView .gc-plan-working').waitFor({ state: 'visible', timeout: 15_000 });
   assert.match(await page.locator('#planDirectionTitle').innerText(), /What deserves attention/);
   assert.ok(await page.locator('#planView button[data-plan-scroll="commitmentEditor"]').count() >= 1, `${browserName}: Schedule must be directly reachable from Plan`);
+  assert.ok(await page.locator('#planView button[data-plan-scroll="plan-module-activities"]').count() >= 1, `${browserName}: Activities must be directly reachable from Plan`);
+
+  await assertActivityLibrary(page, browserName);
 
   await page.locator('#planView button[data-plan-scroll="commitmentEditor"]').first().click();
   const commitmentEditor = page.locator('#commitmentEditor');
