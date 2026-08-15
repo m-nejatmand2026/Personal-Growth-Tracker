@@ -12,12 +12,26 @@ async function load(page) {
   await page.locator('#todayView .gc-today-rebuild').waitFor({ state: 'visible', timeout: 15_000 });
 }
 
+async function assertNotBuriedInMore(page, selector, browserName, label) {
+  const locator = page.locator(selector);
+  await locator.waitFor({ state: 'visible' });
+  const buried = await locator.evaluate((node) => Boolean(node.closest('details.gc-today-more')));
+  assert.equal(buried, false, `${browserName}: ${label} must be visible on Today without opening More detail`);
+}
+
 async function assertRecovery(page, browserName) {
   await load(page);
 
   const tomorrow = page.locator('#todayView .gc-tomorrow-plan');
   await tomorrow.waitFor({ state: 'visible' });
   assert.match(await tomorrow.locator('summary').innerText(), /Tomorrow/);
+
+  await assertNotBuriedInMore(page, '#todayDirectionTitle', browserName, 'Progress direction');
+  await assertNotBuriedInMore(page, '#todayView [data-wellbeing-state]', browserName, 'Wellbeing state');
+  await assertNotBuriedInMore(page, '#journalPreview', browserName, 'Journal entry point');
+  assert.match(await page.locator('#todayDirectionTitle').innerText(), /Direction/);
+  assert.match(await page.locator('#todayView [data-wellbeing-state]').innerText(), /Energy/);
+  assert.match(await page.locator('#journalPreview').innerText(), /Journal/);
 
   await page.locator('#quickAddBtn').click();
   await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({ state: 'visible' });
