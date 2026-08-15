@@ -9,8 +9,9 @@ const plan = await readFile(new URL('../public/js/features/plan.js', import.meta
 const progress = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
 const insights = await readFile(new URL('../public/js/modules/insights/ui.js', import.meta.url), 'utf8');
 const journal = await readFile(new URL('../public/js/modules/journal/module.js', import.meta.url), 'utf8');
+const wellness = await readFile(new URL('../public/js/modules/wellness-boost/module.js', import.meta.url), 'utf8');
 
-test('shared experience framework loads after business module styles and before final accessibility safeguards', () => {
+test('shared experience framework remains between module styles and final accessibility safeguards', () => {
   const frameworkIndex = indexHtml.indexOf('/css/experience-framework.css');
   assert.ok(frameworkIndex > indexHtml.indexOf('/css/journal.css'));
   assert.ok(frameworkIndex > indexHtml.indexOf('/css/modules/wellness-boost.css'));
@@ -18,43 +19,32 @@ test('shared experience framework loads after business module styles and before 
 });
 
 test('framework owns reusable calm page, feature, choice, stat and tone primitives', () => {
-  for (const selector of [
-    '.gc-page-frame{',
-    '.gc-page-header{',
-    '.gc-stat-grid{',
-    '.gc-feature-card{',
-    '.gc-choice-list{',
-    '.gc-choice-row{',
-    '.gc-tone--reset{',
-    '.gc-tone--calm{',
-    '.gc-tone--focus{',
-    '.gc-tone--restore{'
-  ]) assert.match(framework, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  for (const selector of ['.gc-page-frame{','.gc-page-header{','.gc-stat-grid{','.gc-feature-card{','.gc-choice-list{','.gc-choice-row{','.gc-tone--reset{','.gc-tone--calm{','.gc-tone--focus{','.gc-tone--restore{']) {
+    assert.match(framework, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
   assert.match(framework, /--gc-reading-max:60rem/);
   assert.match(framework, /--gc-copy-max:56ch/);
 });
 
-test('major first-class views share the same calm header contract', () => {
-  assert.match(today, /today-sanctuary-heading/);
-  assert.match(plan, /plan-overview gc-page-header gc-page-header--with-stats/);
-  assert.match(progress, /progress-dashboard gc-page-header gc-page-header--with-stats/);
-  assert.match(insights, /insights-hero gc-page-header gc-page-header--aside/);
-  assert.match(framework, /\.journal-hero\{display:grid/);
-  assert.match(journal, /class="journal-hero journal-action-hero"/);
+test('major first-class Current views each expose a semantic destination header', () => {
+  assert.match(today, /<h2 id="todaySanctuaryTitle">Today<\/h2>/);
+  assert.match(plan, /<h2 id="planCurrentTitle">Plan<\/h2>/);
+  assert.match(progress, /<h2 id="progressCurrentTitle">Progress<\/h2>/);
+  assert.match(insights, /<h2 id="insightsCurrentTitle">Insights<\/h2>/);
+  assert.match(journal, /<h2 id="journalCurrentTitle">Journal<\/h2>/);
+  assert.match(wellness, /<h2 id="wellnessCurrentTitle">Wellness<\/h2>/);
 });
 
-test('Stitch Today and the other first-class introductions remain concise', () => {
-  assert.match(today, /<h2 id="todaySanctuaryTitle">Today<\/h2><p>\$\{formatDateLabel\(date\)\}<\/p>/);
+test('first-class introductions remain concise and non-duplicative', () => {
+  assert.match(today, /<h2 id="todaySanctuaryTitle">Today<\/h2><strong class="today-greeting">Good morning\.<\/strong>/);
   assert.match(today, /\$\{dailyPlanPanel\}/);
-  assert.match(plan, /<h2>Your plan<\/h2>/);
-  assert.match(plan, /Set direction, then fit it to your time\./);
-  assert.match(progress, /<h2>This week<\/h2>/);
-  assert.match(progress, /Your history first\. Targets are guidance, not debt\./);
-  assert.match(insights, /<h2>\$\{escapeHtml\(stage\.label\)\}<\/h2>/);
-  assert.match(insights, /No matched patterns yet/);
+  assert.match(plan, /Set direction, then fit it to the week ahead\./);
+  assert.match(progress, /What actually happened\. Targets and minimums are guidance, not debt\./);
+  assert.match(insights, /Patterns only when the evidence is strong enough\. Association never proves cause\./);
+  assert.match(journal, /Write when there is something you want to remember\./);
+  assert.match(wellness, /A quieter space to reset, focus, or restore\./);
   assert.doesNotMatch(today, /Your daily command center/);
   assert.doesNotMatch(plan, /Make ambition fit the life you actually have/);
-  assert.doesNotMatch(insights, /Patterns, when the evidence is ready|See patterns only when there is enough evidence/);
 });
 
 test('shared framework reduces mobile header density without shrinking touch targets', () => {
