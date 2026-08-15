@@ -1,5 +1,5 @@
 import { $, escapeHtml } from '../core/dom.js';
-import { formatMinutes } from '../core/format.js';
+import { formatDateLabel, formatMinutes } from '../core/format.js';
 import { state } from '../core/state.js';
 import { frontendModules } from '../modules/catalog.js';
 import { createFrontendModuleRegistry } from '../platform/module-registry.js';
@@ -12,11 +12,36 @@ const today = todayRegistry.get('today');
 const wellbeing = todayRegistry.get('wellbeing');
 let directionPeriod = 'week';
 
-const PERIOD_LABELS = Object.freeze({ day: 'Today', week: 'This week', month: 'This month', year: 'This year' });
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning.';
+  if (hour < 18) return 'Good afternoon.';
+  return 'Good evening.';
+}
 
-function metricHtml(metric) {
-  const value = metric.minutes == null ? escapeHtml(metric.value ?? '—') : formatMinutes(metric.minutes);
-  return `<div class="today-metric"><span>${escapeHtml(metric.label || '')}</span><strong>${value}</strong></div>`;
+function periodSwitcher(model) {
+  if (!model?.periods?.length) return '';
+  const labels = { day: 'Day', week: 'Week', month: 'Month', year: 'Year' };
+  return `<div class="gc-period-switch" role="group" aria-label="Progress period">${model.periods.map((period) => `<button type="button" data-direction-period="${escapeHtml(period)}" aria-pressed="${period === model.period ? 'true' : 'false'}">${escapeHtml(labels[period] || period)}</button>`).join('')}</div>`;
+}
+
+function metricValue(metrics, label) {
+  const item = (metrics || []).find((metric) => String(metric.label || '').toLowerCase() === label.toLowerCase());
+  return item?.minutes == null ? null : Math.max(0, Number(item.minutes) || 0);
+}
+
+function capacityCard(model) {
+  if (!model) return `<section class="gc-capacity-compact" aria-label="Today's time"><div><span>Today’s time</span><strong>Time fit unavailable</strong></div></section>`;
+  const planned = metricValue(model.metrics, 'Planned');
+  const flexible = metricValue(model.metrics, 'Still flexible');
+  const available = metricValue(model.metrics, 'Available');
+  const overBy = metricValue(model.metrics, 'Over by');
+  const used = available > 0 && planned != null ? Math.min(100, Math.round((planned / available) * 100)) : 0;
+  const status = overBy ? `${formatMinutes(overBy)} over available` : flexible == null ? 'Flexible time unavailable' : `${formatMinutes(flexible)} flexible`;
+  return `<section class="gc-capacity-compact" aria-label="Today's time">
+    <div class="gc-capacity-copy"><span>Today’s time</span><strong>${planned == null ? '—' : `${formatMinutes(planned)} planned`}</strong><small>${escapeHtml(status)}</small></div>
+    <div class="gc-capacity-track" role="img" aria-label="${used}% of available time planned"><i style="width:${used}%"></i></div>
+  </section>`;
 }
 
 function thresholdHtml(card) {
@@ -36,78 +61,23 @@ function thresholdHtml(card) {
   });
 }
 
-function periodSwitcher(model) {
-  if (!model?.periods?.length) return '';
-  const labels = { day: 'Day', week: 'Week', month: 'Month', year: 'Year' };
-  return `<div class="today-period-switch" role="group" aria-label="Progress direction period">${model.periods.map((period) => `<button type="button" data-direction-period="${escapeHtml(period)}" aria-pressed="${period === model.period ? 'true' : 'false'}">${escapeHtml(labels[period] || period)}</button>`).join('')}</div>`;
-}
-
-function summaryWidget(model) {
-  if (!model) return '';
-  return `<section class="time-reality-card" data-today-widget="${escapeHtml(model.id || '')}">
-    <header class="time-reality-head"><div><span class="section-kicker">${escapeHtml(model.title || '')}</span><h2>${escapeHtml(model.status || '')}</h2>${model.description ? `<p class="gc-sr-only">${escapeHtml(model.description)}</p>` : ''}</div></header>
-    ${model.metrics?.length ? `<div class="time-reality-stats">${model.metrics.map(metricHtml).join('')}</div>` : ''}
-  </section>`;
-}
-
-function cardsWidget(model) {
+function directionSection(model) {
   if (!model) return '';
   const cards = model.cards || [];
-  return `<section class="os-section today-direction-section" data-today-widget="${escapeHtml(model.id || '')}">
-    <div class="os-section-head today-direction-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2>${model.detail ? `<small class="gc-sr-only">${escapeHtml(model.detail)}</small>` : ''}</div></div>
-    <div class="today-goal-grid">${cards.length ? cards.map((card) => `<article class="today-goal-card"><div class="goal-card-top"><div><span class="goal-dot" aria-hidden="true"></span><strong>${escapeHtml(card.title || '')}</strong></div><span class="today-goal-status">${escapeHtml(card.status || '')}</span></div><div class="goal-progress-copy">${(card.metrics || []).map(metricHtml).join('')}</div>${thresholdHtml(card)}</article>`).join('') : `<div class="empty">${escapeHtml(model.empty || 'Nothing to show yet.')}</div>`}</div>
+  return `<section class="gc-today-secondary-section" aria-labelledby="todayDirectionTitle">
+    <div class="gc-secondary-head"><div><span>Progress</span><h3 id="todayDirectionTitle">Direction</h3></div>${periodSwitcher(model)}</div>
+    <div class="gc-direction-list">${cards.length ? cards.map((card) => `<article class="gc-direction-item"><div><strong>${escapeHtml(card.title || '')}</strong><small>${escapeHtml(card.status || '')}</small></div><div class="gc-direction-metrics">${(card.metrics || []).map((metric) => `<span><b>${escapeHtml(metric.label || '')}</b>${metric.minutes == null ? escapeHtml(metric.value ?? '—') : formatMinutes(metric.minutes)}</span>`).join('')}</div>${thresholdHtml(card)}</article>`).join('') : `<div class="gc-simple-empty">${escapeHtml(model.empty || 'No recorded direction yet.')}</div>`}</div>
   </section>`;
 }
 
-function rowsWidget(model) {
+function recentSection(model) {
   if (!model) return '';
   const rows = model.rows || [];
-  return `<section class="os-section recent-section" data-today-widget="${escapeHtml(model.id || '')}">
-    <div class="os-section-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2></div></div>
-    <div class="activity-feed">${rows.length ? rows.map((row) => `<article class="activity-feed-row"><span class="activity-symbol" aria-hidden="true">✓</span><div><strong>${escapeHtml(row.title || '')}</strong><small>${escapeHtml(row.subtitle || '')}</small></div>${row.minutes == null ? '' : `<span class="activity-duration">${formatMinutes(row.minutes)}</span>`}</article>`).join('') : `<div class="empty activity-empty">${escapeHtml(model.empty || 'Nothing to show yet.')}</div>`}</div>
-  </section>`;
-}
-
-function renderModel(model) {
-  if (!model) return '';
-  if (model.kind === 'cards') return cardsWidget(model);
-  if (model.kind === 'rows') return rowsWidget(model);
-  return summaryWidget(model);
-}
-
-function directionActualMinutes(model) {
-  return (model?.cards || []).reduce((sum, card) => {
-    const direct = Number(card?.threshold?.actual);
-    if (Number.isFinite(direct)) return sum + Math.max(0, direct);
-    const metric = (card?.metrics || []).find((item) => String(item.label).toLowerCase() === 'actual');
-    return sum + Math.max(0, Number(metric?.minutes) || 0);
-  }, 0);
-}
-
-function capacityWeek(model) {
-  if (!capacity || !model || typeof capacity.planSummary !== 'function') return null;
-  const items = capacity.planSummary({ model }) || [];
-  const planned = items.find((item) => item.id === 'capacity.planned-week');
-  const flexible = items.find((item) => item.id === 'capacity.time-fit-week');
-  return { planned: planned?.value || '—', detail: flexible ? `${flexible.value} ${String(flexible.label || '').toLowerCase()}` : 'Time fit unavailable' };
-}
-
-function currentOverview(directionModel, capacityModel) {
-  const actual = directionActualMinutes(directionModel);
-  const hasGuidance = (directionModel?.cards || []).some((card) => Boolean(card.threshold));
-  const capacitySummary = capacityWeek(capacityModel);
-  return `<section class="today-current-overview" aria-labelledby="todayPeriodHeading">
-    ${periodSwitcher(directionModel)}
-    <h3 id="todayPeriodHeading">${escapeHtml(PERIOD_LABELS[directionModel?.period] || 'This week')}</h3>
-    <div class="today-current-metrics">
-      <article class="today-current-metric"><span>Actual progress</span><strong>${escapeHtml(formatMinutes(actual))}</strong><small>${hasGuidance ? 'Recorded factual progress' : 'No target set for this period'}</small></article>
-      <article class="today-current-metric"><span>Capacity</span><strong>${escapeHtml(capacitySummary?.planned ? `${capacitySummary.planned} planned` : '—')}</strong><small>${escapeHtml(capacitySummary?.detail || 'Time fit unavailable')}</small></article>
-    </div>
-  </section>`;
+  return `<section class="gc-today-secondary-section" aria-labelledby="todayRecentTitle"><div class="gc-secondary-head"><div><span>Facts</span><h3 id="todayRecentTitle">Recently done</h3></div></div><div class="gc-recent-list">${rows.length ? rows.slice(0, 5).map((row) => `<article><span class="gc-recent-mark" aria-hidden="true">✓</span><div><strong>${escapeHtml(row.title || '')}</strong><small>${escapeHtml(row.subtitle || '')}</small></div>${row.minutes == null ? '' : `<b>${formatMinutes(row.minutes)}</b>`}</article>`).join('') : '<div class="gc-simple-empty">Nothing recorded yet.</div>'}</div></section>`;
 }
 
 export function focusTodayActivities() {
-  document.querySelector('.today-primary-flow')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelector('.gc-your-day-head')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 export async function renderToday({ reload, dailyPlanPanel = '', journalPreview = '' } = {}) {
@@ -121,7 +91,7 @@ export async function renderToday({ reload, dailyPlanPanel = '', journalPreview 
   let wellbeingDetails = '';
 
   const [capacityResult, todayResult, wellbeingResult] = await Promise.allSettled([
-    capacity ? capacity.load({ date }) : null,
+    capacity ? capacity.loadToday({ date }) : null,
     today ? today.loadSummary({ date, period: directionPeriod }) : null,
     wellbeing ? wellbeing.getDay(date) : null
   ]);
@@ -140,18 +110,18 @@ export async function renderToday({ reload, dailyPlanPanel = '', journalPreview 
   }) || null;
   const recentModel = progress?.todayRecent({ items: todayModel?.progress || [] }) || null;
 
-  root.innerHTML = `<div class="today-layout gc-page-flow">
-    <section class="today-sanctuary-heading living-page-heading" aria-labelledby="todaySanctuaryTitle"><h2 id="todaySanctuaryTitle">Today</h2><strong class="today-greeting">Good morning.</strong><p>Keep the next useful step visible. Change the period to change the view—not the facts.</p></section>
-    <div class="today-primary-column">
-      ${currentOverview(directionModel, capacityModel)}
-      <div class="today-primary-flow">${dailyPlanPanel}</div>
+  root.innerHTML = `<div class="gc-today-rebuild">
+    <header class="gc-today-header"><div><h2>Today</h2><time datetime="${escapeHtml(date)}">${escapeHtml(formatDateLabel(date))}</time></div><p><strong>${escapeHtml(greeting())}</strong><span>One clear step at a time.</span></p></header>
+    <div class="gc-today-primary">
+      ${dailyPlanPanel}
+      ${capacityCard(capacityModel)}
     </div>
-    <aside class="today-context-column" aria-label="Today context">
-      <section class="today-reflection-card"><span>REFLECTION</span><h3>What is one small friction point you can remove today?</h3><p>Capture it in Journal when useful.</p></section>
+    <details class="gc-today-more"><summary><span><strong>More today</strong><small>Progress, wellbeing and reflection</small></span><span aria-hidden="true">›</span></summary><div class="gc-today-more-body">
+      ${directionSection(directionModel)}
+      ${recentSection(recentModel)}
       ${wellbeingState}
-    </aside>
-    <details class="today-context-disclosure"><summary><span><strong>More today context</strong><small>Progress, reflection and wellbeing details</small></span></summary><div class="today-context-body">
-      ${renderModel(directionModel)}${renderModel(recentModel)}${journalPreview}${wellbeingDetails}
+      ${journalPreview}
+      ${wellbeingDetails}
     </div></details>
   </div>`;
 
