@@ -10,23 +10,25 @@ When documents conflict, use this order unless an explicitly newer approved prod
 
 1. **Canonical product identity/name:** Growth Compass — Version 1 Beta.
 2. **`MODULARITY_STANDARD.md`** for architecture/isolation rules.
-3. **Current approved product/experience architecture** (`EXPERIENCE_ARCHITECTURE.md` plus accepted Revision B decisions).
-4. **Current API/data/operations contracts and runbooks** for their respective boundaries.
-5. **Live code + release-blocking tests on the active feature branch** for mutable implementation state.
-6. **Audit phase records** as evidence/findings; they do not override normative product rules.
-7. **Historical/research/mockup/reference documents** as context only.
+3. **`UX_UI_MASTER_SPEC.md`** for current UX/UI design direction, measurable design quality targets, responsive/accessibility strategy and Revision C+ presentation decisions.
+4. **`EXPERIENCE_ARCHITECTURE.md`** for durable product semantics, easy/default interaction principles and capability experience rules that are not superseded by the UX/UI Master Specification.
+5. **Current API/data/operations contracts and runbooks** for their respective boundaries.
+6. **Live code + release-blocking tests on the active feature branch** for mutable implementation state.
+7. **Audit phase records** as evidence/findings; they do not override normative product rules.
+8. **Historical/research/mockup/reference documents** as context only.
 
 A screenshot/mockup or old implementation note never overrides a current domain/architecture contract by itself.
 
-## Normative architecture and engineering contracts
+## Normative architecture, engineering and design contracts
 
-Read these when changing system structure or boundaries:
+Read these when changing system structure, boundaries or first-class UX/UI:
 
 - [`MODULARITY_STANDARD.md`](MODULARITY_STANDARD.md) — mandatory module isolation and dependency standard; highest architecture authority.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — current modular-monolith architecture and composition model.
 - [`ADR-0001-modular-monolith.md`](ADR-0001-modular-monolith.md) — architectural decision record for the modular monolith.
 - [`API_CONTRACTS.md`](API_CONTRACTS.md) — HTTP Version 1 contract/version/retry/concurrency rules.
-- [`EXPERIENCE_ARCHITECTURE.md`](EXPERIENCE_ARCHITECTURE.md) — shared product/UX architecture and easy/default presentation model.
+- [`UX_UI_MASTER_SPEC.md`](UX_UI_MASTER_SPEC.md) — definitive evidence-backed Revision C+ UX/UI direction, current-interface critique, quality targets, responsive/accessibility contract, design-system requirements, validation framework and redesign roadmap.
+- [`EXPERIENCE_ARCHITECTURE.md`](EXPERIENCE_ARCHITECTURE.md) — durable product/UX semantics and easy/default presentation principles. Where visual/presentation direction differs, the newer UX/UI Master Specification wins; where architecture/ownership differs, the Modularity Standard wins.
 
 ## Product/capability specifications
 
@@ -34,7 +36,7 @@ These define approved capability behavior and semantics:
 
 - [`DAILY_PLAN_AND_JOURNAL_SPEC.md`](DAILY_PLAN_AND_JOURNAL_SPEC.md)
 - [`WELLNESS_BOOST.md`](WELLNESS_BOOST.md)
-- Revision B research/implementation documents where they are marked current/approved.
+- Revision B research/implementation documents where they are marked current/approved and have not been superseded by the UX/UI Master Specification.
 
 Capability-specific specifications are subordinate to the Modularity Standard on architecture and must not redefine another module's ownership.
 
@@ -61,13 +63,13 @@ Audit findings classify current risk. They do not authorize production deploymen
 
 ## UX/research/reference material
 
-Documents containing research, mockups, Revision A history, migration notes or future proposals are supporting evidence rather than automatic implementation requirements.
+Documents containing research, mockups, Revision A/Revision B history, migration notes or future proposals are supporting evidence rather than automatic implementation requirements unless the documentation map marks them normative.
 
 Use them to understand intent, but verify the currently accepted product decision before changing runtime behavior.
 
 In particular:
 
-- Revision A material may explain how the current interface evolved but does not override accepted Revision B/shared-framework decisions.
+- Revision A/Revision B material may explain how the current interface evolved but does not override the current UX/UI Master Specification on Revision C+ presentation decisions.
 - future capability proposals (AI, wearables, communications, focus timer, broader onboarding, etc.) are not implemented merely because a document describes them.
 - mockups do not authorize invented metrics or unsupported data relationships.
 
@@ -92,7 +94,7 @@ Important environment contract:
 
 ## Documentation change rules
 
-When a change materially alters architecture, operations or a public/domain contract:
+When a change materially alters architecture, operations, UX/UI direction or a public/domain contract:
 
 1. update the owning normative document/runbook in the same change;
 2. update regression tests when the rule can be mechanically enforced;
@@ -108,10 +110,11 @@ For a new engineer/contributor:
 1. repository `README.md`;
 2. `MODULARITY_STANDARD.md`;
 3. `ARCHITECTURE.md`;
-4. `EXPERIENCE_ARCHITECTURE.md`;
-5. `DEVELOPMENT_WORKFLOW.md`;
-6. relevant capability spec;
-7. relevant runbook/API contract;
-8. current audit findings and any later post-audit hardening checkpoint for the area being changed.
+4. `UX_UI_MASTER_SPEC.md`;
+5. `EXPERIENCE_ARCHITECTURE.md`;
+6. `DEVELOPMENT_WORKFLOW.md`;
+7. relevant capability spec;
+8. relevant runbook/API contract;
+9. current audit findings and any later post-audit hardening checkpoint for the area being changed.
 
 This reading path is intentionally shorter than reading every document in chronological order.
