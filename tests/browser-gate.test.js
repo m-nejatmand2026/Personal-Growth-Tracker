@@ -5,11 +5,14 @@ import { readFile } from 'node:fs/promises';
 const quality = await readFile(new URL('../.github/workflows/quality.yml', import.meta.url), 'utf8');
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const browserTest = await readFile(new URL('./browser/browser-e2e.browser.js', import.meta.url), 'utf8');
+const recoveryBrowserTest = await readFile(new URL('./browser/functional-recovery.browser.js', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../scripts/run-browser-e2e.sh', import.meta.url), 'utf8');
+
+const browserCommand = 'node --test tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js';
 
 test('Quality keeps pinned Chromium and WebKit browser acceptance release-blocking', () => {
   assert.equal(packageJson.devDependencies.playwright, '1.62.0');
-  assert.equal(packageJson.scripts['test:browser'], 'node --test tests/browser/browser-e2e.browser.js');
+  assert.equal(packageJson.scripts['test:browser'], browserCommand);
   assert.match(quality, /playwright@1\.62\.0/);
   assert.match(quality, /playwright install --with-deps chromium webkit/);
   assert.match(quality, /bash scripts\/run-browser-e2e\.sh/);
@@ -42,4 +45,16 @@ test('browser acceptance proves Product Rebuild workflows across desktop and 375
   assert.match(browserTest, /must not overflow horizontally/);
   assert.doesNotMatch(browserTest, /preview-empty\.css|body must have no rendered box|blank canvas/);
   assert.doesNotMatch(browserTest, /https:\/\//);
+});
+
+test('browser acceptance proves recovered everyday workflows on 375px Chromium and WebKit', () => {
+  assert.match(recoveryBrowserTest, /chromium/);
+  assert.match(recoveryBrowserTest, /webkit/);
+  assert.match(recoveryBrowserTest, /width:\s*375,\s*height:\s*812/);
+  assert.match(recoveryBrowserTest, /value="done"/);
+  assert.match(recoveryBrowserTest, /gc-tomorrow-plan/);
+  assert.match(recoveryBrowserTest, /gc-plan-working/);
+  assert.match(recoveryBrowserTest, /commitmentEditor/);
+  assert.match(recoveryBrowserTest, /plan-loading/);
+  assert.doesNotMatch(recoveryBrowserTest, /https:\/\//);
 });
