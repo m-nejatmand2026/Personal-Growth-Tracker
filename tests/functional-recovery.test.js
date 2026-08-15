@@ -6,9 +6,12 @@ const indexHtml = await readFile(new URL('../public/index.html', import.meta.url
 const appJs = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 const todayJs = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
 const dailyPlanJs = await readFile(new URL('../public/js/modules/daily-plan/module.js', import.meta.url), 'utf8');
+const activitiesJs = await readFile(new URL('../public/js/modules/activities/module.js', import.meta.url), 'utf8');
+const activitiesUi = await readFile(new URL('../public/js/modules/activities/ui.js', import.meta.url), 'utf8');
 const goalsJs = await readFile(new URL('../public/js/modules/goals/module.js', import.meta.url), 'utf8');
 const planJs = await readFile(new URL('../public/js/features/plan.js', import.meta.url), 'utf8');
 const recoveryCss = await readFile(new URL('../public/css/functional-recovery.css', import.meta.url), 'utf8');
+const activitiesCss = await readFile(new URL('../public/css/modules/activities.css', import.meta.url), 'utf8');
 
 test('global Add recovers factual Done as its default consequence', () => {
   assert.match(appJs, /\[data-open-logger\][\s\S]*logger\.open\(\{ entryMode: 'done', date: state\.date \}\)/);
@@ -75,6 +78,24 @@ test('Plan restores Schedule as a direct planning destination', () => {
   assert.match(planJs, /data-plan-scroll="commitmentEditor"><span>Schedule<\/span>/);
   assert.match(planJs, /Recurring commitments/);
   assert.match(planJs, /if \(target\?\.matches\('details'\)\) target\.open = true/);
+});
+
+test('Activities becomes a real module-owned Plan management surface', () => {
+  assert.match(activitiesJs, /slots:\s*Object\.freeze\(\[\{ name: 'plan', order: 15 \}\]\)/);
+  assert.match(activitiesJs, /activitiesPanelHtml/);
+  assert.match(activitiesJs, /bindActivitiesPanel/);
+  assert.match(activitiesJs, /this\.list\(\)/);
+  assert.match(activitiesJs, /this\.creationContext\(\)/);
+  assert.match(activitiesUi, /id="activitiesPanel"/);
+  assert.match(activitiesUi, /id="activityManageForm"/);
+  assert.match(activitiesUi, /data-activity-edit/);
+  assert.match(activitiesUi, /data-activity-archive/);
+  assert.match(activitiesUi, /await create\?/);
+  assert.match(activitiesUi, /await update\?/);
+  assert.match(activitiesUi, /await archive\?/);
+  assert.match(planJs, /data-plan-scroll="plan-module-activities"><span>Activities<\/span>/);
+  assert.match(indexHtml, /\/css\/modules\/activities\.css/);
+  assert.match(activitiesCss, /\.activities-panel/);
 });
 
 test('functional recovery styling loads after visual polish and before accessibility safeguards', () => {
