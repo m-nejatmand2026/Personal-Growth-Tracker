@@ -8,7 +8,7 @@ const dailyPlanCss = await readFile(new URL('../public/css/daily-plan.css', impo
 test('Daily Plan exposes an explicit changed-plan recovery action without automatic rollover language', () => {
   assert.match(dailyPlan, /Plans changed\?/);
   assert.match(dailyPlan, /Nothing moves automatically and nothing becomes debt\. Choose what fits now\./);
-  assert.match(dailyPlan, /It will never roll into the next day automatically/);
+  assert.match(dailyPlan, /It never rolls into the next day automatically/);
   assert.doesNotMatch(dailyPlan, /overdue|auto(?:matic)?[- ]?roll|carry[- ]?forward/i);
 });
 
