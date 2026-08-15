@@ -16,36 +16,15 @@ function token(source,name){
   assert.ok(match,`missing color token ${name}`);
   return match[1];
 }
-
-function rgb(hex){
-  const value=Number.parseInt(hex.slice(1),16);
-  return [(value>>16)&255,(value>>8)&255,value&255];
-}
-
-function luminance(hex){
-  const linear=rgb(hex).map((channel)=>{
-    const value=channel/255;
-    return value<=0.04045?value/12.92:((value+0.055)/1.055)**2.4;
-  });
-  return 0.2126*linear[0]+0.7152*linear[1]+0.0722*linear[2];
-}
-
-function contrast(a,b){
-  const first=luminance(a);
-  const second=luminance(b);
-  const lighter=Math.max(first,second);
-  const darker=Math.min(first,second);
-  return (lighter+0.05)/(darker+0.05);
-}
-
-function assertNormalTextContrast(foreground,background,label){
-  assert.ok(contrast(foreground,background)>=4.5,`${label} must keep at least 4.5:1 contrast`);
-}
+function rgb(hex){const value=Number.parseInt(hex.slice(1),16);return [(value>>16)&255,(value>>8)&255,value&255]}
+function luminance(hex){const linear=rgb(hex).map((channel)=>{const value=channel/255;return value<=0.04045?value/12.92:((value+0.055)/1.055)**2.4});return 0.2126*linear[0]+0.7152*linear[1]+0.0722*linear[2]}
+function contrast(a,b){const first=luminance(a);const second=luminance(b);return (Math.max(first,second)+0.05)/(Math.min(first,second)+0.05)}
+function assertNormalTextContrast(foreground,background,label){assert.ok(contrast(foreground,background)>=4.5,`${label} must keep at least 4.5:1 contrast`)}
 
 test('final accessibility stylesheet loads last so acceptance safeguards cannot be bypassed by feature CSS',()=>{
   const accessibility=index.indexOf('/css/accessibility-regression.css');
-  const installCss=index.indexOf('/css/install-app.css');
-  assert.ok(accessibility>installCss&&installCss>=0);
+  const semantics=index.indexOf('/css/figma-current-semantics.css');
+  assert.ok(accessibility>semantics&&semantics>=0);
 });
 
 test('375px acceptance layer prevents horizontal shell overflow without imposing a desktop minimum width',()=>{
@@ -69,9 +48,7 @@ test('repeated SPA navigation has a keyboard bypass target and inactive views ar
   assert.match(index,/id="mainContent" class="workspace" tabindex="-1"/);
   assert.match(css,/\.gc-skip-link/);
   assert.match(css,/\.gc-skip-link:focus/);
-  for(const view of ['plan','progress','insights','wellness-boost','journal','settings']){
-    assert.match(index,new RegExp(`id="${view}View"[^>]*hidden`));
-  }
+  for(const view of ['plan','progress','insights','wellness-boost','journal','settings']) assert.match(index,new RegExp(`id="${view}View"[^>]*hidden`));
   assert.match(app,/view\.hidden = !isCurrent/);
 });
 
@@ -90,7 +67,6 @@ test('canonical muted copy and shared category tones keep normal-text contrast',
   const muted=token(design,'--gc-text-muted');
   assertNormalTextContrast(muted,surface,'muted copy on surface');
   assertNormalTextContrast(muted,background,'muted copy on app background');
-
   for(const tone of ['reset','calm','focus','restore']){
     const toneBackground=token(framework,`--gc-tone-${tone}-bg`);
     const toneInk=token(framework,`--gc-tone-${tone}-ink`);
@@ -106,12 +82,15 @@ test('threshold graphics expose equivalent Actual Minimum Target text',()=>{
   assert.match(charts,/aria-hidden="true"/);
 });
 
-test('Insights exposes visual readiness current evidence stage and sample sizes semantically',()=>{
-  assert.match(insights,/insight-readiness-ring" role="img"/);
+test('Insights exposes current evidence stage and sample sizes as semantic text',()=>{
+  assert.match(insights,/<h2 id="insightsCurrentTitle">Insights<\/h2>/);
+  assert.match(insights,/EVIDENCE READINESS/);
   assert.match(insights,/aria-current="step"/);
-  assert.match(insights,/\$\{trackedDays\} tracked days so far/);
-  assert.match(insights,/\$\{energy\.length\} check-ins/);
-  assert.match(insights,/how many observations support it/);
+  assert.match(insights,/\$\{trackedDays\} tracked \$\{trackedDays === 1 \? 'day' : 'days'\}/);
+  assert.match(insights,/Energy check-ins/);
+  assert.match(insights,/\$\{energy\.length\}/);
+  assert.match(insights,/Matched patterns/);
+  assert.match(insights,/supporting observation counts/);
   assert.doesNotMatch(insights,/N=/);
 });
 
