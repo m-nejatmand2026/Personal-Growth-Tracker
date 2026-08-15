@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 const appJs = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
+const todayJs = await readFile(new URL('../public/js/features/today.js', import.meta.url), 'utf8');
 const dailyPlanJs = await readFile(new URL('../public/js/modules/daily-plan/module.js', import.meta.url), 'utf8');
 const goalsJs = await readFile(new URL('../public/js/modules/goals/module.js', import.meta.url), 'utf8');
 const planJs = await readFile(new URL('../public/js/features/plan.js', import.meta.url), 'utf8');
@@ -36,6 +37,20 @@ test('Today distinguishes Plan activity from global factual Add', () => {
   assert.match(dailyPlanJs, /data-plan-capture="planned"/);
   assert.match(dailyPlanJs, /data-plan-capture="in_progress"/);
   assert.match(dailyPlanJs, /entryMode: 'done'/);
+});
+
+test('Today keeps Progress wellbeing and Journal visible before deeper detail', () => {
+  assert.match(todayJs, /function visibleContext/);
+  assert.match(todayJs, /gc-today-visible-context/);
+  assert.match(todayJs, /directionSection\(directionModel\)/);
+  assert.match(todayJs, /\$\{wellbeingState\}/);
+  assert.match(todayJs, /\$\{journalPreview\}/);
+  const visibleIndex = todayJs.indexOf('${visibleContext({ directionModel, wellbeingState, journalPreview })}');
+  const disclosureIndex = todayJs.indexOf('<details class="gc-today-more">');
+  assert.ok(visibleIndex >= 0 && disclosureIndex > visibleIndex, 'visible Today context must render before the deeper-details disclosure');
+  assert.match(todayJs, /More detail/);
+  assert.match(todayJs, /Recent facts and deeper wellbeing/);
+  assert.match(recoveryCss, /\.gc-today-visible-context/);
 });
 
 test('Plan no longer injects a visible transient loading card', () => {
