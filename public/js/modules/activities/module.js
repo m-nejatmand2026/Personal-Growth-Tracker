@@ -1,4 +1,5 @@
 import { api } from '../../core/api.js';
+import { activitiesPanelHtml, bindActivitiesPanel } from './ui.js';
 
 function activityPath(id) {
   const numericId = Number(id);
@@ -15,7 +16,7 @@ export const activitiesModule = Object.freeze({
   defaultEnabled: true,
   publishes: Object.freeze([]),
   subscribes: Object.freeze([]),
-  slots: Object.freeze([]),
+  slots: Object.freeze([{ name: 'plan', order: 15 }]),
 
   async list({ goalId = null, includeArchived = false } = {}) {
     const params = new URLSearchParams();
@@ -72,5 +73,36 @@ export const activitiesModule = Object.freeze({
       method: 'DELETE'
     });
     return response.item;
+  },
+
+  async load() {
+    const [activities, context] = await Promise.all([
+      this.list(),
+      this.creationContext()
+    ]);
+    return { activities, goals: context.goals || [] };
+  },
+
+  planSummary({ model }) {
+    return Object.freeze({
+      id: 'activities.active',
+      order: 15,
+      label: 'Activities',
+      value: (model?.activities || []).length,
+      detail: 'reusable actions'
+    });
+  },
+
+  render({ model }) {
+    return activitiesPanelHtml(model);
+  },
+
+  bind({ model, reload }) {
+    bindActivitiesPanel(model, {
+      create: (input) => this.create(input),
+      update: (id, input) => this.update(id, input),
+      archive: (id) => this.archive(id),
+      reload
+    });
   }
 });
