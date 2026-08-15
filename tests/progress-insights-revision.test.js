@@ -11,10 +11,10 @@ test('Progress keeps factual actuals separate from optional minimum and target g
   assert.match(progressJs, /Actual time/);
   assert.match(progressJs, /Good-enough minimums met/);
   assert.match(progressJs, /week\.minimumCount \?/);
-  assert.match(progressJs, /Some minimums are still ahead — no catch-up needed/);
+  assert.match(progressJs, /Plans never appear here until you explicitly record them as done/);
   assert.match(progressJs, /Minimum/);
   assert.match(progressJs, /Target/);
-  assert.match(progressJs, /What actually happened\. Targets and minimums are guidance, not debt\./);
+  assert.match(progressJs, /Actual vs optional guidance/);
 });
 
 test('Progress minimum summary counts only goals that actually have a minimum', () => {
@@ -27,10 +27,12 @@ test('Progress history preserves mixed measurement facts and legacy read-only re
   assert.match(progressJs, /item\.minutes != null/);
   assert.match(progressJs, /item\.quantity != null/);
   assert.match(progressJs, /item\.boolean_value != null/);
-  assert.match(progressJs, /Time, quantity and yes\/no progress remain separate factual measurements/);
-  assert.match(progressJs, /Earlier Beta history/);
-  assert.match(progressJs, /Read-only history from the earlier Beta version/);
-  assert.match(progressJs, /Evidence only here\. Patterns live in Insights\./);
+  assert.match(progressJs, /return 'Time'/);
+  assert.match(progressJs, /return 'Quantity'/);
+  assert.match(progressJs, /return 'Yes \/ No'/);
+  assert.match(progressJs, /Earlier Beta/);
+  assert.match(progressJs, /record_kind === 'progress'/);
+  assert.match(progressJs, /Evidence only here\. Interpretation belongs in Insights\./);
 });
 
 test('Progress does not pull Wellbeing through a legacy or undeclared history path', () => {
@@ -41,9 +43,9 @@ test('Progress does not pull Wellbeing through a legacy or undeclared history pa
 test('Insights exposes evidence readiness and association-only language without claiming causation', () => {
   for (const threshold of ['0–6', '7–20', '21–41', '42+']) assert.match(insightsJs, new RegExp(threshold.replace('+','\\+')));
   assert.match(insightsJs, /tracked \$\{trackedDays === 1 \? 'day' : 'days'\}/);
-  assert.match(insightsJs, /Energy check-ins/);
-  assert.match(insightsJs, /Active days/);
-  assert.match(insightsJs, /Matched patterns/);
+  assert.match(insightsJs, /energy check-ins/);
+  assert.match(insightsJs, /activityDays/);
+  assert.match(insightsJs, /No defensible matched pattern yet/);
   assert.match(insightsJs, /does not prove cause/);
   assert.doesNotMatch(insightsJs, /causes higher|causes lower|because of sleep/i);
 });
