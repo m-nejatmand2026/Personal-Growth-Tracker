@@ -169,7 +169,7 @@ eventBus.subscribe('daily-plan.capture-selected', async (input) => { await logge
 eventBus.subscribe('journal.preview-selected', async () => { await showView('journal'); });
 
 $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => button.addEventListener('click', () => void showView(button.dataset.view)));
-$$('[data-open-logger]').forEach((button) => button.addEventListener('click', () => void logger.open()));
+$$('[data-open-logger]').forEach((button) => button.addEventListener('click', () => void logger.open({ entryMode: 'done', date: state.date })));
 function toggleSettings() { void showView(state.view === 'settings' ? lastPrimaryView : 'settings'); }
 $('#settingsBtn')?.addEventListener('click', toggleSettings);
 $('#settingsRailBtn')?.addEventListener('click', toggleSettings);
