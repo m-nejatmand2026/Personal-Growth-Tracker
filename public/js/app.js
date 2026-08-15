@@ -138,7 +138,7 @@ async function showView(name) {
   const previousView = state.view;
   const transitionToken = ++viewTransitionToken;
   closeTopMore();
-  if (previousView === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
+  if (state.view === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
   state.view = name;
   if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
 
