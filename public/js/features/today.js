@@ -114,7 +114,7 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
     <div class="today-primary-flow">
       ${dailyPlanPanel}
     </div>
-    <details class="today-context-disclosure"><summary><span><strong>Daily context</strong><small>Wellbeing, capacity, progress and reflection</small></span><span class="today-context-chevron" aria-hidden="true">⌄</span></summary><div class="today-context-body">
+    <details class="today-context-disclosure" hidden><summary><span><strong>Daily context</strong><small>Wellbeing, capacity, progress and reflection</small></span><span class="today-context-chevron" aria-hidden="true">⌄</span></summary><div class="today-context-body">
       ${wellbeingState}
       ${renderModel(capacityModel)}
       ${renderModel(directionModel)}

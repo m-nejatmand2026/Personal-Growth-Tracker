@@ -56,7 +56,6 @@ function sanctuaryPanelHtml(model) {
     ${focus ? `<article class="sanctuary-focus-card"><div class="sanctuary-focus-copy"><p><span aria-hidden="true">⊙</span> Primary Focus</p><h3>${escapeHtml(focus.title)}</h3>${focus.note || focus.activity_label ? `<div>${escapeHtml(focus.note || focus.activity_label)}</div>` : ''}</div><button type="button" class="sanctuary-focus-action" data-plan-start="${focus.id}" ${focus.status === 'in_progress' ? 'disabled' : ''}><span aria-hidden="true">▷</span>${focus.status === 'in_progress' ? 'In Focus' : 'Start Focus'}</button></article>` : `<article class="sanctuary-focus-card is-empty"><div class="sanctuary-focus-copy"><p><span aria-hidden="true">⊙</span> Primary Focus</p><h3>Choose what matters most today</h3><div>Keep the day intentional and light.</div></div><button type="button" class="sanctuary-focus-action" data-plan-add="${model.date}"><span aria-hidden="true">＋</span>Add Focus</button></article>`}
     <header class="sanctuary-agenda-head"><h3 id="agendaTitle">Agenda</h3><span>${items.length} ${items.length === 1 ? 'Task' : 'Tasks'}</span></header>
     <div class="sanctuary-agenda-list">${items.length ? items.map(sanctuaryItemHtml).join('') : `<div class="daily-plan-empty sanctuary-agenda-empty"><strong>A clear day.</strong><span>Add only what genuinely matters.</span></div>`}</div>
-    <button type="button" class="daily-plan-add sanctuary-agenda-add" data-plan-add="${model.date}">＋ Add to Today</button>
   </section>`;
 }
 
