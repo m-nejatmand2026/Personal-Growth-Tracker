@@ -26,15 +26,14 @@ test('browser acceptance runs only against an isolated local Worker and local D1
   assert.doesNotMatch(runner, /--remote|workers\.dev|1937971c|a182d8c8/);
 });
 
-test('browser acceptance covers cross-browser desktop mobile keyboard modal and reflow evidence', () => {
+test('browser acceptance proves the Preview frontend reset is blank across desktop and mobile browsers', () => {
   assert.match(browserTest, /chromium/);
   assert.match(browserTest, /webkit/);
   assert.match(browserTest, /width: 375, height: 812/);
-  assert.match(browserTest, /Skip to main content/);
-  assert.match(browserTest, /What do you want to do\?/);
-  assert.match(browserTest, /aria-modal/);
-  assert.match(browserTest, /44px touch target/);
-  assert.match(browserTest, /documentWidth <= metrics\.viewport/);
-  assert.match(browserTest, /bodyWidth <= metrics\.viewport/);
+  assert.match(browserTest, /preview-empty\.css/);
+  assert.match(browserTest, /visibleCount/);
+  assert.match(browserTest, /interactiveCount/);
+  assert.match(browserTest, /legacy app shell must be disabled/);
+  assert.match(browserTest, /blank canvas must not overflow horizontally/);
   assert.doesNotMatch(browserTest, /https:\/\//);
 });
