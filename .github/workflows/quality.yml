@@ -26,13 +26,21 @@ jobs:
           package-manager-cache: false
 
       - name: Run unit, contract and modularity boundary tests
-        run: npm test
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p .artifacts/test-logs
+          npm test 2>&1 | tee .artifacts/test-logs/unit.log
 
       - name: Install pinned Worker and browser test runtimes
         run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4.123.0 playwright@1.62.0
 
       - name: Run real Worker and isolated D1 integration tests
-        run: npm run test:integration
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p .artifacts/test-logs
+          npm run test:integration 2>&1 | tee .artifacts/test-logs/integration.log
 
       - name: Install pinned browser binaries
         run: ./node_modules/.bin/playwright install --with-deps chromium webkit
@@ -40,13 +48,19 @@ jobs:
       - name: Run local Worker browser acceptance gate
         env:
           GC_E2E_SCREENSHOT_DIR: .artifacts/ui
-        run: bash scripts/run-browser-e2e.sh
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p .artifacts/test-logs
+          bash scripts/run-browser-e2e.sh 2>&1 | tee .artifacts/test-logs/browser.log
 
-      - name: Upload Revision C visual evidence
+      - name: Upload Product Rebuild validation evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: revision-c-ui-${{ github.event.pull_request.head.sha || github.sha }}
-          path: .artifacts/ui
+          name: product-rebuild-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            .artifacts/ui
+            .artifacts/test-logs
           if-no-files-found: ignore
           retention-days: 7
