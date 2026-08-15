@@ -34,14 +34,15 @@ function activityGlyph(item) {
   return escapeHtml((source[0] || 'A').toUpperCase());
 }
 
-function todayPlanRow(item) {
+function todayPlanRow(item, { future = false } = {}) {
   const meta = itemMeta(item) || (item.activity_key ? 'Activity' : 'One-off plan');
-  return `<article class="gc-day-item" data-plan-item="${item.id}">
+  return `<article class="gc-day-item${future ? ' is-future' : ''}" data-plan-item="${item.id}">
     <span class="gc-day-item-mark" aria-hidden="true">${activityGlyph(item)}</span>
     <div class="gc-day-item-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(meta)}</small></div>
     <div class="gc-day-item-actions">
-      ${item.status === 'planned' ? `<button type="button" class="gc-day-start" data-plan-start="${item.id}">Start</button>` : ''}
-      <button type="button" class="gc-day-more" data-plan-review="${item.id}" aria-label="Plans changed for ${escapeHtml(item.title)}">•••</button>
+      ${!future && item.status === 'planned' ? `<button type="button" class="gc-day-start" data-plan-start="${item.id}">Start</button>` : ''}
+      ${!future ? `<button type="button" class="gc-day-done" data-plan-done="${item.id}">Done</button>` : `<button type="button" class="gc-day-edit" data-plan-edit="${item.id}">Edit</button>`}
+      <button type="button" class="gc-day-more" data-plan-review="${item.id}" aria-label="More options for ${escapeHtml(item.title)}">•••</button>
     </div>
   </article>`;
 }
@@ -66,6 +67,24 @@ function todayNow(active) {
   </section>`;
 }
 
+function tomorrowPreview(model) {
+  const items = model.tomorrowItems || [];
+  const plannedMinutes = items.reduce((sum, item) => sum + Math.max(0, Number(item.planned_minutes) || 0), 0);
+  const summary = items.length
+    ? `${items.length} ${items.length === 1 ? 'item' : 'items'}${plannedMinutes ? ` · ${formatMinutes(plannedMinutes)}` : ''}`
+    : 'Nothing planned yet';
+  return `<details class="gc-tomorrow-plan">
+    <summary><span><strong>Tomorrow</strong><small>${escapeHtml(summary)}</small></span><b aria-hidden="true">›</b></summary>
+    <div class="gc-tomorrow-plan-body">
+      <div class="gc-day-list">${items.length ? items.map((item) => todayPlanRow(item, { future: true })).join('') : '<div class="gc-day-empty"><strong>Tomorrow is open.</strong><span>Plan only what is useful.</span></div>'}</div>
+      <div class="gc-tomorrow-actions">
+        <button type="button" class="gc-secondary-action" data-plan-capture="planned" data-plan-date="${escapeHtml(model.tomorrow)}">＋ Plan activity</button>
+        <button type="button" class="gc-one-off-action" data-plan-add="${escapeHtml(model.tomorrow)}">Add one-off item</button>
+      </div>
+    </div>
+  </details>`;
+}
+
 function todayProductHtml(model) {
   const items = model.today || [];
   const active = items.find((item) => item.status === 'in_progress') || null;
@@ -75,9 +94,10 @@ function todayProductHtml(model) {
   return `<section class="gc-today-plan" id="dailyPlanSection">
     ${todayNow(active)}
     <div class="gc-your-day-head"><h3>Your day</h3><span>${escapeHtml(countText)}</span></div>
-    <div class="gc-day-list">${planned.length ? planned.map(todayPlanRow).join('') : `<div class="gc-day-empty"><strong>No other plans yet.</strong><span>Add only what is useful today.</span></div>`}</div>
-    <button type="button" class="gc-primary-action gc-add-activity" data-plan-capture="planned"><span aria-hidden="true">＋</span> Add activity</button>
+    <div class="gc-day-list">${planned.length ? planned.map((item) => todayPlanRow(item)).join('') : `<div class="gc-day-empty"><strong>No other plans yet.</strong><span>Add only what is useful today.</span></div>`}</div>
+    <button type="button" class="gc-primary-action gc-add-activity" data-plan-capture="planned"><span aria-hidden="true">＋</span> Plan activity</button>
     <button type="button" class="gc-one-off-action" data-plan-add="${model.date}">Add a one-off item</button>
+    ${tomorrowPreview(model)}
   </section>`;
 }
 
@@ -309,7 +329,7 @@ export const dailyPlanModule = Object.freeze({
     $$('[data-plan-capture]').forEach((button) => button.addEventListener('click', () => {
       void events?.publish('daily-plan.capture-selected', {
         entryMode: button.dataset.planCapture,
-        date: model.date
+        date: button.dataset.planDate || model.date
       });
     }));
     $$('[data-plan-add]').forEach((button) => button.addEventListener('click', () => openEditor(null, button.dataset.planAdd)));
