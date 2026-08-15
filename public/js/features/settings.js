@@ -4,14 +4,13 @@ export function renderSettings() {
   const root = $('#settingsView');
   if (!root) return;
 
-  const row = (icon, title, detail = '', action = '') => `<div class="living-settings-row"><span aria-hidden="true">${icon}</span><div><strong>${title}</strong>${detail ? `<small>${detail}</small>` : ''}</div>${action || '<b aria-hidden="true">›</b>'}</div>`;
-  root.innerHTML = `<header class="settings-current-header"><h2>Settings</h2><p>Profile, experience, and data ownership.</p></header>
-    <section class="living-profile">
-      <p class="gc-sr-only">Goals, minimums and targets are managed in Plan.</p>
-      <div class="living-profile-avatar">GC<span aria-hidden="true">✎</span></div>
-      <h3>Your Profile</h3><p>Growth Compass member</p>
-    </section>
-    <section class="living-settings-group"><h3>Account</h3><div class="living-settings-card">${row('♙','Personal info','Name and profile details')}${row('▣','Security','Private Beta access')}${row('▤','Subscriptions','Not active in Beta')}</div></section>
-    <section class="living-settings-group"><h3>Experience</h3><div class="living-settings-card">${row('◉','Theme','Living Canvas · Mint')}${row('♢','Notifications','Manage reminders later')}${row('◎','Language','English')}</div></section>
-    <section class="living-settings-group"><h3>Data ownership</h3><div class="living-settings-card">${row('⇩','Export everything','Download all records as JSON','<a href="/api/export" target="_blank" rel="noopener" aria-label="Export everything">↗</a>')}</div><aside class="settings-plan-note"><strong>Planning settings live in Plan</strong><p>Goals, minimums and targets are not account settings.</p></aside></section>`;
+  root.innerHTML = `<section class="gc-settings-rebuild" aria-labelledby="settingsCurrentTitle">
+    <header class="gc-product-page-header"><div><h2 id="settingsCurrentTitle">Settings</h2><p>Real controls only. Planning belongs in Plan; future account features stay out until they actually exist.</p></div></header>
+
+    <section class="gc-settings-section"><div class="gc-section-title"><div><span>Access</span><h3>Private Beta</h3></div></div><div class="gc-settings-card"><div class="gc-settings-row"><span class="gc-settings-mark" aria-hidden="true">P</span><div><strong>Protected access</strong><small>Growth Compass is currently behind the private Beta access boundary.</small></div><b>Active</b></div></div></section>
+
+    <section class="gc-settings-section"><div class="gc-section-title"><div><span>Your data</span><h3>Ownership</h3></div></div><div class="gc-settings-card"><a class="gc-settings-row" href="/api/export" target="_blank" rel="noopener"><span class="gc-settings-mark" aria-hidden="true">↓</span><div><strong>Export everything</strong><small>Download your current Growth Compass records as JSON.</small></div><b aria-hidden="true">↗</b></a></div></section>
+
+    <section class="gc-settings-section"><div class="gc-section-title"><div><span>Planning</span><h3>Managed in context</h3></div></div><div class="gc-settings-note"><strong>Goals, time budgets and capacity live in Plan.</strong><p>Growth Compass keeps planning controls next to the information they change instead of duplicating them here.</p></div></section>
+  </section>`;
 }
