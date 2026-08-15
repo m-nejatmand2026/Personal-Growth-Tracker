@@ -76,6 +76,14 @@ function recentSection(model) {
   return `<section class="gc-today-secondary-section" aria-labelledby="todayRecentTitle"><div class="gc-secondary-head"><div><span>Facts</span><h3 id="todayRecentTitle">Recently done</h3></div></div><div class="gc-recent-list">${rows.length ? rows.slice(0, 5).map((row) => `<article><span class="gc-recent-mark" aria-hidden="true">✓</span><div><strong>${escapeHtml(row.title || '')}</strong><small>${escapeHtml(row.subtitle || '')}</small></div>${row.minutes == null ? '' : `<b>${formatMinutes(row.minutes)}</b>`}</article>`).join('') : '<div class="gc-simple-empty">Nothing recorded yet.</div>'}</div></section>`;
 }
 
+function visibleContext({ directionModel, wellbeingState, journalPreview }) {
+  return `<div class="gc-today-visible-context" aria-label="Today context">
+    ${directionSection(directionModel)}
+    ${wellbeingState}
+    ${journalPreview}
+  </div>`;
+}
+
 export function focusTodayActivities() {
   document.querySelector('.gc-your-day-head')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -116,11 +124,9 @@ export async function renderToday({ reload, dailyPlanPanel = '', journalPreview 
       ${dailyPlanPanel}
       ${capacityCard(capacityModel)}
     </div>
-    <details class="gc-today-more"><summary><span><strong>More today</strong><small>Progress, wellbeing and reflection</small></span><span aria-hidden="true">›</span></summary><div class="gc-today-more-body">
-      ${directionSection(directionModel)}
+    ${visibleContext({ directionModel, wellbeingState, journalPreview })}
+    <details class="gc-today-more"><summary><span><strong>More detail</strong><small>Recent facts and deeper wellbeing</small></span><span aria-hidden="true">›</span></summary><div class="gc-today-more-body">
       ${recentSection(recentModel)}
-      ${wellbeingState}
-      ${journalPreview}
       ${wellbeingDetails}
     </div></details>
   </div>`;
