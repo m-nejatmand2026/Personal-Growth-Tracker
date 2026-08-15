@@ -12,6 +12,8 @@ const todayCss = await readFile(new URL('../public/css/today.css', import.meta.u
 const wellbeingCss = await readFile(new URL('../public/css/modules/wellbeing.css', import.meta.url), 'utf8');
 const capacityCss = await readFile(new URL('../public/css/modules/capacity.css', import.meta.url), 'utf8');
 const progressCss = await readFile(new URL('../public/css/modules/progress-today.css', import.meta.url), 'utf8');
+const dailyPlanTodayCss = await readFile(new URL('../public/css/modules/daily-plan-today.css', import.meta.url), 'utf8');
+const wellbeingTodayCss = await readFile(new URL('../public/css/modules/wellbeing-today-sanctuary.css', import.meta.url), 'utf8');
 
 test('Revision C Today puts immediate plan action before supporting state capacity direction history and reflection', () => {
   const render = todayJs.slice(todayJs.indexOf('root.innerHTML'));
@@ -95,6 +97,13 @@ test('Today is phone-first and its contributor styles stay module-owned', () => 
   assert.doesNotMatch(progressCss, /daily-state-grid|time-reality-card|daily-plan|journal-preview/);
 });
 
+test('Today sanctuary variants remain scoped to their owning modules', () => {
+  assert.match(dailyPlanTodayCss, /#todayView \.daily-plan-section/);
+  assert.doesNotMatch(dailyPlanTodayCss, /daily-state-grid|energy-grid|time-reality-card|today-goal-card|journal-preview/);
+  assert.match(wellbeingTodayCss, /#todayView \.daily-state-grid/);
+  assert.doesNotMatch(wellbeingTodayCss, /daily-plan|time-reality-card|today-goal-card|journal-preview/);
+});
+
 test('Today styles load after shell foundation while Daily Plan and Journal retain their own styles', () => {
   const shell = indexHtml.indexOf('/css/navigation-shell.css');
   const today = indexHtml.indexOf('/css/today.css');
@@ -103,6 +112,11 @@ test('Today styles load after shell foundation while Daily Plan and Journal reta
   const progress = indexHtml.indexOf('/css/modules/progress-today.css');
   const dailyPlan = indexHtml.indexOf('/css/daily-plan.css');
   const journal = indexHtml.indexOf('/css/journal.css');
+  const reset = indexHtml.indexOf('/css/ux-reset.css');
+  const dailyPlanToday = indexHtml.indexOf('/css/modules/daily-plan-today.css');
+  const wellbeingToday = indexHtml.indexOf('/css/modules/wellbeing-today-sanctuary.css');
+  const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
   assert.ok(shell >= 0 && shell < today && today < wellbeing && wellbeing < capacity && capacity < progress);
   assert.ok(progress < dailyPlan && progress < journal);
+  assert.ok(reset < dailyPlanToday && dailyPlanToday < wellbeingToday && wellbeingToday < accessibility);
 });
