@@ -1,0 +1,31 @@
+/*
+ * PREVIEW-ONLY FRONTEND RESET
+ *
+ * Growth Compass is intentionally rendered as an empty canvas while the next
+ * UI/UX system is being designed. This file changes presentation only. It does
+ * not remove or alter APIs, D1 data, domain modules, or production resources.
+ */
+
+html,
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 100% !important;
+  background: #fff !important;
+  background-image: none !important;
+  overflow: hidden !important;
+}
+
+html::before,
+html::after,
+body::before,
+body::after {
+  content: none !important;
+  display: none !important;
+}
+
+body > * {
+  display: none !important;
+}
