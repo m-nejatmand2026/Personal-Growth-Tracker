@@ -73,14 +73,13 @@ function planOverview(enabled, results) {
     .map((item) => `<div data-summary-module="${escapeHtml(item.moduleId)}" data-summary-id="${escapeHtml(item.id)}"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.value)}</strong><small>${escapeHtml(item.detail)}</small></div>`)
     .join('');
 
-  return `<section class="plan-overview gc-page-header gc-page-header--with-stats living-plan-overview" aria-label="Plan at a glance">
-    <!-- <h2>Your plan</h2> Set direction, then fit it to your time. -->
+  return `<section class="plan-overview gc-page-header gc-page-header--with-stats living-plan-overview" aria-labelledby="planCurrentTitle">
     <div class="plan-overview-copy living-page-heading">
-      <h2>Plan Overview</h2>
-      <p>Your balance and capacity for the week ahead.</p>
+      <h2 id="planCurrentTitle">Plan</h2>
+      <p>Set direction, then fit it to the week ahead.</p>
     </div>
     <div class="living-plan-grid">
-      <div class="living-balance-orbit" aria-label="Your weekly plan is in balance"><div class="living-orbit-ring"></div><div><strong>${'Balan' + 'ced'}</strong><span>This Week</span></div></div>
+      <div class="living-balance-orbit" aria-label="Your weekly plan is in balance"><div class="living-orbit-ring"></div><div><strong>Balanced</strong><span>This Week</span></div></div>
       <div class="plan-overview-grid gc-stat-grid">${cards}</div>
     </div>
   </section>`;
@@ -88,10 +87,10 @@ function planOverview(enabled, results) {
 
 function planNavigation() {
   return `<nav class="plan-section-nav" aria-label="Plan sections">
-    <button type="button" data-plan-scroll="plan-module-goals"><span>01</span><b>Goals</b><small>Direction</small></button>
-    <button type="button" data-plan-scroll="capacityPanel"><span>02</span><b>Capacity</b><small>Time fit</small></button>
-    <button type="button" data-plan-scroll="commitmentEditor"><span>03</span><b>Schedule</b><small>Commitments</small></button>
-    <button type="button" data-plan-scroll="compassSection"><span>04</span><b>Compass</b><small>Long term</small></button>
+    <button type="button" data-plan-scroll="plan-module-goals"><span>01</span><b>Goals</b><small>Direction and outcomes</small></button>
+    <button type="button" data-plan-scroll="capacityPanel"><span>02</span><b>Time & capacity</b><small>Fit plans to real time</small></button>
+    <button type="button" data-plan-scroll="commitmentEditor"><span>03</span><b>Schedule</b><small>Commitments and timing</small></button>
+    <button type="button" data-plan-scroll="compassSection"><span>04</span><b>Compass</b><small>Long-term direction</small></button>
   </nav>`;
 }
 
