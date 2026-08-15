@@ -1,5 +1,5 @@
 import { $, escapeHtml } from '../core/dom.js';
-import { formatDateLabel, formatMinutes } from '../core/format.js';
+import { formatMinutes } from '../core/format.js';
 import { state } from '../core/state.js';
 import { frontendModules } from '../modules/catalog.js';
 import { createFrontendModuleRegistry } from '../platform/module-registry.js';
@@ -11,6 +11,8 @@ const progress = todayRegistry.get('progress');
 const today = todayRegistry.get('today');
 const wellbeing = todayRegistry.get('wellbeing');
 let directionPeriod = 'week';
+
+const PERIOD_LABELS = Object.freeze({ day: 'Today', week: 'This week', month: 'This month', year: 'This year' });
 
 function metricHtml(metric) {
   const value = metric.minutes == null ? escapeHtml(metric.value ?? '—') : formatMinutes(metric.minutes);
@@ -52,7 +54,7 @@ function cardsWidget(model) {
   if (!model) return '';
   const cards = model.cards || [];
   return `<section class="os-section today-direction-section" data-today-widget="${escapeHtml(model.id || '')}">
-    <div class="os-section-head today-direction-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2>${model.detail ? `<small class="gc-sr-only">${escapeHtml(model.detail)}</small>` : ''}</div>${periodSwitcher(model)}</div>
+    <div class="os-section-head today-direction-head"><div><span class="section-kicker">${escapeHtml(model.kicker || '')}</span><h2>${escapeHtml(model.title || '')}</h2>${model.detail ? `<small class="gc-sr-only">${escapeHtml(model.detail)}</small>` : ''}</div></div>
     <div class="today-goal-grid">${cards.length ? cards.map((card) => `<article class="today-goal-card"><div class="goal-card-top"><div><span class="goal-dot" aria-hidden="true"></span><strong>${escapeHtml(card.title || '')}</strong></div><span class="today-goal-status">${escapeHtml(card.status || '')}</span></div><div class="goal-progress-copy">${(card.metrics || []).map(metricHtml).join('')}</div>${thresholdHtml(card)}</article>`).join('') : `<div class="empty">${escapeHtml(model.empty || 'Nothing to show yet.')}</div>`}</div>
   </section>`;
 }
@@ -73,11 +75,42 @@ function renderModel(model) {
   return summaryWidget(model);
 }
 
-export function focusTodayActivities() {
-  document.querySelector('[data-today-widget="progress.direction"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function directionActualMinutes(model) {
+  return (model?.cards || []).reduce((sum, card) => {
+    const direct = Number(card?.threshold?.actual);
+    if (Number.isFinite(direct)) return sum + Math.max(0, direct);
+    const metric = (card?.metrics || []).find((item) => String(item.label).toLowerCase() === 'actual');
+    return sum + Math.max(0, Number(metric?.minutes) || 0);
+  }, 0);
 }
 
-export async function renderToday({ reload, openLogger, dailyPlanPanel = '', journalPreview = '' } = {}) {
+function capacityWeek(model) {
+  if (!capacity || !model || typeof capacity.planSummary !== 'function') return null;
+  const items = capacity.planSummary({ model }) || [];
+  const planned = items.find((item) => item.id === 'capacity.planned-week');
+  const flexible = items.find((item) => item.id === 'capacity.time-fit-week');
+  return { planned: planned?.value || '—', detail: flexible ? `${flexible.value} ${String(flexible.label || '').toLowerCase()}` : 'Time fit unavailable' };
+}
+
+function currentOverview(directionModel, capacityModel) {
+  const actual = directionActualMinutes(directionModel);
+  const hasGuidance = (directionModel?.cards || []).some((card) => Boolean(card.threshold));
+  const capacitySummary = capacityWeek(capacityModel);
+  return `<section class="today-current-overview" aria-labelledby="todayPeriodHeading">
+    ${periodSwitcher(directionModel)}
+    <h3 id="todayPeriodHeading">${escapeHtml(PERIOD_LABELS[directionModel?.period] || 'This week')}</h3>
+    <div class="today-current-metrics">
+      <article class="today-current-metric"><span>Actual progress</span><strong>${escapeHtml(formatMinutes(actual))}</strong><small>${hasGuidance ? 'Recorded factual progress' : 'No target set for this period'}</small></article>
+      <article class="today-current-metric"><span>Capacity</span><strong>${escapeHtml(capacitySummary?.planned ? `${capacitySummary.planned} planned` : '—')}</strong><small>${escapeHtml(capacitySummary?.detail || 'Time fit unavailable')}</small></article>
+    </div>
+  </section>`;
+}
+
+export function focusTodayActivities() {
+  document.querySelector('.today-primary-flow')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+export async function renderToday({ reload, dailyPlanPanel = '', journalPreview = '' } = {}) {
   const root = $('#todayView');
   if (!root) return;
   const date = state.date;
@@ -88,7 +121,7 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   let wellbeingDetails = '';
 
   const [capacityResult, todayResult, wellbeingResult] = await Promise.allSettled([
-    capacity ? capacity.loadToday({ date }) : null,
+    capacity ? capacity.load({ date }) : null,
     today ? today.loadSummary({ date, period: directionPeriod }) : null,
     wellbeing ? wellbeing.getDay(date) : null
   ]);
@@ -105,27 +138,20 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
     items: todayModel?.direction || todayModel?.weeklyDirection || [],
     period: todayModel?.directionPeriod || directionPeriod
   }) || null;
-  const recentModel = progress?.todayRecent({
-    items: todayModel?.progress || []
-  }) || null;
-  const energyLabel = wellbeingModel?.energy?.label || '';
-  const energyMessage = energyLabel
-    ? `Your energy feels ${energyLabel.toLowerCase()} today. Let’s build momentum.`
-    : 'Set your rhythm gently. Let’s build momentum.';
+  const recentModel = progress?.todayRecent({ items: todayModel?.progress || [] }) || null;
 
   root.innerHTML = `<div class="today-layout gc-page-flow">
-    <!-- <h2 id="todaySanctuaryTitle">Today</h2><p>${formatDateLabel(date)}</p> -->
-    <section class="today-sanctuary-heading living-page-heading" aria-labelledby="todaySanctuaryTitle"><span>${formatDateLabel(date)}</span><h2 id="todaySanctuaryTitle">Good morning.</h2><p>${escapeHtml(energyMessage)}</p></section>
-    <div class="today-primary-flow">
-      ${dailyPlanPanel}
+    <section class="today-sanctuary-heading living-page-heading" aria-labelledby="todaySanctuaryTitle"><h2 id="todaySanctuaryTitle">Good morning.</h2><p>Keep the next useful step visible. Change the period to change the view—not the facts.</p></section>
+    <div class="today-primary-column">
+      ${currentOverview(directionModel, capacityModel)}
+      <div class="today-primary-flow">${dailyPlanPanel}</div>
     </div>
-    <details class="today-context-disclosure" hidden><summary><span><strong>Daily context</strong><small>Wellbeing, capacity, progress and reflection</small></span><span class="today-context-chevron" aria-hidden="true">⌄</span></summary><div class="today-context-body">
+    <aside class="today-context-column" aria-label="Today context">
+      <section class="today-reflection-card"><span>REFLECTION</span><h3>What is one small friction point you can remove today?</h3><p>Capture it in Journal when useful.</p></section>
       ${wellbeingState}
-      ${renderModel(capacityModel)}
-      ${renderModel(directionModel)}
-      ${renderModel(recentModel)}
-      ${journalPreview}
-      ${wellbeingDetails}
+    </aside>
+    <details class="today-context-disclosure"><summary><span><strong>More today context</strong><small>Progress, reflection and wellbeing details</small></span></summary><div class="today-context-body">
+      ${renderModel(directionModel)}${renderModel(recentModel)}${journalPreview}${wellbeingDetails}
     </div></details>
   </div>`;
 
