@@ -78,8 +78,7 @@ function planOverview(enabled, results) {
       <h2 id="planCurrentTitle">Plan</h2>
       <p>Set direction, then fit it to the week ahead.</p>
     </div>
-    <div class="living-plan-grid">
-      <div class="living-balance-orbit" aria-label="Your weekly plan is in balance"><div class="living-orbit-ring"></div><div><strong>Balanced</strong><span>This Week</span></div></div>
+    <div class="living-plan-grid living-plan-grid--summary">
       <div class="plan-overview-grid gc-stat-grid">${cards}</div>
     </div>
   </section>`;
