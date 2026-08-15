@@ -108,16 +108,24 @@ export async function renderToday({ reload, openLogger, dailyPlanPanel = '', jou
   const recentModel = progress?.todayRecent({
     items: todayModel?.progress || []
   }) || null;
+  const supportingContext = [
+    renderModel(capacityModel),
+    renderModel(directionModel),
+    renderModel(recentModel),
+    journalPreview,
+    wellbeingDetails
+  ].filter(Boolean).join('');
 
   root.innerHTML = `<div class="today-layout gc-page-flow">
-    <section class="today-command gc-page-header gc-page-header--action" aria-label="Today actions"><div class="today-command-copy"><p class="eyebrow">${formatDateLabel(date)}</p><p class="gc-sr-only">Choose what fits today. Log what actually happens.</p></div><button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Add</button></section>
-    ${dailyPlanPanel}
-    ${wellbeingState}
-    ${renderModel(capacityModel)}
-    ${renderModel(directionModel)}
-    ${renderModel(recentModel)}
-    ${journalPreview}
-    ${wellbeingDetails}
+    <section class="today-command gc-page-header gc-page-header--action" aria-label="Today actions">
+      <div class="today-command-copy"><span class="today-command-label">Today</span><h2>${formatDateLabel(date)}</h2><p class="gc-sr-only">Choose what fits today. Log what actually happens.</p></div>
+      <button type="button" class="command-log-btn gc-button gc-button--primary" id="todayLogButton"><span aria-hidden="true">＋</span> Add</button>
+    </section>
+    <div class="today-primary-flow">
+      ${dailyPlanPanel}
+      ${wellbeingState}
+    </div>
+    ${supportingContext ? `<details class="today-context-disclosure"><summary><span><strong>More for today</strong><small>Capacity, progress and reflection</small></span><span class="today-context-chevron" aria-hidden="true">⌄</span></summary><div class="today-context-body">${supportingContext}</div></details>` : ''}
   </div>`;
 
   $('#todayLogButton')?.addEventListener('click', () => void openLogger?.());
