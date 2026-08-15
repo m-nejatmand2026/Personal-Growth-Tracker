@@ -36,7 +36,7 @@ async function assertMobileHeaderPolish(page, browserName, state, headingSelecto
   const metrics = await page.evaluate((selector) => {
     const heading = document.querySelector(selector);
     const more = document.querySelector('#topMore > summary');
-    const legacyDots = more?.querySelector('span');
+    const label = more?.querySelector('.top-more-label');
     if (!heading || !more) return null;
     const h = heading.getBoundingClientRect();
     const m = more.getBoundingClientRect();
@@ -45,14 +45,16 @@ async function assertMobileHeaderPolish(page, browserName, state, headingSelecto
       moreTop: Math.round(m.top * 10) / 10,
       moreWidth: Math.round(m.width * 10) / 10,
       moreHeight: Math.round(m.height * 10) / 10,
-      legacyDotsDisplay: legacyDots ? getComputedStyle(legacyDots).display : null
+      labelDisplay: label ? getComputedStyle(label).display : null,
+      text: more.innerText.trim()
     };
   }, headingSelector);
-  assert.ok(metrics, `${browserName} mobile ${state}: expected a visible page heading and More control`);
-  assert.ok(Math.abs(metrics.headingTop - metrics.moreTop) <= 3, `${browserName} mobile ${state}: More control must align with the page heading; ${JSON.stringify(metrics)}`);
-  assert.equal(metrics.moreWidth, 44, `${browserName} mobile ${state}: More control must stay 44px wide`);
-  assert.equal(metrics.moreHeight, 44, `${browserName} mobile ${state}: More control must stay 44px high`);
-  assert.equal(metrics.legacyDotsDisplay, 'none', `${browserName} mobile ${state}: inherited legacy dots must not remain visible`);
+  assert.ok(metrics, `${browserName} mobile ${state}: expected a visible page heading and Explore control`);
+  assert.ok(Math.abs(metrics.headingTop - metrics.moreTop) <= 3, `${browserName} mobile ${state}: Explore control must align with the page heading; ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.moreWidth >= 78 && metrics.moreWidth <= 100, `${browserName} mobile ${state}: Explore control must stay compact but labeled; ${JSON.stringify(metrics)}`);
+  assert.equal(metrics.moreHeight, 44, `${browserName} mobile ${state}: Explore control must stay 44px high`);
+  assert.notEqual(metrics.labelDisplay, 'none', `${browserName} mobile ${state}: Explore label must remain visible`);
+  assert.match(metrics.text, /Explore/i, `${browserName} mobile ${state}: secondary navigation must explain itself`);
 }
 
 async function armPlanTransitionGuard(page) {
@@ -90,9 +92,7 @@ async function assertPlanTransitionWasAtomic(page, browserName, viewport) {
 async function loadProductUi(page, browserName, viewport) {
   const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15_000 });
   assert.ok(response?.ok(), `expected ${BASE_URL} to return a successful document`);
-  await page.locator('link[href="/css/product-rebuild.css"]').waitFor({ state: 'attached' });
-  await page.locator('link[href="/css/product-rebuild-pages.css"]').waitFor({ state: 'attached' });
-  await page.locator('link[href="/css/product-polish.css"]').waitFor({ state: 'attached' });
+  for (const href of ['/css/product-rebuild.css','/css/product-rebuild-pages.css','/css/product-polish.css','/css/functional-recovery.css','/css/screenshot-recovery.css']) await page.locator(`link[href="${href}"]`).waitFor({ state: 'attached' });
   await page.locator('#todayView .gc-today-rebuild').waitFor({ state: 'visible', timeout: 15_000 });
   const state = await page.evaluate(() => ({ bodyDisplay:getComputedStyle(document.body).display, background:getComputedStyle(document.documentElement).backgroundColor, interactiveCount:[...document.querySelectorAll('a,button,input,select,textarea,summary,[role="button"],[tabindex]')].filter((element)=>element.getClientRects().length>0).length, title:document.title }));
   assert.notEqual(state.bodyDisplay,'none',`${browserName} ${viewport}: application body must render`);
@@ -103,11 +103,7 @@ async function loadProductUi(page, browserName, viewport) {
 }
 
 async function assertPlanHelperCopyWraps(page, browserName, viewport) {
-  const result = await page.locator('#planView .gc-plan-stat').last().locator('small').evaluate((node) => ({
-    whiteSpace: getComputedStyle(node).whiteSpace,
-    textOverflow: getComputedStyle(node).textOverflow,
-    overflowX: getComputedStyle(node).overflowX
-  }));
+  const result = await page.locator('#planView .gc-plan-stat').last().locator('small').evaluate((node) => ({ whiteSpace:getComputedStyle(node).whiteSpace,textOverflow:getComputedStyle(node).textOverflow }));
   assert.equal(result.whiteSpace, 'normal', `${browserName} ${viewport}: Plan helper copy must wrap`);
   assert.notEqual(result.textOverflow, 'ellipsis', `${browserName} ${viewport}: Plan helper copy must not be ellipsized`);
 }
