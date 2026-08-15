@@ -1,0 +1,57 @@
+/* Wellbeing-owned Today treatment for the sanctuary prototype. */
+#todayView .today-state-section{
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#todayView .today-state-section .os-section-head{margin:0 0 8px;padding-inline:2px}
+#todayView .today-state-section .os-section-head h2{margin:0;color:#17202b;font-size:.92rem;font-weight:720}
+#todayView .today-state-section .os-section-head>small{display:none}
+#todayView .daily-state-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  overflow:hidden;
+  border:1px solid #e6e7e3;
+  border-radius:18px;
+  background:#fff;
+}
+#todayView .state-card{
+  min-width:0;
+  min-height:82px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:12px;
+  border:0;
+  border-right:1px solid #e6e7e3;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#todayView .state-card:last-child{border-right:0}
+#todayView button.state-card:hover{background:#fbfaf7}
+#todayView .state-icon{flex:0 0 32px;width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:#dff3ea;color:#256b5e}
+#todayView .sleep-icon{background:#f0ebf7;color:#735a9c}
+#todayView .context-icon{background:#eaf1f5;color:#476d8e}
+#todayView .state-card>div{min-width:0}
+#todayView .state-card>div>span{color:#6f777d;font-size:.58rem;font-weight:720;letter-spacing:.05em;text-transform:uppercase}
+#todayView .state-card strong{display:block;margin-top:2px;overflow:hidden;color:#17202b;font-size:.78rem;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+#todayView .state-card small{display:none}
+
+@media (max-width:600px){
+  #todayView .daily-state-grid{grid-template-columns:1fr}
+  #todayView .state-card{min-height:64px;border-right:0;border-bottom:1px solid #e6e7e3}
+  #todayView .state-card:last-child{border-bottom:0}
+  #todayView .state-card strong{font-size:.82rem}
+}
+
+@media (min-width:900px){
+  #todayView .today-state-section{position:sticky;top:92px}
+  #todayView .daily-state-grid{grid-template-columns:1fr}
+  #todayView .state-card{border-right:0;border-bottom:1px solid #e6e7e3}
+  #todayView .state-card:last-child{border-bottom:0}
+}
