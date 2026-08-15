@@ -22,9 +22,10 @@ const today = moduleRegistry.get('today');
 const wellnessBoost = moduleRegistry.get('wellness-boost');
 let lastPrimaryView = 'today';
 let journalFilters = { query: '', filterDate: '' };
+let viewTransitionToken = 0;
 
 async function load() {
-  await renderCurrentView();
+  await renderCurrentView(state.view);
 }
 
 const logger = loggerCapability?.create({ onSaved: load, activities }) || Object.freeze({ open() {}, close() {} });
@@ -83,42 +84,31 @@ function renderWellnessBoostView() {
   wellnessBoost?.bindView?.({ root, rerender: renderWellnessBoostView });
 }
 
-async function renderCurrentView() {
-  const root = $(`#${state.view}View`);
+async function renderCurrentView(viewName = state.view) {
+  const root = $(`#${viewName}View`);
   root?.setAttribute('aria-busy', 'true');
   try {
-    if (state.view === 'today') await renderTodayView();
-    if (state.view === 'plan') await renderPlan({ reload: load, openLogger: logger.open });
-    if (state.view === 'progress') {
+    if (viewName === 'today') await renderTodayView();
+    if (viewName === 'plan') await renderPlan({ reload: load, openLogger: logger.open });
+    if (viewName === 'progress') {
       if (progress) {
         const summary = today ? await today.loadSummary({ date: state.date }) : null;
         await progress.render({ reload: load, weeklyDirection: summary?.weeklyDirection || [] });
       } else if (root) root.innerHTML = '<div class="empty">Progress is unavailable.</div>';
     }
-    if (state.view === 'insights') {
+    if (viewName === 'insights') {
       if (insights) await insights.render();
       else if (root) root.innerHTML = '<div class="empty">Insights are unavailable.</div>';
     }
-    if (state.view === 'wellness-boost') renderWellnessBoostView();
-    if (state.view === 'journal') await renderJournalView();
-    if (state.view === 'settings') renderSettings({ reload: load });
+    if (viewName === 'wellness-boost') renderWellnessBoostView();
+    if (viewName === 'journal') await renderJournalView();
+    if (viewName === 'settings') renderSettings({ reload: load });
   } finally { root?.removeAttribute('aria-busy'); }
 }
 
 function closeTopMore() { $('#topMore')?.removeAttribute('open'); }
 
-async function showView(name) {
-  if (!viewTitles[name]) return;
-  closeTopMore();
-  if (state.view === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
-  state.view = name;
-  window.scrollTo({ top: 0, behavior: 'instant' });
-  if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
-  $$('.view').forEach((view) => {
-    const isCurrent = view.id === `${name}View`;
-    view.classList.toggle('active', isCurrent);
-    view.hidden = !isCurrent;
-  });
+function updateNavigation(name) {
   $$('.nav-btn[data-view], .rail-nav-btn[data-view]').forEach((button) => {
     const isCurrent = button.dataset.view === name;
     button.classList.toggle('active', isCurrent);
@@ -129,9 +119,49 @@ async function showView(name) {
   const insightsButton = $('#insightsBtn');
   insightsButton?.classList.toggle('active', name === 'insights');
   if (name === 'insights') insightsButton?.setAttribute('aria-current', 'page'); else insightsButton?.removeAttribute('aria-current');
+}
+
+function revealView(name) {
+  $$('.view').forEach((view) => {
+    const isCurrent = view.id === `${name}View`;
+    view.classList.toggle('active', isCurrent);
+    view.hidden = !isCurrent;
+  });
+  updateNavigation(name);
   $('#pageTitle').textContent = viewTitles[name];
   document.title = `${viewTitles[name]} — Growth Compass`;
-  await renderCurrentView();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+async function showView(name) {
+  if (!viewTitles[name]) return;
+  const previousView = state.view;
+  const transitionToken = ++viewTransitionToken;
+  closeTopMore();
+  if (previousView === 'wellness-boost' && name !== 'wellness-boost') wellnessBoost?.deactivate?.();
+  state.view = name;
+  if (PRIMARY_VIEWS.has(name)) lastPrimaryView = name;
+
+  const destination = $(`#${name}View`);
+  const alreadyVisible = Boolean(destination && !destination.hidden && destination.classList.contains('active'));
+  if (!alreadyVisible && destination) {
+    destination.hidden = true;
+    destination.classList.remove('active');
+  }
+
+  try {
+    await renderCurrentView(name);
+  } catch (error) {
+    console.error(`Failed to render ${name}`, error);
+    if (transitionToken === viewTransitionToken && state.view === name) {
+      state.view = previousView;
+      revealView(previousView);
+    }
+    return;
+  }
+
+  if (transitionToken !== viewTransitionToken || state.view !== name) return;
+  revealView(name);
 }
 
 eventBus.subscribe('daily-plan.completion-selected', async (input) => { await logger.open(input); });
