@@ -68,7 +68,6 @@ function planModuleLabel(module) {
 export async function renderPlan({ reload, openLogger } = {}) {
   const root = $('#planView');
   if (!root) return;
-  root.innerHTML = `<section class="plan-loading"><span class="section-kicker">Plan</span><h2>Loading your goals and time reality…</h2></section>`;
 
   const enabled = registry.enabled().filter((module) => module.slots.some((slot) => slot.name === 'plan'));
   const results = {};
