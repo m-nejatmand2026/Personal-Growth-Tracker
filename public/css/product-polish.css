@@ -61,6 +61,12 @@
   .top-more>summary::after{content:none!important;display:none!important}
   .top-more-menu{top:52px!important;right:0!important}
 
+  /* A full-screen task sheet owns the top-right control while it is open. */
+  body.logger-open .topbar{
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
   /* Every first-class page reserves the same clean top-right breathing room. */
   .gc-today-header,
   .gc-product-page-header,
@@ -81,6 +87,15 @@
   .gc-plan-stat{
     min-height:88px!important;
     align-content:center!important;
+  }
+
+  /* Custom duration should read as one field, never a broken two-line unit. */
+  .logger-custom-duration{
+    grid-column:1/-1!important;
+    width:100%!important;
+  }
+  .logger-custom-duration span{
+    white-space:nowrap!important;
   }
 
   /* Keep the fixed navigation visually separated without making it heavier. */
