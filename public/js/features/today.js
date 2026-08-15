@@ -141,7 +141,7 @@ export async function renderToday({ reload, dailyPlanPanel = '', journalPreview 
   const recentModel = progress?.todayRecent({ items: todayModel?.progress || [] }) || null;
 
   root.innerHTML = `<div class="today-layout gc-page-flow">
-    <section class="today-sanctuary-heading living-page-heading" aria-labelledby="todaySanctuaryTitle"><h2 id="todaySanctuaryTitle">Good morning.</h2><p>Keep the next useful step visible. Change the period to change the view—not the facts.</p></section>
+    <section class="today-sanctuary-heading living-page-heading" aria-labelledby="todaySanctuaryTitle"><h2 id="todaySanctuaryTitle">Today</h2><strong class="today-greeting">Good morning.</strong><p>Keep the next useful step visible. Change the period to change the view—not the facts.</p></section>
     <div class="today-primary-column">
       ${currentOverview(directionModel, capacityModel)}
       <div class="today-primary-flow">${dailyPlanPanel}</div>
