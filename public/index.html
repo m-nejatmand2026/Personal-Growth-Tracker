@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#09111f" />
+  <meta name="theme-color" content="#0f6f6d" />
   <meta name="description" content="Growth Compass — a modular personal development planning and progress platform." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -33,52 +33,36 @@
   <link rel="stylesheet" href="/css/experience-framework.css" />
   <link rel="stylesheet" href="/css/install-app.css" />
   <link rel="stylesheet" href="/css/ux-reset.css" />
-  <link rel="stylesheet" href="/css/revision-d.css" />
-  <link rel="stylesheet" href="/css/revision-d-fixes.css" />
-  <link rel="stylesheet" href="/css/revision-e.css" />
-  <link rel="stylesheet" href="/css/revision-e-fixes.css" />
   <link rel="stylesheet" href="/css/accessibility-regression.css" />
   <title>Today — Growth Compass</title>
 </head>
 <body>
   <a class="gc-skip-link" href="#mainContent">Skip to main content</a>
-  <svg class="gc-icon-sprite" aria-hidden="true" focusable="false">
-    <symbol id="gc-icon-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m14.9 9.1-1.7 4.1-4.1 1.7 1.7-4.1 4.1-1.7Z"/></symbol>
-    <symbol id="gc-icon-today" viewBox="0 0 24 24"><path d="M4.5 10.5 12 4l7.5 6.5v8a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5v-8Z"/><path d="M9.5 20v-5.5h5V20"/></symbol>
-    <symbol id="gc-icon-plan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5V6M20.5 12H18M12 20.5V18M3.5 12H6"/></symbol>
-    <symbol id="gc-icon-progress" viewBox="0 0 24 24"><path d="M5 18.5V14m5 4.5V10m5 8.5V6m4 12.5H3.5"/></symbol>
-    <symbol id="gc-icon-insights" viewBox="0 0 24 24"><path d="M12 3.8 13.5 9l4.7 1.5-4.7 1.5-1.5 5.2-1.5-5.2-4.7-1.5L10.5 9 12 3.8Z"/><path d="m18.5 15 .7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3Z"/></symbol>
-    <symbol id="gc-icon-wellness" viewBox="0 0 24 24"><path d="M12 20c4.4-2.3 7-5.2 7-9a4 4 0 0 0-7-2.6A4 4 0 0 0 5 11c0 3.8 2.6 6.7 7 9Z"/><path d="M12 8.5c-.2 3.2-1.5 5.7-4 7.5M12 8.5c.2 3.2 1.5 5.7 4 7.5"/></symbol>
-    <symbol id="gc-icon-journal" viewBox="0 0 24 24"><path d="M6 4h10.5A1.5 1.5 0 0 1 18 5.5V20H7.5A1.5 1.5 0 0 1 6 18.5V4Z"/><path d="M9 8h6M9 11.5h6M9 15h4"/></symbol>
-    <symbol id="gc-icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6"/></symbol>
-    <symbol id="gc-icon-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
-    <symbol id="gc-icon-add" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-  </svg>
   <main id="app" class="shell os-shell">
     <aside class="app-rail" aria-label="Growth Compass navigation">
-      <div class="rail-brand"><span class="brand-mark" aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-compass"></use></svg></span><div><strong>Growth Compass</strong><small>Personal development OS</small></div></div>
+      <div class="rail-brand"><span class="brand-mark" aria-hidden="true">GC</span><div><strong>Growth Compass</strong><small>Personal development OS</small></div></div>
       <nav class="rail-nav" aria-label="Primary navigation">
-        <button type="button" data-view="today" class="rail-nav-btn active" aria-current="page"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-today"></use></svg></span><b>Today</b></button>
-        <button type="button" data-view="plan" class="rail-nav-btn"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-plan"></use></svg></span><b>Plan</b></button>
-        <button type="button" data-view="progress" class="rail-nav-btn"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-progress"></use></svg></span><b>Progress</b></button>
-        <button type="button" data-view="insights" class="rail-nav-btn"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-insights"></use></svg></span><b>Insights</b></button>
-        <button type="button" data-view="wellness-boost" class="rail-nav-btn"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-wellness"></use></svg></span><b>Wellness Boost</b></button>
+        <button type="button" data-view="today" class="rail-nav-btn active" aria-current="page"><span aria-hidden="true">⌂</span><b>Today</b></button>
+        <button type="button" data-view="plan" class="rail-nav-btn"><span aria-hidden="true">◎</span><b>Plan</b></button>
+        <button type="button" data-view="progress" class="rail-nav-btn"><span aria-hidden="true">↗</span><b>Progress</b></button>
+        <button type="button" data-view="insights" class="rail-nav-btn"><span aria-hidden="true">✦</span><b>Insights</b></button>
+        <button type="button" data-view="wellness-boost" class="rail-nav-btn"><span aria-hidden="true">☼</span><b>Wellness Boost</b></button>
       </nav>
-      <button id="journalRailBtn" class="rail-secondary" type="button"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-journal"></use></svg></span> Journal</button>
-      <button class="rail-log-btn" type="button" data-open-logger><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-add"></use></svg></span> Add</button>
-      <button id="settingsRailBtn" class="rail-settings" type="button"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-settings"></use></svg></span> Settings</button>
+      <button id="journalRailBtn" class="rail-secondary" type="button"><span aria-hidden="true">✎</span> Journal</button>
+      <button class="rail-log-btn" type="button" data-open-logger><span aria-hidden="true">＋</span> Add</button>
+      <button id="settingsRailBtn" class="rail-settings" type="button"><span aria-hidden="true">⚙</span> Settings</button>
     </aside>
     <div id="mainContent" class="workspace" tabindex="-1">
       <header class="topbar">
         <div class="topbar-title"><div><p class="eyebrow">Growth Compass</p><h1 id="pageTitle">Today</h1></div></div>
         <div class="top-actions">
-          <button class="top-log-btn" type="button" data-open-logger aria-label="Add"><svg class="gc-icon" aria-hidden="true"><use href="#gc-icon-add"></use></svg><span>Add</span></button>
+          <button class="top-log-btn" type="button" data-open-logger aria-label="Log progress">＋ <span>Add</span></button>
           <details id="topMore" class="top-more">
-            <summary aria-label="More sections and settings" title="More"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-more"></use></svg></span></summary>
+            <summary aria-label="More sections and settings" title="More"><span aria-hidden="true">•••</span></summary>
             <div class="top-more-menu" role="group" aria-label="More sections and settings">
-              <button id="insightsBtn" type="button"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-insights"></use></svg></span><b>Insights</b></button>
-              <button id="journalBtn" type="button"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-journal"></use></svg></span><b>Journal</b></button>
-              <button id="settingsBtn" type="button"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-settings"></use></svg></span><b>Settings</b></button>
+              <button id="insightsBtn" type="button"><span aria-hidden="true">✦</span><b>Insights</b></button>
+              <button id="journalBtn" type="button"><span aria-hidden="true">✎</span><b>Journal</b></button>
+              <button id="settingsBtn" type="button"><span aria-hidden="true">⚙</span><b>Settings</b></button>
             </div>
           </details>
         </div>
@@ -86,7 +70,7 @@
       <section id="todayView" class="view active" aria-labelledby="pageTitle"></section><section id="planView" class="view" aria-labelledby="pageTitle" hidden></section><section id="progressView" class="view" aria-labelledby="pageTitle" hidden></section><section id="insightsView" class="view" aria-labelledby="pageTitle" hidden></section><section id="wellness-boostView" class="view" aria-labelledby="pageTitle" hidden></section><section id="journalView" class="view" aria-labelledby="pageTitle" hidden></section><section id="settingsView" class="view" aria-labelledby="pageTitle" hidden></section>
     </div>
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button type="button" data-view="today" class="nav-btn active" aria-current="page"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-today"></use></svg></span>Today</button><button type="button" data-view="plan" class="nav-btn"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-plan"></use></svg></span>Plan</button><button id="quickAddBtn" class="nav-btn nav-add" type="button" data-open-logger aria-label="Add"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-add"></use></svg></span><b>Add</b></button><button type="button" data-view="progress" class="nav-btn"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-progress"></use></svg></span>Progress</button><button type="button" data-view="wellness-boost" class="nav-btn" aria-label="Wellness Boost"><span aria-hidden="true"><svg class="gc-icon"><use href="#gc-icon-wellness"></use></svg></span>Wellness</button>
+      <button type="button" data-view="today" class="nav-btn active" aria-current="page"><span aria-hidden="true">⌂</span>Today</button><button type="button" data-view="plan" class="nav-btn"><span aria-hidden="true">◎</span>Plan</button><button id="quickAddBtn" class="nav-btn nav-add" type="button" data-open-logger aria-label="Log progress"><span aria-hidden="true">＋</span><b>Add</b></button><button type="button" data-view="progress" class="nav-btn"><span aria-hidden="true">↗</span>Progress</button><button type="button" data-view="wellness-boost" class="nav-btn" aria-label="Wellness Boost"><span aria-hidden="true">☼</span>Wellness</button>
     </nav>
   </main>
   <div id="loggerHost"></div><div id="dailyPlanHost"></div><div id="journalHost"></div><div id="installAppHost"></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
