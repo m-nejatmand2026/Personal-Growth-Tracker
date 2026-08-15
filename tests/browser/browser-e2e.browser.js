@@ -25,45 +25,33 @@ async function assertBlankCanvas(page, browserName, viewport) {
   assert.ok(response?.ok(), `expected ${BASE_URL} to return a successful document`);
 
   await page.locator('link[href="/css/preview-empty.css"]').waitFor({ state: 'attached' });
-  await page.waitForFunction(() => {
-    const app = document.querySelector('#app');
-    return app && getComputedStyle(app).display === 'none';
-  });
+  await page.waitForFunction(() => getComputedStyle(document.body).display === 'none');
 
   const state = await page.evaluate(() => {
-    const visibleElements = [...document.body.querySelectorAll('*')].filter((element) => {
-      const style = getComputedStyle(element);
-      const rect = element.getBoundingClientRect();
-      return style.display !== 'none' &&
-        style.visibility !== 'hidden' &&
-        Number(style.opacity || 1) !== 0 &&
-        rect.width > 0 &&
-        rect.height > 0;
-    });
-
-    const visibleInteractive = visibleElements.filter((element) =>
+    const renderedElements = [...document.body.querySelectorAll('*')].filter((element) =>
+      element.getClientRects().length > 0
+    );
+    const visibleInteractive = renderedElements.filter((element) =>
       element.matches('a,button,input,select,textarea,summary,[role="button"],[tabindex]')
     );
 
     return {
-      visibleCount: visibleElements.length,
+      visibleCount: renderedElements.length,
       interactiveCount: visibleInteractive.length,
-      visibleText: document.body.innerText.trim(),
-      appDisplay: getComputedStyle(document.querySelector('#app')).display,
-      background: getComputedStyle(document.body).backgroundColor,
+      bodyDisplay: getComputedStyle(document.body).display,
+      bodyRectCount: document.body.getClientRects().length,
+      htmlBackground: getComputedStyle(document.documentElement).backgroundColor,
       viewport: document.documentElement.clientWidth,
-      documentWidth: document.documentElement.scrollWidth,
-      bodyWidth: document.body.scrollWidth
+      documentWidth: document.documentElement.scrollWidth
     };
   });
 
+  assert.equal(state.bodyDisplay, 'none', `${browserName} ${viewport}: legacy app shell must be disabled by the blank Preview ancestor`);
+  assert.equal(state.bodyRectCount, 0, `${browserName} ${viewport}: body must have no rendered box`);
   assert.equal(state.visibleCount, 0, `${browserName} ${viewport}: Preview must contain no visible UI elements`);
   assert.equal(state.interactiveCount, 0, `${browserName} ${viewport}: Preview must contain no visible interactive controls`);
-  assert.equal(state.visibleText, '', `${browserName} ${viewport}: Preview must contain no visible product copy`);
-  assert.equal(state.appDisplay, 'none', `${browserName} ${viewport}: legacy app shell must be disabled`);
-  assert.equal(state.background, 'rgb(255, 255, 255)', `${browserName} ${viewport}: reset canvas should be neutral white`);
+  assert.equal(state.htmlBackground, 'rgb(255, 255, 255)', `${browserName} ${viewport}: document canvas should be neutral white`);
   assert.ok(state.documentWidth <= state.viewport + 1, `${browserName} ${viewport}: blank canvas must not overflow horizontally`);
-  assert.ok(state.bodyWidth <= state.viewport + 1, `${browserName} ${viewport}: blank body must not overflow horizontally`);
 
   await capture(page, browserName, viewport);
 }
