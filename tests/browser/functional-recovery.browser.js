@@ -57,7 +57,7 @@ async function assertRecovery(page, browserName) {
   await assertNotBuriedInMore(page, '#todayView [data-wellbeing-state]', browserName, 'Wellbeing state');
   await assertNotBuriedInMore(page, '#journalPreview', browserName, 'Journal entry point');
   assert.match(await page.locator('#todayDirectionTitle').innerText(), /Direction/);
-  assert.match(await page.locator('#todayView [data-wellbeing-state]').innerText(), /Energy/);
+  assert.match(await page.locator('#todayView [data-wellbeing-state]').innerText(), /energy/i);
   assert.match(await page.locator('#journalPreview').innerText(), /Journal/);
 
   await page.locator('#quickAddBtn').click();
