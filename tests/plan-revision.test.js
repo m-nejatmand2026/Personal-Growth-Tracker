@@ -11,20 +11,24 @@ const indexHtml = await readFile(new URL('../public/index.html', import.meta.url
 const rebuildPages = await readFile(new URL('../public/css/product-rebuild-pages.css', import.meta.url), 'utf8');
 const planExperience = `${planJs}\n${goalsModule}\n${capacityModule}`;
 
-test('Product Rebuild Plan exposes Goals Goal time budgets Time & capacity Compass in that order', () => {
+test('Recovered Plan exposes Goals Activities Schedule budgets Capacity and Compass in that order', () => {
   const goals = planJs.indexOf('<span>Goals</span>');
+  const activities = planJs.indexOf('<span>Activities</span>');
+  const schedule = planJs.indexOf('<span>Schedule</span>');
   const budgets = planJs.indexOf('<span>Goal time budgets</span>');
   const capacity = planJs.indexOf('<span>Time & capacity</span>');
   const compass = planJs.indexOf('<span>Compass</span>');
-  assert.ok(goals >= 0 && goals < budgets && budgets < capacity && capacity < compass);
+  assert.ok(goals >= 0 && goals < activities && activities < schedule && schedule < budgets && budgets < capacity && capacity < compass);
   assert.match(planJs, /data-plan-scroll="plan-module-goals"/);
+  assert.match(planJs, /data-plan-scroll="plan-module-activities"/);
+  assert.match(planJs, /data-plan-scroll="commitmentEditor"/);
   assert.match(planJs, /data-plan-scroll="plan-module-plans"/);
   assert.match(planJs, /data-plan-scroll="capacityPanel"/);
   assert.match(planJs, /data-plan-scroll="compassSection"/);
 });
 
-test('Goals render before supporting Areas and time-budget modules', () => {
-  assert.match(planJs, /EXPERIENCE_ORDER = Object\.freeze\(\{ goals: 10, areas: 20, plans: 30, capacity: 40 \}\)/);
+test('Goals stay first while Activities and supporting planning modules follow explicitly', () => {
+  assert.match(planJs, /EXPERIENCE_ORDER = Object\.freeze\(\{ goals: 10, activities: 15, areas: 20, plans: 30, capacity: 40 \}\)/);
   assert.match(planJs, /Choose what deserves attention, then fit it to the time you actually have\./);
 });
 
@@ -49,5 +53,5 @@ test('Plan retains phone-first touch-safe foundations and Product Rebuild respon
 });
 
 test('Plan shell remains composition only and does not absorb module API calls', () => {
-  assert.doesNotMatch(planJs, /\/api\/v1\/areas|\/api\/v1\/goals|\/api\/v1\/capacity|\/api\/v1\/plan\/versions/); assert.match(planJs, /createFrontendModuleRegistry/); assert.match(planJs, /module\.load/); assert.match(planJs, /module\.render/); assert.match(planJs, /module\.planSummary/);
+  assert.doesNotMatch(planJs, /\/api\/v1\/areas|\/api\/v1\/goals|\/api\/v1\/activities|\/api\/v1\/capacity|\/api\/v1\/plan\/versions/); assert.match(planJs, /createFrontendModuleRegistry/); assert.match(planJs, /module\.load/); assert.match(planJs, /module\.render/); assert.match(planJs, /module\.planSummary/); assert.match(planJs, /module\.planWorkingSummary/);
 });
