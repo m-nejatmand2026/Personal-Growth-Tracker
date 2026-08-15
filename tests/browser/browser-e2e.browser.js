@@ -23,6 +23,15 @@ async function assertNoHorizontalOverflow(page, browserName, viewport, state) {
   assert.ok(result.documentWidth <= result.viewportWidth + 1, `${browserName} ${viewport} ${state}: Product Rebuild must not overflow horizontally; viewport=${result.viewportWidth}, document=${result.documentWidth}, offenders=${JSON.stringify(result.offenders)}`);
 }
 
+async function assertLoggerCloseIsTopmost(page, browserName, viewport) {
+  const hit = await page.locator('#loggerHost .logger-close').evaluate((button) => {
+    const rect = button.getBoundingClientRect();
+    const target = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return target === button || button.contains(target);
+  });
+  assert.equal(hit, true, `${browserName} ${viewport}: Add Activity close control must remain above global navigation controls`);
+}
+
 async function loadProductUi(page, browserName, viewport) {
   const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15_000 });
   assert.ok(response?.ok(), `expected ${BASE_URL} to return a successful document`);
@@ -49,7 +58,7 @@ async function assertDesktop(page,browserName) {
   await page.locator('.app-rail').waitFor({state:'visible'});assert.equal(await page.locator('.bottom-nav').isVisible(),false);
   assert.equal(await page.locator('.rail-brand').innerText(),'Growth Compass');
   await page.locator('#todayView .gc-now-card').waitFor({state:'visible'});await page.locator('#todayView .gc-add-activity').waitFor({state:'visible'});
-  await page.locator('.rail-log-btn').click();await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({state:'visible'});assert.equal(await page.locator('input[name="loggerEntryMode"]').count(),3);await page.keyboard.press('Escape');
+  await page.locator('.rail-log-btn').click();await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({state:'visible'});assert.equal(await page.locator('input[name="loggerEntryMode"]').count(),3);await assertLoggerCloseIsTopmost(page,browserName,'desktop');await page.keyboard.press('Escape');
   await page.locator('.rail-nav-btn[data-view="plan"]').click();await page.locator('#planView .gc-plan-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'desktop','plan');
   await page.locator('.rail-nav-btn[data-view="progress"]').click();await page.locator('#progressView .gc-progress-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'desktop','progress');
   await page.locator('.rail-nav-btn[data-view="wellness-boost"]').click();await page.locator('#wellness-boostView .wellness-boost-library-view').waitFor({state:'visible'});
@@ -60,7 +69,7 @@ async function assertDesktop(page,browserName) {
 async function assertMobile(page,browserName) {
   await loadProductUi(page,browserName,'mobile');
   assert.equal(await page.locator('.app-rail').isVisible(),false);await page.locator('.bottom-nav').waitFor({state:'visible'});assert.equal(await page.locator('.bottom-nav .nav-btn').count(),5);assert.equal((await page.locator('#quickAddBtn').innerText()).trim().includes('Add'),true);await assertMobileHeaderClear(page,browserName);await capture(page,browserName,'mobile','today');
-  await page.locator('#quickAddBtn').click();await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({state:'visible'});await page.locator('#loggerActivityQuery').waitFor({state:'visible'});assert.equal(await page.locator('input[name="loggerEntryMode"]').count(),3);await assertNoHorizontalOverflow(page,browserName,'mobile','add');await capture(page,browserName,'mobile','add');await page.keyboard.press('Escape');
+  await page.locator('#quickAddBtn').click();await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({state:'visible'});await page.locator('#loggerActivityQuery').waitFor({state:'visible'});assert.equal(await page.locator('input[name="loggerEntryMode"]').count(),3);await assertLoggerCloseIsTopmost(page,browserName,'mobile');await assertNoHorizontalOverflow(page,browserName,'mobile','add');await capture(page,browserName,'mobile','add');await page.keyboard.press('Escape');
   await page.locator('.nav-btn[data-view="plan"]').click();await page.locator('#planView .gc-plan-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'mobile','plan');await capture(page,browserName,'mobile','plan');
   await page.locator('.nav-btn[data-view="progress"]').click();await page.locator('#progressView .gc-progress-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'mobile','progress');await capture(page,browserName,'mobile','progress');
   await page.locator('.nav-btn[data-view="wellness-boost"]').click();await page.locator('#wellness-boostView .wellness-boost-library-view').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'mobile','wellness');
