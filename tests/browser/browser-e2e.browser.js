@@ -18,8 +18,34 @@ async function capture(page, browserName, viewport) {
 }
 
 async function assertNoHorizontalOverflow(page, browserName, viewport) {
-  const dimensions = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, documentWidth: document.documentElement.scrollWidth }));
-  assert.ok(dimensions.documentWidth <= dimensions.viewport + 1, `${browserName} ${viewport}: current UI must not overflow horizontally`);
+  const result = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const documentWidth = document.documentElement.scrollWidth;
+    const offenders = [...document.querySelectorAll('body *')]
+      .filter((element) => {
+        const style = getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        const rect = element.getBoundingClientRect();
+        return rect.right > viewportWidth + 1 || rect.left < -1;
+      })
+      .slice(0, 12)
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          tag: element.tagName.toLowerCase(),
+          id: element.id || '',
+          className: typeof element.className === 'string' ? element.className : '',
+          left: Math.round(rect.left * 10) / 10,
+          right: Math.round(rect.right * 10) / 10,
+          width: Math.round(rect.width * 10) / 10
+        };
+      });
+    return { viewportWidth, documentWidth, offenders };
+  });
+  assert.ok(
+    result.documentWidth <= result.viewportWidth + 1,
+    `${browserName} ${viewport}: current UI must not overflow horizontally; viewport=${result.viewportWidth}, document=${result.documentWidth}, offenders=${JSON.stringify(result.offenders)}`
+  );
 }
 
 async function loadCurrentUi(page, browserName, viewport) {
