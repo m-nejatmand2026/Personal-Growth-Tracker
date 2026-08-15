@@ -10,9 +10,9 @@ const planCss = await readFile(new URL('../public/css/plan-revision.css', import
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 const planExperience = `${planJs}\n${goalsModule}\n${capacityModule}`;
 
-test('Revision A Plan exposes Goals Capacity Schedule Compass in that order', () => {
+test('Figma Current Plan exposes Goals Time & capacity Schedule Compass in that order', () => {
   const goals = planJs.indexOf('<b>Goals</b>');
-  const capacity = planJs.indexOf('<b>Capacity</b>');
+  const capacity = planJs.indexOf('<b>Time & capacity</b>');
   const schedule = planJs.indexOf('<b>Schedule</b>');
   const compass = planJs.indexOf('<b>Compass</b>');
   assert.ok(goals >= 0 && goals < capacity && capacity < schedule && schedule < compass);
@@ -24,7 +24,7 @@ test('Revision A Plan exposes Goals Capacity Schedule Compass in that order', ()
 
 test('Goals render before supporting Areas and time-budget modules', () => {
   assert.match(planJs, /EXPERIENCE_ORDER = Object\.freeze\(\{ goals: 10, areas: 20, plans: 30, capacity: 40 \}\)/);
-  assert.match(planJs, /Set direction, then fit it to your time\./);
+  assert.match(planJs, /Set direction, then fit it to the week ahead\./);
 });
 
 test('Goal creation uses human questions before optional expert controls', () => {
@@ -40,9 +40,7 @@ test('Goal creation uses human questions before optional expert controls', () =>
   assert.match(goalsUi, /Milestones/);
   assert.match(goalsUi, /Aim for/);
   assert.match(goalsUi, /Targets are guidance, not debt/);
-  for (const id of ['goalMinimum','goalPriority','goalStatus','goalWhy','goalDescription']) {
-    assert.ok(goalsUi.indexOf(`id="${id}"`) > advanced);
-  }
+  for (const id of ['goalMinimum','goalPriority','goalStatus','goalWhy','goalDescription']) assert.ok(goalsUi.indexOf(`id="${id}"`) > advanced);
 });
 
 test('Plan overview uses module-owned concrete available planned and still-flexible time language', () => {
@@ -59,7 +57,7 @@ test('Plan overview uses module-owned concrete available planned and still-flexi
   assert.doesNotMatch(planJs, /productivity score|performance score/i);
 });
 
-test('Plan Revision A stylesheet is token based phone first and touch sized', () => {
+test('Plan Revision stylesheet is token based phone first and touch sized', () => {
   assert.match(indexHtml, /\/css\/plan-revision\.css/);
   assert.match(planCss, /#planView\.active\{display:grid/);
   assert.doesNotMatch(planCss, /#planView\{[^}]*display:grid/);
