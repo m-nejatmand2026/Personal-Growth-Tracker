@@ -83,16 +83,6 @@ export const activitiesModule = Object.freeze({
     return { activities, goals: context.goals || [] };
   },
 
-  planSummary({ model }) {
-    return Object.freeze({
-      id: 'activities.active',
-      order: 15,
-      label: 'Activities',
-      value: (model?.activities || []).length,
-      detail: 'reusable actions'
-    });
-  },
-
   render({ model }) {
     return activitiesPanelHtml(model);
   },
