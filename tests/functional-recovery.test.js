@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 const appJs = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 const dailyPlanJs = await readFile(new URL('../public/js/modules/daily-plan/module.js', import.meta.url), 'utf8');
+const goalsJs = await readFile(new URL('../public/js/modules/goals/module.js', import.meta.url), 'utf8');
 const planJs = await readFile(new URL('../public/js/features/plan.js', import.meta.url), 'utf8');
 const recoveryCss = await readFile(new URL('../public/css/functional-recovery.css', import.meta.url), 'utf8');
 
@@ -44,13 +45,14 @@ test('Plan no longer injects a visible transient loading card', () => {
   assert.match(appJs, /revealView\(name\)/);
 });
 
-test('Plan restores visible Goal direction instead of only an active-goal count', () => {
+test('Plan restores visible Goal direction through a module-owned working-summary contract', () => {
+  assert.match(goalsJs, /planWorkingSummary\(\{ model \}\)/);
+  assert.match(goalsJs, /id: `goals\.focus\.\$\{goal\.id\}`/);
+  assert.match(goalsJs, /label: goal\.name/);
+  assert.match(planJs, /module\.planWorkingSummary/);
   assert.match(planJs, /function planWorkingSurface/);
   assert.match(planJs, /What deserves attention/);
-  assert.match(planJs, /goal\.name/);
-  assert.match(planJs, /goal\.area_name/);
-  assert.match(planJs, /goalAttention\(goal, planModel\)/);
-  assert.match(planJs, /No time budget set/);
+  assert.doesNotMatch(planJs, /goal\.name|goal\.area_name|time_target_minutes|time_minimum_minutes/);
   assert.match(recoveryCss, /\.gc-plan-goal-focus/);
 });
 
