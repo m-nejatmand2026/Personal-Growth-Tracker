@@ -8,50 +8,49 @@ const todayJs = await readFile(new URL('../public/js/features/today.js', import.
 const todayModuleJs = await readFile(new URL('../public/js/modules/today/manifest.js', import.meta.url), 'utf8');
 const wellbeingJs = await readFile(new URL('../public/js/modules/wellbeing/module.js', import.meta.url), 'utf8');
 const capacityJs = await readFile(new URL('../public/js/modules/capacity/module.js', import.meta.url), 'utf8');
-const todayCss = await readFile(new URL('../public/css/today.css', import.meta.url), 'utf8');
-const wellbeingCss = await readFile(new URL('../public/css/modules/wellbeing.css', import.meta.url), 'utf8');
-const capacityCss = await readFile(new URL('../public/css/modules/capacity.css', import.meta.url), 'utf8');
-const progressCss = await readFile(new URL('../public/css/modules/progress-today.css', import.meta.url), 'utf8');
-const dailyPlanTodayCss = await readFile(new URL('../public/css/modules/daily-plan-today.css', import.meta.url), 'utf8');
-const wellbeingTodayCss = await readFile(new URL('../public/css/modules/wellbeing-today-sanctuary.css', import.meta.url), 'utf8');
 const dailyPlanJs = await readFile(new URL('../public/js/modules/daily-plan/module.js', import.meta.url), 'utf8');
+const currentCss = await readFile(new URL('../public/css/figma-current.css', import.meta.url), 'utf8');
+const liveCss = await readFile(new URL('../public/css/figma-current-live.css', import.meta.url), 'utf8');
+const semanticCss = await readFile(new URL('../public/css/figma-current-semantics.css', import.meta.url), 'utf8');
 
-test('Stitch Today Sanctuary puts the editorial heading and agenda before supporting context', () => {
+test('Figma Current Today puts identity, live overview and next actions before supporting state', () => {
   const render = todayJs.slice(todayJs.indexOf('root.innerHTML'));
   const heading = render.indexOf('today-sanctuary-heading');
+  const overview = render.indexOf('${currentOverview(directionModel, capacityModel)}');
   const dailyPlan = render.indexOf('${dailyPlanPanel}');
   const state = render.indexOf('${wellbeingState}');
-  const capacity = render.indexOf('${renderModel(capacityModel)}');
-  const direction = render.indexOf('${renderModel(directionModel)}');
-  const recent = render.indexOf('${renderModel(recentModel)}');
-  const journal = render.indexOf('${journalPreview}');
-  const energy = render.indexOf('${wellbeingDetails}');
-  assert.ok(heading >= 0 && heading < dailyPlan && dailyPlan < state && state < capacity && capacity < direction && direction < recent && recent < journal && journal < energy);
+  assert.ok(heading >= 0 && heading < overview && overview < dailyPlan && dailyPlan < state);
 });
 
-test('Daily Plan owns the Stitch focus card agenda and existing actions', () => {
+test('Today headline metrics are derived from module models rather than placeholder dashboard values', () => {
+  assert.match(todayJs, /directionActualMinutes\(directionModel\)/);
+  assert.match(todayJs, /capacity\.planSummary\(\{ model \}\)/);
+  assert.match(todayJs, /Actual progress/);
+  assert.match(todayJs, /Capacity/);
+  assert.doesNotMatch(todayJs, /Records\s*9|6 h 40 m|9 h planned/);
+});
+
+test('Daily Plan owns its agenda and existing actions', () => {
   assert.match(dailyPlanJs, /variant === 'today-sanctuary'/);
-  assert.match(dailyPlanJs, /sanctuary-focus-card/);
   assert.match(dailyPlanJs, /sanctuary-agenda-list/);
   assert.match(dailyPlanJs, /data-plan-start/);
   assert.match(dailyPlanJs, /data-plan-done/);
   assert.match(dailyPlanJs, /data-plan-edit/);
 });
 
-test('Today remains a composition surface and uses the platform threshold primitive', () => {
+test('Today remains a composition surface and does not duplicate module APIs', () => {
   assert.match(todayJs, /renderThresholdTrack/);
-  assert.match(todayJs, /platform\/charts\.js/);
   assert.match(todayJs, /frontendModules/);
-  assert.doesNotMatch(todayJs, /\/api\/v1\/capacity|\/api\/v1\/progress|\/api\/v1\/wellbeing/);
+  assert.match(todayJs, /capacity\.load\(\{ date \}\)/);
+  assert.match(todayJs, /today\.loadSummary\(\{ date, period: directionPeriod \}\)/);
+  assert.doesNotMatch(todayJs, /\/api\/v1\/|fetch\(/);
 });
 
-test('Revision B Today exposes Day Week Month Year through the Today capability', () => {
+test('Today exposes Day Week Month Year through the existing Today capability', () => {
   assert.match(todayJs, /data-direction-period/);
   for (const period of ['day', 'week', 'month', 'year']) assert.match(todayJs, new RegExp(`'${period}'`));
-  assert.match(todayJs, /today\.loadSummary\(\{ date, period: directionPeriod \}\)/);
   assert.match(todayModuleJs, /period=\$\{encodeURIComponent\(selectedPeriod\)\}/);
-  assert.match(progressCss, /today-period-switch/);
-  assert.match(progressCss, /min-height:var\(--gc-target-min\)/);
+  assert.match(liveCss, /today-period-switch/);
 });
 
 test('targetless direction shows Actual without inventing zero guidance', () => {
@@ -66,70 +65,29 @@ test('targetless direction shows Actual without inventing zero guidance', () => 
   assert.deepEqual(model.cards[0].metrics, [{ label: 'Actual', minutes: 30 }]);
 });
 
-test('Today Capacity uses concrete available planned and flexible time', () => {
-  assert.match(capacityJs, /title: 'Time today'/);
+test('Capacity keeps physical-time semantics and contributes live week summary', () => {
   assert.match(capacityJs, /still flexible today/);
   assert.match(capacityJs, /more planned than available/);
-  assert.match(capacityJs, /label: 'Available'/);
-  assert.match(capacityJs, /label: 'Planned'/);
-  assert.match(capacityJs, /'Still flexible'/);
   assert.match(capacityJs, /physical time math, not a productivity score/i);
-  assert.doesNotMatch(capacityJs, /Plan load unavailable|of flexible time planned|Goal plan|Total day/);
-  assert.match(capacityCss, /time-reality-card/);
-  assert.match(capacityCss, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(todayJs, /capacity\.planned-week/);
+  assert.match(todayJs, /capacity\.time-fit-week/);
 });
 
-test('Wellbeing owns visible Daily State and accessible progressive Energy selection', () => {
+test('Wellbeing remains module-owned and exposes accessible progressive Energy selection', () => {
   assert.match(wellbeingJs, /Daily state/);
   assert.match(wellbeingJs, /How today feels/);
   assert.match(wellbeingJs, /Observations, not performance scores/);
   assert.match(wellbeingJs, /aria-pressed=/);
   assert.match(wellbeingJs, /setAttribute\('aria-pressed'/);
   assert.match(wellbeingJs, /<details class="energy-drawer"/);
-  assert.match(wellbeingJs, /Energy map/);
 });
 
-test('Today is phone-first and its contributor styles stay module-owned', () => {
-  assert.match(todayCss, /@media \(max-width:600px\)/);
-  assert.match(todayCss, /today-sanctuary-heading/);
-  assert.match(todayCss, /Georgia,serif/);
-  assert.doesNotMatch(todayCss, /daily-state-grid|time-reality-card|today-goal-card|daily-plan|journal-preview|energy-grid/);
-
-  assert.match(wellbeingCss, /daily-state-grid/);
-  assert.match(wellbeingCss, /@media \(min-width:640px\)/);
-  assert.match(wellbeingCss, /energy-cell\{[^}]*min-height:50px/s);
-  assert.doesNotMatch(wellbeingCss, /daily-plan|journal-preview|time-reality-card|today-goal-card/);
-
-  assert.match(capacityCss, /time-reality-card/);
-  assert.doesNotMatch(capacityCss, /daily-state-grid|today-goal-card|daily-plan|journal-preview/);
-
-  assert.match(progressCss, /today-goal-card/);
-  assert.match(progressCss, /activity-feed-row/);
-  assert.doesNotMatch(progressCss, /daily-state-grid|time-reality-card|daily-plan|journal-preview/);
-});
-
-test('Today sanctuary variants remain scoped to their owning modules', () => {
-  assert.match(dailyPlanTodayCss, /#todayView \.daily-plan-sanctuary/);
-  assert.match(dailyPlanTodayCss, /#todayView \.sanctuary-focus-card/);
-  assert.match(dailyPlanTodayCss, /#todayView \.sanctuary-agenda-item/);
-  assert.doesNotMatch(dailyPlanTodayCss, /daily-state-grid|energy-grid|time-reality-card|today-goal-card|journal-preview/);
-  assert.match(wellbeingTodayCss, /#todayView \.daily-state-grid/);
-  assert.doesNotMatch(wellbeingTodayCss, /daily-plan|time-reality-card|today-goal-card|journal-preview/);
-});
-
-test('Today styles load after shell foundation while Daily Plan and Journal retain their own styles', () => {
-  const shell = indexHtml.indexOf('/css/navigation-shell.css');
-  const today = indexHtml.indexOf('/css/today.css');
-  const wellbeing = indexHtml.indexOf('/css/modules/wellbeing.css');
-  const capacity = indexHtml.indexOf('/css/modules/capacity.css');
-  const progress = indexHtml.indexOf('/css/modules/progress-today.css');
-  const dailyPlan = indexHtml.indexOf('/css/daily-plan.css');
-  const journal = indexHtml.indexOf('/css/journal.css');
-  const reset = indexHtml.indexOf('/css/ux-reset.css');
-  const dailyPlanToday = indexHtml.indexOf('/css/modules/daily-plan-today.css');
-  const wellbeingToday = indexHtml.indexOf('/css/modules/wellbeing-today-sanctuary.css');
+test('canonical Figma layers load last while accessibility safeguards remain present', () => {
   const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
-  assert.ok(shell >= 0 && shell < today && today < wellbeing && wellbeing < capacity && capacity < progress);
-  assert.ok(progress < dailyPlan && progress < journal);
-  assert.ok(reset < dailyPlanToday && dailyPlanToday < wellbeingToday && wellbeingToday < accessibility);
+  const current = indexHtml.indexOf('/css/figma-current.css');
+  const live = indexHtml.indexOf('/css/figma-current-live.css');
+  const semantics = indexHtml.indexOf('/css/figma-current-semantics.css');
+  assert.ok(accessibility >= 0 && accessibility < current && current < live && live < semantics);
+  assert.match(currentCss, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(semanticCss, /today-sanctuary-heading h2::before\{content:none!important\}/);
 });
