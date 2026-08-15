@@ -82,12 +82,12 @@ test('Wellbeing remains module-owned and exposes accessible progressive Energy s
   assert.match(wellbeingJs, /<details class="energy-drawer"/);
 });
 
-test('canonical Figma layers load last while accessibility safeguards remain present', () => {
-  const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
+test('canonical Figma layers load after foundations while accessibility safeguards remain last', () => {
   const current = indexHtml.indexOf('/css/figma-current.css');
   const live = indexHtml.indexOf('/css/figma-current-live.css');
   const semantics = indexHtml.indexOf('/css/figma-current-semantics.css');
-  assert.ok(accessibility >= 0 && accessibility < current && current < live && live < semantics);
+  const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
+  assert.ok(current >= 0 && current < live && live < semantics && semantics < accessibility);
   assert.match(currentCss, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(semanticCss, /today-sanctuary-heading h2::before\{content:none!important\}/);
 });
