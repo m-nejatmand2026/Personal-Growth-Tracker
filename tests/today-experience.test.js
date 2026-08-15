@@ -11,14 +11,18 @@ const capacityJs = await readFile(new URL('../public/js/modules/capacity/module.
 const dailyPlanJs = await readFile(new URL('../public/js/modules/daily-plan/module.js', import.meta.url), 'utf8');
 const rebuildCss = await readFile(new URL('../public/css/product-rebuild.css', import.meta.url), 'utf8');
 
-test('Product Rebuild Today puts daily action and time reality before supporting state', () => {
+test('Recovered Today keeps daily action and time reality first then visible supporting context', () => {
   const render = todayJs.slice(todayJs.indexOf('root.innerHTML'));
   const heading = render.indexOf('gc-today-header');
   const dailyPlan = render.indexOf('${dailyPlanPanel}');
   const capacity = render.indexOf('${capacityCard(capacityModel)}');
+  const context = render.indexOf('${visibleContext({ directionModel, wellbeingState, journalPreview })}');
   const more = render.indexOf('gc-today-more');
-  const state = render.indexOf('${wellbeingState}');
-  assert.ok(heading >= 0 && heading < dailyPlan && dailyPlan < capacity && capacity < more && more < state);
+  assert.ok(heading >= 0 && heading < dailyPlan && dailyPlan < capacity && capacity < context && context < more);
+  assert.match(todayJs, /function visibleContext/);
+  assert.match(todayJs, /directionSection\(directionModel\)/);
+  assert.match(todayJs, /\$\{wellbeingState\}/);
+  assert.match(todayJs, /\$\{journalPreview\}/);
 });
 
 test('Today uses live module data rather than placeholder dashboard values', () => {
@@ -82,11 +86,12 @@ test('Wellbeing remains module-owned and exposes accessible progressive Energy s
   assert.match(wellbeingJs, /<details class="energy-drawer"/);
 });
 
-test('Product Rebuild layers load after rejected Current layers while accessibility safeguards remain last', () => {
+test('Product Rebuild and recovery layers load after rejected Current while accessibility stays last', () => {
   const semantics = indexHtml.indexOf('/css/figma-current-semantics.css');
   const rebuild = indexHtml.indexOf('/css/product-rebuild.css');
   const pages = indexHtml.indexOf('/css/product-rebuild-pages.css');
+  const recovery = indexHtml.indexOf('/css/functional-recovery.css');
   const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
-  assert.ok(semantics >= 0 && semantics < rebuild && rebuild < pages && pages < accessibility);
+  assert.ok(semantics >= 0 && semantics < rebuild && rebuild < pages && pages < recovery && recovery < accessibility);
   assert.match(rebuildCss, /@media\(prefers-reduced-motion:reduce\)/);
 });
