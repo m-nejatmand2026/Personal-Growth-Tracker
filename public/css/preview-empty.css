@@ -4,10 +4,13 @@
  * Growth Compass is intentionally rendered as an empty canvas while the next
  * UI/UX system is being designed. This file changes presentation only. It does
  * not remove or alter APIs, D1 data, domain modules, or production resources.
+ *
+ * The body itself is not rendered. Hiding the ancestor rather than individual
+ * components prevents any legacy selector from winning the cascade and makes
+ * this a true blank canvas until this reset layer is removed.
  */
 
-html,
-body {
+html {
   margin: 0 !important;
   padding: 0 !important;
   width: 100% !important;
@@ -18,14 +21,12 @@ body {
   overflow: hidden !important;
 }
 
-html::before,
-html::after,
-body::before,
-body::after {
-  content: none !important;
+body {
   display: none !important;
 }
 
-body > * {
+html::before,
+html::after {
+  content: none !important;
   display: none !important;
 }
