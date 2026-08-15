@@ -5,8 +5,8 @@ import { frontendModules } from '../modules/catalog.js';
 import { bindLegacyPlan, legacyPlanHtml } from './plan/legacy.js';
 
 const registry = createFrontendModuleRegistry(frontendModules);
-const EXPERIENCE_ORDER = Object.freeze({ goals: 10, areas: 20, plans: 30, capacity: 40 });
-const PLAN_SECTION_LABELS = Object.freeze({ goals: 'Goals', areas: 'Life areas', plans: 'Goal time budgets', capacity: 'Time & capacity' });
+const EXPERIENCE_ORDER = Object.freeze({ goals: 10, activities: 15, areas: 20, plans: 30, capacity: 40 });
+const PLAN_SECTION_LABELS = Object.freeze({ goals: 'Goals', activities: 'Activities', areas: 'Life areas', plans: 'Goal time budgets', capacity: 'Time & capacity' });
 
 function slotOrder(module, slotName) {
   return EXPERIENCE_ORDER[module.id] ?? module.slots.find((slot) => slot.name === slotName)?.order ?? 100;
@@ -98,6 +98,7 @@ function planWorkingSurface(enabled, results) {
     <div class="gc-plan-working-head"><div><span>Direction</span><h3 id="planDirectionTitle">What deserves attention</h3></div><button type="button" data-plan-scroll="goalEditor">Manage goals</button></div>
     <div class="gc-plan-goal-focus-list">${rows}</div>
     <div class="gc-plan-working-actions">
+      <button type="button" data-plan-scroll="plan-module-activities"><strong>Activities</strong><small>Reusable things you actually do</small></button>
       <button type="button" data-plan-scroll="commitmentEditor"><strong>Schedule</strong><small>Recurring commitments</small></button>
       <button type="button" data-plan-scroll="plan-module-plans"><strong>Time budgets</strong><small>Planned attention by Goal</small></button>
     </div>
@@ -107,6 +108,7 @@ function planWorkingSurface(enabled, results) {
 function planNavigation() {
   return `<nav class="gc-plan-sections" aria-label="Plan sections">
     <button type="button" data-plan-scroll="plan-module-goals"><span>Goals</span><small>What matters longer term</small><b aria-hidden="true">›</b></button>
+    <button type="button" data-plan-scroll="plan-module-activities"><span>Activities</span><small>Reusable things you actually do</small><b aria-hidden="true">›</b></button>
     <button type="button" data-plan-scroll="commitmentEditor"><span>Schedule</span><small>Recurring commitments</small><b aria-hidden="true">›</b></button>
     <button type="button" data-plan-scroll="plan-module-plans"><span>Goal time budgets</span><small>How much attention you intend to give</small><b aria-hidden="true">›</b></button>
     <button type="button" data-plan-scroll="capacityPanel"><span>Time & capacity</span><small>What realistically fits</small><b aria-hidden="true">›</b></button>
@@ -116,6 +118,14 @@ function planNavigation() {
 
 function planModuleLabel(module) {
   return PLAN_SECTION_LABELS[module.id] || module.id.replaceAll('-', ' ').replace(/^./, (value) => value.toUpperCase());
+}
+
+function planModuleContext(module) {
+  if (module.id === 'goals') return 'Direction';
+  if (module.id === 'activities') return 'Reusable actions';
+  if (module.id === 'areas') return 'Your own life structure';
+  if (module.id === 'plans') return 'Planned attention';
+  return 'Time reality';
 }
 
 export async function renderPlan({ reload, openLogger } = {}) {
@@ -143,7 +153,7 @@ export async function renderPlan({ reload, openLogger } = {}) {
     if (!result || result.status !== 'ready') return moduleErrorHtml(module, result?.error || 'Section unavailable.');
     try {
       return `<details class="plan-module-block plan-module-disclosure" id="plan-module-${module.id}" data-module="${module.id}" ${module.id === 'goals' ? 'open' : ''}>
-        <summary class="plan-module-summary"><div><strong>${escapeHtml(planModuleLabel(module))}</strong><small>${module.id === 'goals' ? 'Direction' : module.id === 'areas' ? 'Your own life structure' : module.id === 'plans' ? 'Planned attention' : 'Time reality'}</small></div><span aria-hidden="true">⌄</span></summary>
+        <summary class="plan-module-summary"><div><strong>${escapeHtml(planModuleLabel(module))}</strong><small>${escapeHtml(planModuleContext(module))}</small></div><span aria-hidden="true">⌄</span></summary>
         <div class="plan-module-content">${module.render({ model: result.model, models: dependencyModelsFor(module, results), date: state.date, dependencies: dependenciesFor(module) })}</div>
       </details>`;
     } catch (error) {
