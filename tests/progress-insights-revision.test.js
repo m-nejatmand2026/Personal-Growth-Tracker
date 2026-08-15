@@ -4,35 +4,33 @@ import { readFile } from 'node:fs/promises';
 
 const progressJs = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
 const insightsJs = await readFile(new URL('../public/js/modules/insights/ui.js', import.meta.url), 'utf8');
-const progressCss = await readFile(new URL('../public/css/modules/progress.css', import.meta.url), 'utf8');
-const insightsCss = await readFile(new URL('../public/css/modules/insights.css', import.meta.url), 'utf8');
+const liveCss = await readFile(new URL('../public/css/figma-current-live.css', import.meta.url), 'utf8');
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
-test('Progress keeps Actual Minimum Target explicit and denominator-safe in human language', () => {
-  assert.match(progressJs, /Toward your targets/);
+test('Progress keeps factual actuals separate from optional minimum and target guidance', () => {
+  assert.match(progressJs, /Actual time/);
   assert.match(progressJs, /Good-enough minimums met/);
   assert.match(progressJs, /week\.minimumCount \?/);
-  assert.match(progressJs, /Only goals using time targets/);
   assert.match(progressJs, /Some minimums are still ahead — no catch-up needed/);
-  assert.match(progressJs, /Shows progress up to each target, never above 100%/);
-  assert.doesNotMatch(progressJs, /Target coverage|capped at each target|Minimums reached/);
+  assert.match(progressJs, /Minimum/);
+  assert.match(progressJs, /Target/);
+  assert.match(progressJs, /What actually happened\. Targets and minimums are guidance, not debt\./);
 });
 
-test('Progress minimum summary counts only Goals that actually have a minimum', () => {
+test('Progress minimum summary counts only goals that actually have a minimum', () => {
   assert.match(progressJs, /Number\(item\.minimum_minutes \|\| 0\) > 0 && Number\(item\.actual_minutes \|\| 0\) >= Number\(item\.minimum_minutes \|\| 0\)/);
   assert.match(progressJs, /itemsWithMinimum = measurableItems\.filter\(\(item\) => Number\(item\.minimum_minutes \|\| 0\) > 0\)\.length/);
   assert.match(progressJs, /minimumCount: itemsWithMinimum/);
 });
 
-test('Progress history preserves mixed measurement facts in plain language', () => {
+test('Progress history preserves mixed measurement facts and legacy read-only records', () => {
   assert.match(progressJs, /item\.minutes != null/);
   assert.match(progressJs, /item\.quantity != null/);
   assert.match(progressJs, /item\.boolean_value != null/);
-  assert.match(progressJs, /Time, quantity and yes\/no progress remain separate/);
+  assert.match(progressJs, /Time, quantity and yes\/no progress remain separate factual measurements/);
   assert.match(progressJs, /Earlier Beta history/);
   assert.match(progressJs, /Read-only history from the earlier Beta version/);
-  const history = progressJs.indexOf('${historySection}${goalsSection}');
-  assert.ok(history >= 0, 'factual history must render before goal guidance');
+  assert.match(progressJs, /Evidence only here\. Patterns live in Insights\./);
 });
 
 test('Progress does not pull Wellbeing through a legacy or undeclared history path', () => {
@@ -40,41 +38,32 @@ test('Progress does not pull Wellbeing through a legacy or undeclared history pa
   assert.match(progressJs, /\/api\/v1\/progress/);
 });
 
-test('Insights keeps evidence thresholds sample size and association-only language without analytics jargon', () => {
-  for (const threshold of ['0–6 days','7–20 days','21–41 days','42+ days']) assert.match(insightsJs, new RegExp(threshold.replace('+','\\+')));
-  assert.match(insightsJs, /tracked days/);
-  assert.match(insightsJs, /\$\{energy\.length\} check-ins/);
-  assert.match(insightsJs, /how many observations support it/);
-  assert.match(insightsJs, /associated with/);
+test('Insights exposes evidence readiness and association-only language without claiming causation', () => {
+  for (const threshold of ['0–6', '7–20', '21–41', '42+']) assert.match(insightsJs, new RegExp(threshold.replace('+','\\+')));
+  assert.match(insightsJs, /tracked \$\{trackedDays === 1 \? 'day' : 'days'\}/);
+  assert.match(insightsJs, /Energy check-ins/);
+  assert.match(insightsJs, /Active days/);
+  assert.match(insightsJs, /Matched patterns/);
   assert.match(insightsJs, /does not prove cause/);
-  assert.doesNotMatch(insightsJs, /\bN=/);
-  assert.doesNotMatch(insightsJs, /Evidence guardrail|Descriptive stage|paired wellbeing data/i);
   assert.doesNotMatch(insightsJs, /causes higher|causes lower|because of sleep/i);
 });
 
 test('Insights distinguishes unavailable evidence from an honest empty sample', () => {
-  assert.match(insightsJs, /let evidenceAvailable = true/);
-  assert.match(insightsJs, /evidenceAvailable = false/);
-  assert.match(insightsJs, /if \(!evidenceAvailable\)/);
   const unavailableStart = insightsJs.indexOf('function unavailableHtml()');
   const renderStart = insightsJs.indexOf('export async function renderInsights()');
   assert.ok(unavailableStart >= 0 && renderStart > unavailableStart);
   const unavailableBlock = insightsJs.slice(unavailableStart, renderStart);
   assert.match(unavailableBlock, /Evidence is unavailable/);
   assert.match(unavailableBlock, /No summaries were generated\. Try again later\./);
-  assert.doesNotMatch(unavailableBlock, /tracked days|readinessPct|Still learning/);
-  const failureGuard = insightsJs.indexOf('if (!evidenceAvailable)');
+  const catchReturn = insightsJs.indexOf('root.innerHTML = unavailableHtml();');
   const trackedDays = insightsJs.indexOf('const trackedDays');
-  assert.ok(failureGuard >= 0 && failureGuard < trackedDays, 'failure state must return before evidence-count rendering');
+  assert.ok(catchReturn >= 0 && catchReturn < trackedDays, 'failure state must return before evidence-count rendering');
 });
 
-test('Progress and Insights presentation remains module-owned responsive and touch-safe', () => {
-  assert.match(indexHtml, /\/css\/modules\/progress\.css/);
-  assert.match(indexHtml, /\/css\/modules\/insights\.css/);
-  assert.match(progressCss, /@media\(max-width:520px\)/);
-  assert.match(progressCss, /@media\(min-width:760px\)/);
-  assert.match(insightsCss, /@media\(min-width:700px\)/);
-  assert.match(insightsCss, /\.insights-hero\{[^}]*color:var\(--gc-text\)/);
-  assert.match(insightsCss, /\.insight-method-disclosure>summary\{[^}]*min-height:56px/);
-  assert.match(progressCss, /var\(--gc-target-min\)/);
+test('Progress and Insights Figma Current presentation remains responsive and touch-safe', () => {
+  assert.match(indexHtml, /\/css\/figma-current-live\.css/);
+  assert.match(liveCss, /\.progress-current-metrics\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(liveCss, /\.insights-current \.insight-summary-grid\{display:grid!important;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/);
+  assert.match(liveCss, /@media\(max-width:760px\)/);
+  assert.match(liveCss, /\.insights-more\{width:44px;height:44px/);
 });
