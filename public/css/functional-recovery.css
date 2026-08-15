@@ -1,0 +1,68 @@
+/* Growth Compass functional recovery layer.
+ * Restores discoverable everyday actions without changing domain semantics.
+ */
+
+.gc-day-item-actions .gc-day-done{
+  color:var(--gc-brand)!important;
+  border:1px solid color-mix(in srgb,var(--gc-brand) 34%,transparent)!important;
+  background:color-mix(in srgb,var(--gc-brand) 7%,transparent)!important;
+}
+.gc-day-item-actions .gc-day-edit{color:var(--gc-text-muted)!important}
+
+.gc-tomorrow-plan{
+  margin-top:2px;
+  overflow:hidden;
+  border:1px solid var(--gc-border);
+  border-radius:16px;
+  background:var(--gc-surface);
+}
+.gc-tomorrow-plan>summary{
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:0 14px;
+  list-style:none;
+  color:var(--gc-text);
+  cursor:pointer;
+}
+.gc-tomorrow-plan>summary::-webkit-details-marker{display:none}
+.gc-tomorrow-plan>summary>span{display:grid;gap:2px}
+.gc-tomorrow-plan>summary strong{font-size:13px}
+.gc-tomorrow-plan>summary small{color:var(--gc-text-muted);font-size:10px;font-weight:500}
+.gc-tomorrow-plan>summary>b{color:var(--gc-text-muted);font-size:20px;transition:transform .16s ease}
+.gc-tomorrow-plan[open]>summary>b{transform:rotate(90deg)}
+.gc-tomorrow-plan-body{display:grid;gap:10px;padding:0 10px 12px}
+.gc-tomorrow-plan .gc-day-item{background:var(--gc-surface-raised)}
+.gc-tomorrow-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gc-tomorrow-actions .gc-secondary-action,
+.gc-tomorrow-actions .gc-one-off-action{
+  width:100%;
+  min-height:44px;
+  justify-self:stretch;
+  text-align:center;
+  text-decoration:none;
+}
+.gc-tomorrow-actions .gc-one-off-action{
+  border:1px solid var(--gc-border);
+  border-radius:14px;
+  background:transparent;
+}
+
+@media(max-width:520px){
+  .gc-day-item{
+    grid-template-columns:34px minmax(0,1fr);
+  }
+  .gc-day-item-actions{
+    grid-column:2;
+    justify-content:flex-start;
+    gap:4px;
+  }
+  .gc-day-item-actions button{
+    min-width:52px;
+    padding-inline:9px;
+  }
+  .gc-day-more{min-width:44px!important}
+  .gc-tomorrow-actions{grid-template-columns:1fr}
+}
