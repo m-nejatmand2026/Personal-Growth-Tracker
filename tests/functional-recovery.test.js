@@ -44,6 +44,22 @@ test('Plan no longer injects a visible transient loading card', () => {
   assert.match(appJs, /revealView\(name\)/);
 });
 
+test('Plan restores visible Goal direction instead of only an active-goal count', () => {
+  assert.match(planJs, /function planWorkingSurface/);
+  assert.match(planJs, /What deserves attention/);
+  assert.match(planJs, /goal\.name/);
+  assert.match(planJs, /goal\.area_name/);
+  assert.match(planJs, /goalAttention\(goal, planModel\)/);
+  assert.match(planJs, /No time budget set/);
+  assert.match(recoveryCss, /\.gc-plan-goal-focus/);
+});
+
+test('Plan restores Schedule as a direct planning destination', () => {
+  assert.match(planJs, /data-plan-scroll="commitmentEditor"><span>Schedule<\/span>/);
+  assert.match(planJs, /Recurring commitments/);
+  assert.match(planJs, /if \(target\?\.matches\('details'\)\) target\.open = true/);
+});
+
 test('functional recovery styling loads after visual polish and before accessibility safeguards', () => {
   const polish = indexHtml.indexOf('/css/product-polish.css');
   const recovery = indexHtml.indexOf('/css/functional-recovery.css');
