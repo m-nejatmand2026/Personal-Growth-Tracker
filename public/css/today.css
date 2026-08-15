@@ -1,56 +1,37 @@
-/* Today is the calm daily-entry surface. Module logic remains module-owned; this file controls only Today composition. */
+/* Today composition surface only. Module-owned cards keep their own CSS. */
 #todayView{
   min-width:0;
   --today-ink:#17202b;
   --today-muted:#6f777d;
   --today-line:#e6e7e3;
   --today-paper:#fbfaf7;
-  --today-surface:#ffffff;
-  --today-mint:#dff3ea;
-  --today-mint-strong:#256b5e;
-  --today-warm:#f3eee4;
 }
 
-#todayView .today-layout{
-  display:grid;
-  gap:18px;
-  min-width:0;
-  padding-bottom:16px;
-}
+.today-layout{display:grid;gap:18px;min-width:0;padding-bottom:16px}
+.today-layout>*{margin-bottom:0!important}
+.today-primary-flow{display:grid;gap:16px;min-width:0}
 
-#todayView .today-layout>*{margin-bottom:0!important}
-
-/* A quiet date header, not another dashboard card. */
 #todayView .today-command{
   min-height:0;
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
-  gap:16px;
+  gap:14px;
   align-items:end;
-  padding:4px 2px 10px;
+  padding:5px 2px 10px;
   border:0;
   border-radius:0;
   background:transparent;
   box-shadow:none;
 }
-
 #todayView .today-command-copy{min-width:0}
-#todayView .today-command-label{
-  display:block;
-  margin:0 0 5px;
-  color:var(--today-ink);
-  font-size:clamp(1.75rem,7vw,2.45rem);
-  font-weight:760;
-  line-height:1;
-  letter-spacing:-.045em;
-}
-#todayView .today-command h2{
+#todayView .today-command .eyebrow{
   margin:0;
   color:var(--today-muted);
-  font-size:.88rem;
+  font-size:.9rem;
   font-weight:560;
   line-height:1.35;
   letter-spacing:0;
+  text-transform:none;
 }
 #todayView .command-log-btn{
   min-width:0;
@@ -66,237 +47,6 @@
 #todayView .command-log-btn:hover{background:#253140}
 #todayView .command-log-btn>span{font-size:1.1rem;line-height:1}
 
-#todayView .today-primary-flow{display:grid;gap:16px}
-
-/* Daily plan: the main content of Today. Remove the nested-dashboard feeling. */
-#todayView .today-primary-flow .daily-plan-section{
-  margin:0;
-  padding:18px;
-  overflow:hidden;
-  border:1px solid var(--today-line);
-  border-radius:24px;
-  background:var(--today-surface);
-  box-shadow:0 14px 42px rgba(31,38,43,.055);
-}
-#todayView .today-primary-flow .daily-plan-head{margin-bottom:12px}
-#todayView .today-primary-flow .daily-plan-head h2{
-  margin:0;
-  color:var(--today-ink);
-  font-size:1.12rem;
-  font-weight:760;
-  letter-spacing:-.025em;
-}
-#todayView .today-primary-flow .daily-plan-head>small{
-  color:var(--today-muted);
-  font-size:.72rem;
-  font-weight:600;
-}
-#todayView .today-primary-flow .daily-plan-tabs{
-  width:max-content;
-  max-width:100%;
-  display:flex;
-  gap:3px;
-  margin:0 0 15px;
-  padding:3px;
-  border:1px solid var(--today-line);
-  border-radius:999px;
-  background:var(--today-paper);
-}
-#todayView .today-primary-flow .daily-plan-tabs button{
-  min-width:98px;
-  min-height:40px;
-  padding:0 13px;
-  border-radius:999px;
-  color:var(--today-muted);
-  font-size:.74rem;
-  font-weight:720;
-}
-#todayView .today-primary-flow .daily-plan-tabs button.active{
-  background:var(--today-ink);
-  color:#fff;
-  box-shadow:none;
-}
-#todayView .today-primary-flow .daily-plan-tabs button b{
-  min-width:20px;
-  height:20px;
-  background:rgba(255,255,255,.14);
-  color:inherit;
-}
-
-#todayView .today-primary-flow .daily-plan-list{gap:0}
-#todayView .today-primary-flow .daily-plan-item{
-  position:relative;
-  display:grid;
-  grid-template-columns:42px minmax(0,1fr) auto;
-  gap:11px;
-  align-items:center;
-  margin:0;
-  padding:13px 0;
-  border:0;
-  border-bottom:1px solid var(--today-line);
-  border-radius:0;
-  background:transparent;
-  box-shadow:none;
-}
-#todayView .today-primary-flow .daily-plan-item:last-child{border-bottom:0}
-#todayView .today-primary-flow .daily-plan-item.is-active{
-  margin:0 0 10px;
-  padding:16px;
-  border:1px solid #cfe7dd;
-  border-radius:18px;
-  background:linear-gradient(135deg,#f2faf6 0%,#fff 76%);
-  box-shadow:none;
-}
-#todayView .today-primary-flow .daily-plan-check{
-  width:40px;
-  height:40px;
-  border:1.5px solid #c9cfcc;
-  background:#fff;
-  color:var(--today-mint-strong);
-}
-#todayView .today-primary-flow .daily-plan-item.is-active .daily-plan-check{border-color:#87bbaa;background:var(--today-mint)}
-#todayView .today-primary-flow .daily-plan-status{
-  margin:0 0 2px;
-  color:var(--today-mint-strong);
-  font-size:.62rem!important;
-  font-weight:760;
-  letter-spacing:.08em;
-}
-#todayView .today-primary-flow .daily-plan-main strong{
-  color:var(--today-ink);
-  font-size:.98rem;
-  font-weight:720;
-  line-height:1.28;
-}
-#todayView .today-primary-flow .daily-plan-main>span:not(.daily-plan-status),
-#todayView .today-primary-flow .daily-plan-main small{
-  margin-top:3px;
-  color:var(--today-muted);
-  font-size:.72rem;
-  line-height:1.35;
-}
-#todayView .today-primary-flow .daily-plan-actions{gap:2px;justify-content:flex-end}
-#todayView .today-primary-flow .daily-plan-actions button{
-  min-height:40px;
-  padding:0 8px;
-  border-radius:10px;
-  background:transparent;
-  color:var(--today-muted);
-  font-size:.69rem;
-  font-weight:680;
-}
-#todayView .today-primary-flow .daily-plan-actions [data-plan-start]{
-  padding-inline:12px;
-  background:var(--today-ink);
-  color:#fff;
-}
-#todayView .today-primary-flow .daily-plan-actions [data-plan-review]{background:transparent;color:var(--today-muted)}
-#todayView .today-primary-flow .daily-plan-add{
-  min-height:46px;
-  margin-top:12px;
-  border:1px solid var(--today-line);
-  border-radius:14px;
-  background:var(--today-paper);
-  color:var(--today-ink);
-  font-size:.76rem;
-  font-weight:720;
-}
-#todayView .today-primary-flow .daily-plan-add:hover{background:var(--today-warm)}
-#todayView .today-primary-flow .daily-plan-empty{
-  min-height:132px;
-  display:grid;
-  align-content:center;
-  justify-items:start;
-  gap:5px;
-  padding:10px 4px;
-}
-#todayView .today-primary-flow .daily-plan-empty strong{
-  color:var(--today-ink);
-  font-size:1.12rem;
-  font-weight:720;
-  letter-spacing:-.02em;
-}
-#todayView .today-primary-flow .daily-plan-empty span{
-  display:block;
-  max-width:420px;
-  color:var(--today-muted);
-  font-size:.78rem;
-  line-height:1.5;
-}
-
-/* Wellbeing is a lightweight check-in, not another dashboard. */
-#todayView .today-primary-flow .today-state-section{
-  margin:0;
-  padding:0;
-  border:0;
-  border-radius:0;
-  background:transparent;
-  box-shadow:none;
-}
-#todayView .today-primary-flow .today-state-section .os-section-head{
-  margin:0 0 8px;
-  padding-inline:2px;
-}
-#todayView .today-primary-flow .today-state-section .os-section-head h2{
-  margin:0;
-  color:var(--today-ink);
-  font-size:.92rem;
-  font-weight:720;
-}
-#todayView .today-primary-flow .daily-state-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:0;
-  overflow:hidden;
-  border:1px solid var(--today-line);
-  border-radius:18px;
-  background:var(--today-surface);
-}
-#todayView .today-primary-flow .state-card{
-  min-height:82px;
-  display:flex;
-  align-items:center;
-  gap:9px;
-  padding:12px;
-  border:0;
-  border-right:1px solid var(--today-line);
-  border-radius:0;
-  background:transparent;
-  box-shadow:none;
-}
-#todayView .today-primary-flow .state-card:last-child{border-right:0}
-#todayView .today-primary-flow button.state-card:hover{background:var(--today-paper)}
-#todayView .today-primary-flow .state-icon{
-  flex:0 0 32px;
-  width:32px;
-  height:32px;
-  display:grid;
-  place-items:center;
-  border-radius:999px;
-  background:var(--today-mint);
-  color:var(--today-mint-strong);
-}
-#todayView .today-primary-flow .state-card>div{min-width:0}
-#todayView .today-primary-flow .state-card>div>span{
-  color:var(--today-muted);
-  font-size:.58rem;
-  font-weight:720;
-  letter-spacing:.05em;
-  text-transform:uppercase;
-}
-#todayView .today-primary-flow .state-card strong{
-  display:block;
-  margin-top:2px;
-  overflow:hidden;
-  color:var(--today-ink);
-  font-size:.78rem;
-  font-weight:700;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-#todayView .today-primary-flow .state-card small{display:none}
-
-/* Capacity, progress and reflection remain available without occupying the first viewport. */
 #todayView .today-context-disclosure{
   margin:0;
   overflow:hidden;
@@ -322,39 +72,15 @@
 #todayView .today-context-chevron{color:var(--today-muted);transition:transform .18s ease}
 #todayView .today-context-disclosure[open] .today-context-chevron{transform:rotate(180deg)}
 #todayView .today-context-body{display:grid;gap:12px;padding:4px 0 18px}
-#todayView .today-context-body>.os-section,
-#todayView .today-context-body>.time-reality-card,
-#todayView .today-context-body>.energy-drawer,
-#todayView .today-context-body>.journal-preview{
-  margin:0;
-  border-color:var(--today-line);
-  border-radius:18px;
-  background:var(--today-surface);
-  box-shadow:none;
-}
 
-@media(max-width:620px){
-  #todayView .today-layout{gap:15px}
+@media (max-width:600px){
+  .today-layout{gap:15px}
+  .today-primary-flow{grid-template-columns:1fr}
   #todayView .today-command{padding-top:0}
-  #todayView .today-command-label{font-size:2rem}
   #todayView .command-log-btn{min-height:44px;padding-inline:15px}
-  #todayView .today-primary-flow .daily-plan-section{padding:15px;border-radius:21px}
-  #todayView .today-primary-flow .daily-plan-tabs{width:100%}
-  #todayView .today-primary-flow .daily-plan-tabs button{flex:1;min-width:0}
-  #todayView .today-primary-flow .daily-plan-item,
-  #todayView .today-primary-flow .daily-plan-item.is-active{grid-template-columns:40px minmax(0,1fr)}
-  #todayView .today-primary-flow .daily-plan-actions{grid-column:2;justify-content:flex-start}
-  #todayView .today-primary-flow .daily-state-grid{grid-template-columns:1fr}
-  #todayView .today-primary-flow .state-card{min-height:64px;border-right:0;border-bottom:1px solid var(--today-line)}
-  #todayView .today-primary-flow .state-card:last-child{border-bottom:0}
-  #todayView .today-primary-flow .state-card strong{font-size:.82rem}
 }
 
-@media(min-width:900px){
-  #todayView .today-layout{gap:20px}
-  #todayView .today-primary-flow{grid-template-columns:minmax(0,1.6fr) minmax(260px,.8fr);align-items:start}
-  #todayView .today-primary-flow .today-state-section{position:sticky;top:92px}
-  #todayView .today-primary-flow .daily-state-grid{grid-template-columns:1fr}
-  #todayView .today-primary-flow .state-card{border-right:0;border-bottom:1px solid var(--today-line)}
-  #todayView .today-primary-flow .state-card:last-child{border-bottom:0}
+@media (min-width:900px){
+  .today-layout{gap:20px}
+  .today-primary-flow{grid-template-columns:minmax(0,1.6fr) minmax(260px,.8fr);align-items:start}
 }
