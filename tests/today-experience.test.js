@@ -9,40 +9,42 @@ const todayModuleJs = await readFile(new URL('../public/js/modules/today/manifes
 const wellbeingJs = await readFile(new URL('../public/js/modules/wellbeing/module.js', import.meta.url), 'utf8');
 const capacityJs = await readFile(new URL('../public/js/modules/capacity/module.js', import.meta.url), 'utf8');
 const dailyPlanJs = await readFile(new URL('../public/js/modules/daily-plan/module.js', import.meta.url), 'utf8');
-const currentCss = await readFile(new URL('../public/css/figma-current.css', import.meta.url), 'utf8');
-const liveCss = await readFile(new URL('../public/css/figma-current-live.css', import.meta.url), 'utf8');
-const semanticCss = await readFile(new URL('../public/css/figma-current-semantics.css', import.meta.url), 'utf8');
+const rebuildCss = await readFile(new URL('../public/css/product-rebuild.css', import.meta.url), 'utf8');
 
-test('Figma Current Today puts identity, live overview and next actions before supporting state', () => {
+test('Product Rebuild Today puts daily action and time reality before supporting state', () => {
   const render = todayJs.slice(todayJs.indexOf('root.innerHTML'));
-  const heading = render.indexOf('today-sanctuary-heading');
-  const overview = render.indexOf('${currentOverview(directionModel, capacityModel)}');
+  const heading = render.indexOf('gc-today-header');
   const dailyPlan = render.indexOf('${dailyPlanPanel}');
+  const capacity = render.indexOf('${capacityCard(capacityModel)}');
+  const more = render.indexOf('gc-today-more');
   const state = render.indexOf('${wellbeingState}');
-  assert.ok(heading >= 0 && heading < overview && overview < dailyPlan && dailyPlan < state);
+  assert.ok(heading >= 0 && heading < dailyPlan && dailyPlan < capacity && capacity < more && more < state);
 });
 
-test('Today headline metrics are derived from module models rather than placeholder dashboard values', () => {
-  assert.match(todayJs, /directionActualMinutes\(directionModel\)/);
-  assert.match(todayJs, /capacity\.planSummary\(\{ model \}\)/);
-  assert.match(todayJs, /Actual progress/);
-  assert.match(todayJs, /Capacity/);
+test('Today uses live module data rather than placeholder dashboard values', () => {
+  assert.match(todayJs, /metricValue\(model\.metrics, 'Planned'\)/);
+  assert.match(todayJs, /metricValue\(model\.metrics, 'Still flexible'\)/);
+  assert.match(todayJs, /progress\?\.todayDirection/);
+  assert.match(todayJs, /progress\?\.todayRecent/);
   assert.doesNotMatch(todayJs, /Records\s*9|6 h 40 m|9 h planned/);
 });
 
-test('Daily Plan owns its agenda and existing actions', () => {
-  assert.match(dailyPlanJs, /variant === 'today-sanctuary'/);
-  assert.match(dailyPlanJs, /sanctuary-agenda-list/);
+test('Daily Plan owns Now, Your day and activity actions', () => {
+  assert.match(dailyPlanJs, /variant === 'today-sanctuary' \|\| variant === 'today-product'/);
+  assert.match(dailyPlanJs, /gc-now-card/);
+  assert.match(dailyPlanJs, /gc-day-list/);
+  assert.match(dailyPlanJs, /data-plan-capture="in_progress"/);
+  assert.match(dailyPlanJs, /data-plan-capture="planned"/);
   assert.match(dailyPlanJs, /data-plan-start/);
   assert.match(dailyPlanJs, /data-plan-done/);
-  assert.match(dailyPlanJs, /data-plan-edit/);
+  assert.match(dailyPlanJs, /data-plan-review/);
 });
 
 test('Today remains a composition surface and does not duplicate module APIs', () => {
   assert.match(todayJs, /renderThresholdTrack/);
   assert.match(todayJs, /frontendModules/);
-  assert.match(todayJs, /capacity\.load\(\{ date \}\)/);
-  assert.match(todayJs, /today\.loadSummary\(\{ date, period: directionPeriod \}\)/);
+  assert.match(todayJs, /capacity \? capacity\.loadToday\(\{ date \}\)/);
+  assert.match(todayJs, /today \? today\.loadSummary\(\{ date, period: directionPeriod \}\)/);
   assert.doesNotMatch(todayJs, /\/api\/v1\/|fetch\(/);
 });
 
@@ -50,14 +52,11 @@ test('Today exposes Day Week Month Year through the existing Today capability', 
   assert.match(todayJs, /data-direction-period/);
   for (const period of ['day', 'week', 'month', 'year']) assert.match(todayJs, new RegExp(`'${period}'`));
   assert.match(todayModuleJs, /period=\$\{encodeURIComponent\(selectedPeriod\)\}/);
-  assert.match(liveCss, /today-period-switch/);
+  assert.match(rebuildCss, /gc-period-switch/);
 });
 
 test('targetless direction shows Actual without inventing zero guidance', () => {
-  const model = progressModule.todayDirection({
-    period: 'month',
-    items: [{ key: 'writing', name: 'Writing', actual_minutes: 30, minimum_minutes: 0, target_minutes: 0 }]
-  });
+  const model = progressModule.todayDirection({ period: 'month', items: [{ key: 'writing', name: 'Writing', actual_minutes: 30, minimum_minutes: 0, target_minutes: 0 }] });
   assert.equal(model.title, 'Progress direction');
   assert.equal(model.period, 'month');
   assert.equal(model.cards[0].status, 'No target set for this period');
@@ -65,12 +64,13 @@ test('targetless direction shows Actual without inventing zero guidance', () => 
   assert.deepEqual(model.cards[0].metrics, [{ label: 'Actual', minutes: 30 }]);
 });
 
-test('Capacity keeps physical-time semantics and contributes live week summary', () => {
+test('Capacity keeps physical-time semantics and Today renders concrete time-fit language', () => {
   assert.match(capacityJs, /still flexible today/);
   assert.match(capacityJs, /more planned than available/);
   assert.match(capacityJs, /physical time math, not a productivity score/i);
-  assert.match(todayJs, /capacity\.planned-week/);
-  assert.match(todayJs, /capacity\.time-fit-week/);
+  assert.match(todayJs, /Today’s time/);
+  assert.match(todayJs, /planned/);
+  assert.match(todayJs, /flexible/);
 });
 
 test('Wellbeing remains module-owned and exposes accessible progressive Energy selection', () => {
@@ -82,12 +82,11 @@ test('Wellbeing remains module-owned and exposes accessible progressive Energy s
   assert.match(wellbeingJs, /<details class="energy-drawer"/);
 });
 
-test('canonical Figma layers load after foundations while accessibility safeguards remain last', () => {
-  const current = indexHtml.indexOf('/css/figma-current.css');
-  const live = indexHtml.indexOf('/css/figma-current-live.css');
+test('Product Rebuild layers load after rejected Current layers while accessibility safeguards remain last', () => {
   const semantics = indexHtml.indexOf('/css/figma-current-semantics.css');
+  const rebuild = indexHtml.indexOf('/css/product-rebuild.css');
+  const pages = indexHtml.indexOf('/css/product-rebuild-pages.css');
   const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
-  assert.ok(current >= 0 && current < live && live < semantics && semantics < accessibility);
-  assert.match(currentCss, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(semanticCss, /today-sanctuary-heading h2::before\{content:none!important\}/);
+  assert.ok(semantics >= 0 && semantics < rebuild && rebuild < pages && pages < accessibility);
+  assert.match(rebuildCss, /@media\(prefers-reduced-motion:reduce\)/);
 });

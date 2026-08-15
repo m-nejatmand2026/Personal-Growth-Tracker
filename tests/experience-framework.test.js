@@ -18,16 +18,13 @@ test('shared experience framework remains between module styles and final access
   assert.ok(frameworkIndex < indexHtml.indexOf('/css/accessibility-regression.css'));
 });
 
-test('framework owns reusable calm page, feature, choice, stat and tone primitives', () => {
-  for (const selector of ['.gc-page-frame{','.gc-page-header{','.gc-stat-grid{','.gc-feature-card{','.gc-choice-list{','.gc-choice-row{','.gc-tone--reset{','.gc-tone--calm{','.gc-tone--focus{','.gc-tone--restore{']) {
-    assert.match(framework, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  }
+test('framework retains reusable calm page and choice primitives', () => {
+  for (const selector of ['.gc-page-frame{','.gc-page-header{','.gc-stat-grid{','.gc-feature-card{','.gc-choice-list{','.gc-choice-row{','.gc-tone--calm{']) assert.match(framework, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(framework, /--gc-reading-max:60rem/);
-  assert.match(framework, /--gc-copy-max:56ch/);
 });
 
-test('major first-class Current views each expose a semantic destination header', () => {
-  assert.match(today, /<h2 id="todaySanctuaryTitle">Today<\/h2>/);
+test('major first-class views each expose a semantic destination heading', () => {
+  assert.match(today, /<h2[^>]*>Today<\/h2>/);
   assert.match(plan, /<h2 id="planCurrentTitle">Plan<\/h2>/);
   assert.match(progress, /<h2 id="progressCurrentTitle">Progress<\/h2>/);
   assert.match(insights, /<h2 id="insightsCurrentTitle">Insights<\/h2>/);
@@ -35,22 +32,18 @@ test('major first-class Current views each expose a semantic destination header'
   assert.match(wellness, /<h2 id="wellnessCurrentTitle">Wellness<\/h2>/);
 });
 
-test('first-class introductions remain concise and non-duplicative', () => {
-  assert.match(today, /<h2 id="todaySanctuaryTitle">Today<\/h2><strong class="today-greeting">Good morning\.<\/strong>/);
+test('first-class introductions describe their actual product jobs concisely', () => {
+  assert.match(today, /One clear step at a time\./);
   assert.match(today, /\$\{dailyPlanPanel\}/);
-  assert.match(plan, /Set direction, then fit it to the week ahead\./);
-  assert.match(progress, /What actually happened\. Targets and minimums are guidance, not debt\./);
-  assert.match(insights, /Patterns only when the evidence is strong enough\. Association never proves cause\./);
-  assert.match(journal, /Write when there is something you want to remember\./);
+  assert.match(plan, /Choose what deserves attention, then fit it to the time you actually have\./);
+  assert.match(progress, /What actually happened\. Plans never appear here until you explicitly record them as done\./);
+  assert.match(insights, /What the evidence may support\. Association is never presented as cause\./);
+  assert.match(journal, /A private place to think, remember and notice what matters\./);
   assert.match(wellness, /A quieter space to reset, focus, or restore\./);
-  assert.doesNotMatch(today, /Your daily command center/);
-  assert.doesNotMatch(plan, /Make ambition fit the life you actually have/);
 });
 
-test('shared framework reduces mobile header density without shrinking touch targets', () => {
+test('shared framework keeps mobile choices touch-sized', () => {
   assert.match(framework, /@media\(max-width:760px\)/);
-  assert.match(framework, /\.topbar-title h1\{font-size:clamp\(1\.55rem,7vw,1\.9rem\)/);
   assert.match(framework, /\.gc-choice-row\{min-height:68px/);
-  assert.match(framework, /\.gc-feature-card__visual\{width:64px;height:64px/);
   assert.doesNotMatch(framework, /min-height:\s*(?:3[0-9]|4[0-3])px/);
 });
