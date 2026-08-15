@@ -1,0 +1,72 @@
+/* Daily Plan-owned Today treatment for the sanctuary prototype. */
+#todayView .daily-plan-section{
+  margin:0;
+  padding:18px;
+  overflow:hidden;
+  border:1px solid #e6e7e3;
+  border-radius:24px;
+  background:#fff;
+  box-shadow:0 14px 42px rgba(31,38,43,.055);
+}
+#todayView .daily-plan-head{margin-bottom:12px}
+#todayView .daily-plan-head h2{margin:0;color:#17202b;font-size:1.12rem;font-weight:760;letter-spacing:-.025em}
+#todayView .daily-plan-head>small{color:#6f777d;font-size:.72rem;font-weight:600}
+#todayView .daily-plan-tabs{
+  width:max-content;
+  max-width:100%;
+  display:flex;
+  gap:3px;
+  margin:0 0 15px;
+  padding:3px;
+  border:1px solid #e6e7e3;
+  border-radius:999px;
+  background:#fbfaf7;
+}
+#todayView .daily-plan-tabs button{min-width:98px;min-height:40px;padding:0 13px;border-radius:999px;color:#6f777d;font-size:.74rem;font-weight:720}
+#todayView .daily-plan-tabs button.active{background:#17202b;color:#fff;box-shadow:none}
+#todayView .daily-plan-tabs button b{min-width:20px;height:20px;background:rgba(255,255,255,.14);color:inherit}
+#todayView .daily-plan-list{gap:0}
+#todayView .daily-plan-item{
+  position:relative;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  gap:11px;
+  align-items:center;
+  margin:0;
+  padding:13px 0;
+  border:0;
+  border-bottom:1px solid #e6e7e3;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#todayView .daily-plan-item:last-child{border-bottom:0}
+#todayView .daily-plan-item.is-active{
+  margin:0 0 10px;
+  padding:16px;
+  border:1px solid #cfe7dd;
+  border-radius:18px;
+  background:linear-gradient(135deg,#f2faf6 0%,#fff 76%);
+}
+#todayView .daily-plan-check{width:40px;height:40px;border:1.5px solid #c9cfcc;background:#fff;color:#256b5e}
+#todayView .daily-plan-item.is-active .daily-plan-check{border-color:#87bbaa;background:#dff3ea}
+#todayView .daily-plan-status{margin:0 0 2px;color:#256b5e;font-size:.62rem!important;font-weight:760;letter-spacing:.08em}
+#todayView .daily-plan-main strong{color:#17202b;font-size:.98rem;font-weight:720;line-height:1.28}
+#todayView .daily-plan-main>span:not(.daily-plan-status),#todayView .daily-plan-main small{margin-top:3px;color:#6f777d;font-size:.72rem;line-height:1.35}
+#todayView .daily-plan-actions{gap:2px;justify-content:flex-end}
+#todayView .daily-plan-actions button{min-height:40px;padding:0 8px;border-radius:10px;background:transparent;color:#6f777d;font-size:.69rem;font-weight:680}
+#todayView .daily-plan-actions [data-plan-start]{padding-inline:12px;background:#17202b;color:#fff}
+#todayView .daily-plan-actions [data-plan-review]{background:transparent;color:#6f777d}
+#todayView .daily-plan-add{min-height:46px;margin-top:12px;border:1px solid #e6e7e3;border-radius:14px;background:#fbfaf7;color:#17202b;font-size:.76rem;font-weight:720}
+#todayView .daily-plan-add:hover{background:#f3eee4}
+#todayView .daily-plan-empty{min-height:128px;display:grid;align-content:center;justify-items:start;gap:5px;padding:10px 4px}
+#todayView .daily-plan-empty strong{color:#17202b;font-size:1.08rem;font-weight:720;letter-spacing:-.02em}
+#todayView .daily-plan-empty span{display:block;max-width:420px;color:#6f777d;font-size:.78rem;line-height:1.5}
+
+@media (max-width:600px){
+  #todayView .daily-plan-section{padding:15px;border-radius:21px}
+  #todayView .daily-plan-tabs{width:100%}
+  #todayView .daily-plan-tabs button{flex:1;min-width:0}
+  #todayView .daily-plan-item,#todayView .daily-plan-item.is-active{grid-template-columns:40px minmax(0,1fr)}
+  #todayView .daily-plan-actions{grid-column:2;justify-content:flex-start}
+}
