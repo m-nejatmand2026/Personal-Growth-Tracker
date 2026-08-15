@@ -92,7 +92,7 @@ test('Logger visual simplification preserves its mode legend and dynamic guidanc
 });
 
 test('primary capture wording is consistent across desktop rail topbar and mobile navigation', () => {
-  assert.match(indexHtml, /rail-log-btn[^>]*>[\s\S]*?gc-icon-add[\s\S]*? Add<\/button>/);
-  assert.match(indexHtml, /top-log-btn[^>]*>[\s\S]*?gc-icon-add[\s\S]*?<span>Add<\/span>/);
-  assert.match(indexHtml, /id="quickAddBtn"[\s\S]*?gc-icon-add[\s\S]*?<b>Add<\/b>/);
+  assert.match(indexHtml, /rail-log-btn[^>]*>[\s\S]*?＋<\/span> Add<\/button>/);
+  assert.match(indexHtml, /top-log-btn[^>]*>[\s\S]*?<span>Add<\/span>/);
+  assert.match(indexHtml, /id="quickAddBtn"[\s\S]*?<b>Add<\/b>/);
 });
