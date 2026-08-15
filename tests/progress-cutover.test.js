@@ -73,7 +73,7 @@ test('Universal Logger consumes canonical Activities capability plus Progress an
 test('Progress UI owns canonical history and deletion', () => {
   assert.match(progressUi, /\/api\/v1\/progress/);
   assert.match(progressUi, /data-delete-progress/);
-  assert.match(progressUi, /Beta history/);
+  assert.match(progressUi, /Earlier Beta/);
   assert.doesNotMatch(progressUi, /data-delete-session/);
   assert.doesNotMatch(progressUi, /state\.data|\/api\/history/);
 });
