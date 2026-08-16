@@ -67,11 +67,12 @@ test('navigation shell owns desktop Explore geometry without specificity escalat
   assert.ok(importantCount(shellCss) <= 1, `navigation shell must not grow a specificity arms race; found ${importantCount(shellCss)} !important declarations`);
 });
 
-test('Journal owns the Today preview instead of the global device recovery layer', () => {
+test('Journal owns the Today preview without rebuilding a specificity arms race', () => {
   assert.match(journalCss, /#todayView \.journal-preview\{/);
-  assert.match(journalCss, /grid-template-columns:minmax\(0,1fr\)!important/);
+  assert.match(journalCss, /grid-template-columns:minmax\(0,1fr\);/);
   assert.match(journalCss, /#todayView \.journal-preview-actions button:first-child/);
   assert.doesNotMatch(screenshotRecoveryCss, /#todayView \.journal-preview/);
+  assert.ok(importantCount(journalCss) <= 8, `Journal Today preview must keep shrinking legacy specificity debt; found ${importantCount(journalCss)} !important declarations`);
 });
 
 test('Goals owns the Plan goal launcher instead of the global device recovery layer', () => {
