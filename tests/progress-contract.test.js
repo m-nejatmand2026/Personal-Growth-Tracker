@@ -69,8 +69,8 @@ test('Progress API writes and deletes canonical factual records', () => {
 });
 
 test('Logger Done path consumes Activities capability and canonical Progress API', () => {
-  assert.match(app, /const activities = moduleRegistry\.get\('activities'\)/);
-  assert.match(app, /create\(\{ onSaved: load, activities \}\)/);
+  assert.match(app, /activities\s*=\s*moduleRegistry\.get\('activities'\)/);
+  assert.match(app, /create\(\{\s*onSaved:\s*load,\s*activities\s*\}\)/);
   assert.match(logger, /activityCapability\?\.list/);
   assert.match(logger, /activityCapability\.create/);
   assert.doesNotMatch(logger, /\/api\/v1\/activities|\/api\/v1\/goals/);
