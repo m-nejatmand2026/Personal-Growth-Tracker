@@ -151,20 +151,6 @@
   color: var(--gc-brand) !important;
 }
 
-/* Avoid the large white Add goal bar seen on the device. */
-#planView .goal-editor > summary {
-  width: 100% !important;
-  min-height: 48px !important;
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 14px !important;
-  border: 1px solid color-mix(in srgb, var(--gc-brand) 32%, var(--gc-border)) !important;
-  border-radius: 14px !important;
-  background: color-mix(in srgb, var(--gc-brand) 7%, var(--gc-surface)) !important;
-  color: var(--gc-brand) !important;
-  box-shadow: none !important;
-}
-
 @media (max-width: 760px) {
   /* Keep Explore compact and remove the accidental legacy gear glyph. */
   .topbar {

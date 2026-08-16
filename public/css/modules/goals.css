@@ -62,3 +62,17 @@
   .goal-row-menu-popover{position:fixed;z-index:150;top:auto;right:max(12px,env(safe-area-inset-right));bottom:calc(88px + env(safe-area-inset-bottom));left:max(12px,env(safe-area-inset-left));width:auto;padding:7px;border-radius:16px}
   .goal-row-menu-popover button{min-height:48px;font-size:12px}
 }
+
+/* Device-validated Plan launcher belongs to Goals, not the global recovery layer. */
+#planView .goal-editor>summary{
+  width:100%!important;
+  min-height:48px!important;
+  display:flex!important;
+  align-items:center!important;
+  padding:0 14px!important;
+  border:1px solid color-mix(in srgb,var(--gc-brand) 32%,var(--gc-border))!important;
+  border-radius:14px!important;
+  background:color-mix(in srgb,var(--gc-brand) 7%,var(--gc-surface))!important;
+  color:var(--gc-brand)!important;
+  box-shadow:none!important;
+}

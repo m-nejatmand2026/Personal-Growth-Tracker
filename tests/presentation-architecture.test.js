@@ -7,6 +7,7 @@ const indexHtml = await readFile(new URL('public/index.html', root), 'utf8');
 const designCss = await readFile(new URL('public/css/design-system.css', root), 'utf8');
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
 const screenshotRecoveryCss = await readFile(new URL('public/css/screenshot-recovery.css', root), 'utf8');
+const goalsCss = await readFile(new URL('public/css/modules/goals.css', root), 'utf8');
 const wellbeingTodayCss = await readFile(new URL('public/css/modules/wellbeing-today-sanctuary.css', root), 'utf8');
 const wellnessBreathingCss = await readFile(new URL('public/css/modules/wellness-breathing.css', root), 'utf8');
 const accessibilityCss = await readFile(new URL('public/css/accessibility-regression.css', root), 'utf8');
@@ -62,6 +63,12 @@ test('navigation shell owns desktop Explore geometry without specificity escalat
   assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.top-actions\{display:flex\}/);
   assert.doesNotMatch(accessibilityCss, /@media\(min-width:900px\)[\s\S]*\.topbar/);
   assert.ok(importantCount(shellCss) <= 1, `navigation shell must not grow a specificity arms race; found ${importantCount(shellCss)} !important declarations`);
+});
+
+test('Goals owns the Plan goal launcher instead of the global device recovery layer', () => {
+  assert.match(goalsCss, /#planView \.goal-editor>summary\{/);
+  assert.match(goalsCss, /min-height:48px!important/);
+  assert.doesNotMatch(screenshotRecoveryCss, /#planView \.goal-editor\s*>\s*summary/);
 });
 
 test('Today wellbeing presentation is owned by Wellbeing instead of the global device recovery layer', () => {
