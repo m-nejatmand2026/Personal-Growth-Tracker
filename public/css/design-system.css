@@ -1,24 +1,27 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* Canonical Growth Compass design tokens. */
-  --gc-bg: #f4f8f7;
-  --gc-surface: #ffffff;
-  --gc-surface-subtle: #f8fbfa;
-  --gc-text: #0d1b2a;
-  --gc-text-muted: #5f7078;
-  --gc-border: #dce8e5;
-  --gc-brand: #0f7775;
-  --gc-brand-strong: #0a5756;
-  --gc-brand-soft: #dff5ef;
-  --gc-brand-soft-strong: #bce9df;
-  --gc-info-soft: #e4eef7;
-  --gc-reflection-soft: #eee8f7;
-  --gc-warm-soft: #f6edc9;
-  --gc-danger: #a33b3b;
-  --gc-danger-soft: #fee2e2;
-  --gc-focus: #0a6664;
-  --gc-focus-halo: rgba(15, 119, 117, 0.16);
+  /* Canonical Growth Compass design tokens. These are the single runtime theme authority. */
+  --gc-bg: #051424;
+  --gc-surface: #0d1c2d;
+  --gc-surface-raised: #122131;
+  --gc-surface-subtle: #273647;
+  --gc-text: #ffffff;
+  --gc-text-muted: #c5c6cd;
+  --gc-text-quiet: #99a4b2;
+  --gc-text-on-brand: #051424;
+  --gc-border: #273647;
+  --gc-brand: #4edea3;
+  --gc-brand-strong: #29c98a;
+  --gc-brand-soft: #273647;
+  --gc-brand-soft-strong: #305244;
+  --gc-info-soft: #18334b;
+  --gc-reflection-soft: #302b48;
+  --gc-warm-soft: #493e23;
+  --gc-danger: #ff8f8f;
+  --gc-danger-soft: #4a2329;
+  --gc-focus: #4edea3;
+  --gc-focus-halo: rgba(78, 222, 163, 0.22);
 
   --gc-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --gc-text-xs: 0.6875rem;
@@ -42,15 +45,15 @@
   --gc-radius-xl: 1.5rem;
   --gc-radius-pill: 999px;
 
-  --gc-shadow-sm: 0 5px 18px rgba(15, 49, 52, 0.04);
-  --gc-shadow-md: 0 12px 36px rgba(15, 49, 52, 0.08);
-  --gc-shadow-lg: 0 24px 70px rgba(6, 24, 31, 0.18);
+  --gc-shadow-sm: none;
+  --gc-shadow-md: none;
+  --gc-shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.35);
   --gc-target-min: 44px;
   --gc-content-max: 1180px;
   --gc-motion-fast: 160ms;
   --gc-motion-normal: 240ms;
 
-  /* Compatibility aliases while the existing presentation CSS is migrated incrementally. */
+  /* Compatibility aliases while older module styles are migrated incrementally. */
   --bg: var(--gc-bg);
   --panel: var(--gc-surface);
   --text: var(--gc-text);
@@ -78,9 +81,14 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: var(--gc-bg);
+  color: var(--gc-text);
 }
 
 body {
+  background: var(--gc-bg);
+  background-image: none;
+  color: var(--gc-text);
   font-family: var(--gc-font-sans);
 }
 
@@ -138,7 +146,7 @@ body {
 
 .gc-button--primary {
   background: var(--gc-brand);
-  color: #ffffff;
+  color: var(--gc-text-on-brand);
 }
 
 .gc-button--secondary {
@@ -147,7 +155,7 @@ body {
 }
 
 .gc-button--quiet {
-  color: var(--gc-brand-strong);
+  color: var(--gc-brand);
 }
 
 .gc-surface {
@@ -179,7 +187,7 @@ body {
   height: 10px;
   margin: 6px 1px 0;
   border-radius: var(--gc-radius-pill);
-  background: #ecf1f0;
+  background: var(--gc-surface-subtle);
 }
 
 .gc-threshold__actual {
