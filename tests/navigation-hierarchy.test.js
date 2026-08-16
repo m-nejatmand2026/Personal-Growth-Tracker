@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const appSource = await readFile(new URL('../public/js/app.js', import.meta.url), 'utf8');
 const indexSource = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+const shellCss = await readFile(new URL('../public/css/navigation-shell.css', import.meta.url), 'utf8');
 const finalCss = await readFile(new URL('../public/css/accessibility-regression.css', import.meta.url), 'utf8');
 
 test('secondary Explore destinations do not become primary navigation state', () => {
@@ -32,6 +33,7 @@ test('desktop keeps secondary destinations behind the labeled Explore control', 
   assert.match(indexSource, /<button id="insightsBtn"[^>]*><strong>Insights<\/strong>/);
   assert.match(indexSource, /<button id="journalBtn"[^>]*><strong>Journal<\/strong>/);
   assert.match(indexSource, /<button id="settingsBtn"[^>]*><strong>Settings<\/strong>/);
-  assert.match(finalCss, /@media\(min-width:900px\)\{\.topbar\{display:flex!important/);
-  assert.match(finalCss, /\.topbar-title\{display:none!important\}\.top-actions\{display:flex!important\}/);
+  assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.topbar\{display:flex;position:fixed;z-index:95/);
+  assert.match(shellCss, /\.topbar-title\{display:none\}[\s\S]*\.top-actions\{display:flex\}/);
+  assert.doesNotMatch(finalCss, /@media\(min-width:900px\)[\s\S]*\.topbar/);
 });
