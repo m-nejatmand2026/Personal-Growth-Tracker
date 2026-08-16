@@ -41,8 +41,8 @@ export const boostContent = Object.freeze([
     durationMinutes: 5,
     category: 'Calm',
     icon: '∿',
-    summary: 'Reconnect with your breath.',
-    description: 'Use the breath as a simple anchor without forcing a particular rhythm.',
+    summary: 'Follow a guided breathing rhythm.',
+    description: 'A motion-guided breathing practice with a longer exhale and optional locally generated ambient sound.',
     cues: [
       { atSeconds: 0, text: 'Find a comfortable position and let your breathing be ordinary.' },
       { atSeconds: 35, text: 'Notice the beginning of an inhale, the middle, and the end. Then notice the exhale in the same way.' },
