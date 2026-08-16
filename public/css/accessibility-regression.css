@@ -52,6 +52,73 @@ body.gc-modal-open {
   display: block !important;
 }
 
+/* The semantic heading is the only wellbeing heading. Older visual layers
+   generated duplicate labels with pseudo-elements on this composition. */
+#todayView .today-state-section::before,
+#todayView .today-state-section::after,
+#todayView .today-state-section .os-section-head::before,
+#todayView .today-state-section .os-section-head::after,
+#todayView .today-state-section .os-section-head h2::before,
+#todayView .today-state-section .os-section-head h2::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Today Journal is a phone-first vertical composition. Force the real preview
+   back to one full-width content column after every older desktop split rule. */
+#todayView #journalPreview {
+  inline-size: 100% !important;
+  width: 100% !important;
+  max-inline-size: none !important;
+  max-width: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+#todayView #journalPreview .journal-preview-copy {
+  flex: 1 1 auto !important;
+  inline-size: 100% !important;
+  width: 100% !important;
+  min-inline-size: 0 !important;
+  min-width: 0 !important;
+  max-inline-size: none !important;
+  max-width: none !important;
+  display: block !important;
+}
+
+#todayView #journalPreview .journal-preview-copy h2 {
+  display: block !important;
+  inline-size: 100% !important;
+  width: 100% !important;
+  min-inline-size: 100% !important;
+  min-width: 100% !important;
+  max-inline-size: none !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  white-space: normal !important;
+}
+
+#todayView #journalPreview .journal-preview-copy p {
+  inline-size: 100% !important;
+  width: 100% !important;
+  max-inline-size: none !important;
+  max-width: none !important;
+}
+
+#todayView #journalPreview .journal-preview-actions {
+  position: static !important;
+  inset: auto !important;
+  flex: 0 0 auto !important;
+  inline-size: 100% !important;
+  width: 100% !important;
+  max-inline-size: none !important;
+  max-width: none !important;
+}
+
 :where(.shell, .workspace, .view, .os-section, .card, .plan-module-block, .plan-module-stack, .today-command, .today-composition, .progress-dashboard, .insights-hero) {
   min-inline-size: 0;
   max-inline-size: 100%;
