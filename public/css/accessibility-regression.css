@@ -37,6 +37,14 @@ body.gc-modal-open {
   outline: none;
 }
 
+/* Whole-surface interactive tiles must retain a visible focus indicator even
+   when focus is moved programmatically after touch or pointer interaction. */
+.gc-live-tile:focus,
+.gc-live-tile:focus-visible {
+  outline: 2px solid var(--gc-focus) !important;
+  outline-offset: 2px !important;
+}
+
 :where(.shell, .workspace, .view, .os-section, .card, .plan-module-block, .plan-module-stack, .today-command, .today-composition, .progress-dashboard, .insights-hero) {
   min-inline-size: 0;
   max-inline-size: 100%;
