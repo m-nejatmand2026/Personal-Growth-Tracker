@@ -11,6 +11,7 @@ const journalCss = await readFile(new URL('public/css/journal.css', root), 'utf8
 const goalsCss = await readFile(new URL('public/css/modules/goals.css', root), 'utf8');
 const wellbeingCss = await readFile(new URL('public/css/modules/wellbeing.css', root), 'utf8');
 const wellbeingTodayCss = await readFile(new URL('public/css/modules/wellbeing-today-sanctuary.css', root), 'utf8');
+const wellnessBoostCss = await readFile(new URL('public/css/modules/wellness-boost.css', root), 'utf8');
 const wellnessBreathingCss = await readFile(new URL('public/css/modules/wellness-breathing.css', root), 'utf8');
 const accessibilityCss = await readFile(new URL('public/css/accessibility-regression.css', root), 'utf8');
 
@@ -96,6 +97,12 @@ test('Today wellbeing presentation is owned by Wellbeing instead of the global d
   assert.match(wellbeingTodayCss, /var\(--gc-surface-raised\)/);
   assert.doesNotMatch(wellbeingTodayCss, /background:#fff|color:#17202b|#e6e7e3/);
   assert.doesNotMatch(screenshotRecoveryCss, /#todayView \.today-state-section|#todayView \.daily-state-grid|#todayView \.state-card(?:\s|\{|:|>)/);
+});
+
+test('Wellness owns mobile sanctuary alignment instead of the global device recovery layer', () => {
+  assert.match(wellnessBoostCss, /@media\(max-width:760px\)[\s\S]*#wellness-boostView \.living-wellness-hero/);
+  assert.match(wellnessBoostCss, /#wellness-boostView \.wellness-sanctuary-copy p\{margin-inline:auto!important\}/);
+  assert.doesNotMatch(screenshotRecoveryCss, /#wellness-boostView \.living-wellness-hero|#wellness-boostView \.wellness-sanctuary-copy/);
 });
 
 test('wellness breathing owns breathing presentation after recovery layers', () => {
