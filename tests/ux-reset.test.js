@@ -13,7 +13,13 @@ const rebuildCss = await readFile(new URL('../public/css/product-rebuild.css', i
 const pagesCss = await readFile(new URL('../public/css/product-rebuild-pages.css', import.meta.url), 'utf8');
 const accessibilityCss = await readFile(new URL('../public/css/accessibility-regression.css', import.meta.url), 'utf8');
 
-test('Product Rebuild layers override rejected Current presentation and accessibility remains last', () => { const semantics=indexHtml.indexOf('/css/figma-current-semantics.css');const rebuild=indexHtml.indexOf('/css/product-rebuild.css');const pages=indexHtml.indexOf('/css/product-rebuild-pages.css');const accessibility=indexHtml.indexOf('/css/accessibility-regression.css');assert.ok(semantics>=0&&semantics<rebuild&&rebuild<pages&&pages<accessibility); });
+test('Product Rebuild is authoritative and rejected presentation layers stay out of runtime', () => {
+  const rebuild=indexHtml.indexOf('/css/product-rebuild.css');
+  const pages=indexHtml.indexOf('/css/product-rebuild-pages.css');
+  const accessibility=indexHtml.indexOf('/css/accessibility-regression.css');
+  assert.ok(rebuild>=0&&rebuild<pages&&pages<accessibility);
+  assert.doesNotMatch(indexHtml,/\/css\/(?:ux-reset|living-canvas|figma-current(?:-live|-semantics)?)\.css/);
+});
 test('Today puts daily action and capacity first without moving business logic into composition', () => { assert.match(today,/\$\{dailyPlanPanel\}[\s\S]*\$\{capacityCard\(capacityModel\)\}/);assert.match(today,/gc-today-more/);assert.doesNotMatch(today,/\/api\/v1\/|fetch\(/); });
 test('Plan uses progressive disclosure while preserving module-owned rendering and dependencies', () => { assert.match(plan,/<details class="plan-module-block plan-module-disclosure"/);assert.match(plan,/module\.id === 'goals' \? 'open' : ''/);assert.match(plan,/module\.render\(/);assert.match(plan,/module\.bind\(/);assert.doesNotMatch(plan,/\/api\/v1\//); });
 test('Progress foregrounds factual evidence and keeps interpretation out', () => { assert.match(progress,/<h2 id="progressCurrentTitle">Progress<\/h2>/);assert.match(progress,/Recent activity/);assert.match(progress,/By goal/);assert.match(progress,/Evidence only here\. Interpretation belongs in Insights\./); });
