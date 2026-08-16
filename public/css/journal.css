@@ -21,11 +21,13 @@
 @media(max-width:430px){.journal-search{grid-template-columns:minmax(0,1fr) auto}.journal-search #journalClearFilters{grid-column:1/-1;width:max-content}.journal-new{padding-inline:13px}.journal-preview-copy p{display:none}}
 @media(min-width:640px){.journal-editor{width:min(620px,calc(100% - 32px));border-radius:26px}}
 
-/* Device-validated Today preview belongs to Journal rather than a global recovery layer. */
-#todayView .journal-preview{width:100%!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:15px!important;align-items:start!important;padding:18px!important;border:1px solid var(--gc-border)!important;border-radius:18px!important;background:linear-gradient(145deg,var(--gc-surface-raised),var(--gc-surface))!important}
-#todayView .journal-preview-copy{width:100%!important;min-width:0!important;display:grid!important;gap:5px!important}
-#todayView .journal-preview h2{width:100%!important;max-width:none!important;margin:0!important;color:var(--gc-text)!important;font-size:20px!important;line-height:1.25!important;overflow-wrap:normal!important;word-break:normal!important}
-#todayView .journal-preview p{max-width:34rem!important;margin:0!important;color:var(--gc-text-muted)!important;font-size:10px!important;line-height:1.45!important}
-#todayView .journal-preview-actions{width:100%!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
-#todayView .journal-preview-actions button{width:100%!important;min-height:46px!important;border:1px solid var(--gc-border)!important;border-radius:14px!important;background:var(--gc-surface-subtle)!important;color:var(--gc-text)!important;font-size:11px!important;font-weight:800!important}
-#todayView .journal-preview-actions button:first-child{border-color:color-mix(in srgb,var(--gc-brand) 56%,var(--gc-border))!important;background:color-mix(in srgb,var(--gc-brand) 14%,var(--gc-surface-raised))!important;color:var(--gc-brand)!important}
+/* Device-validated Today preview belongs to Journal rather than a global recovery layer.
+ * Only declarations still competing with the legacy recovery layer retain !important;
+ * the rest now rely on normal module specificity so the debt can be removed incrementally. */
+#todayView .journal-preview{width:100%;display:grid!important;grid-template-columns:minmax(0,1fr);gap:15px;align-items:start;padding:18px!important;border:1px solid var(--gc-border)!important;border-radius:18px!important;background:linear-gradient(145deg,var(--gc-surface-raised),var(--gc-surface))!important}
+#todayView .journal-preview-copy{width:100%;min-width:0;display:grid;gap:5px}
+#todayView .journal-preview h2{width:100%;max-width:none;margin:0;color:var(--gc-text);font-size:20px!important;line-height:1.25;overflow-wrap:normal;word-break:normal}
+#todayView .journal-preview p{max-width:34rem;margin:0;color:var(--gc-text-muted)!important;font-size:10px!important;line-height:1.45}
+#todayView .journal-preview-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#todayView .journal-preview-actions button{width:100%;min-height:46px;border:1px solid var(--gc-border);border-radius:14px;background:var(--gc-surface-subtle);color:var(--gc-text);font-size:11px;font-weight:800}
+#todayView .journal-preview-actions button:first-child{border-color:color-mix(in srgb,var(--gc-brand) 56%,var(--gc-border));background:color-mix(in srgb,var(--gc-brand) 14%,var(--gc-surface-raised));color:var(--gc-brand)}
