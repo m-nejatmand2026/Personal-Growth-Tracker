@@ -77,7 +77,8 @@ test('mobile Explore recovery is shell-owned and its transitional specificity de
   const transitionStart = shellCss.indexOf('/* Explore is a shell-owned destination control.');
   const desktopStart = shellCss.indexOf('@media (min-width:900px)');
   const transition = shellCss.slice(transitionStart, desktopStart);
-  assert.match(transition, /\.os-shell \.topbar\{[^}]*width:88px!important;[^}]*height:42px!important/);
+  assert.match(transition, /\.os-shell \.topbar\{[^}]*width:88px!important;[^}]*height:44px!important/);
+  assert.match(transition, /\.os-shell \.top-more>summary\{[^}]*height:44px!important/);
   assert.match(transition, /\.os-shell \.top-more>summary \.top-more-label\{[^}]*display:inline!important/);
   assert.match(transition, /\.workspace \.gc-today-header,[\s\S]*padding-right:98px!important/);
   assert.ok(importantCount(transition) <= 48, `mobile Explore transition debt grew to ${importantCount(transition)} !important declarations`);
