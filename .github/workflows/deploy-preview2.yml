@@ -1,0 +1,171 @@
+name: Deploy Preview 2
+
+on:
+  workflow_run:
+    workflows: [Quality]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: growth-compass-preview2
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview2:
+    name: Deploy tested experience-v2 head to Preview 2
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_branch == 'feature/experience-v2' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      vars.GC_PREVIEW2_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout exact tested Preview 2 commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Verify Preview 2 bootstrap values
+        shell: bash
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TESTED_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          TESTED_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+          PREVIEW2_DB_ID: ${{ vars.GC_PREVIEW2_D1_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          test "$TESTED_BRANCH" = "feature/experience-v2"
+          test "$TESTED_REPOSITORY" = "$GITHUB_REPOSITORY"
+          test "$(git rev-parse HEAD)" = "$TESTED_SHA"
+          test -n "$PREVIEW2_DB_ID" || { echo 'Missing repository variable GC_PREVIEW2_D1_ID.'; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN repository secret.'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID repository secret.'; exit 1; }
+          test -n "$CF_ACCESS_CLIENT_ID" || { echo 'Missing CF_ACCESS_CLIENT_ID repository secret.'; exit 1; }
+          test -n "$CF_ACCESS_CLIENT_SECRET" || { echo 'Missing CF_ACCESS_CLIENT_SECRET repository secret.'; exit 1; }
+
+      - name: Build isolated Preview 2 Wrangler config
+        shell: bash
+        env:
+          PREVIEW2_DB_ID: ${{ vars.GC_PREVIEW2_D1_ID }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('wrangler.jsonc', 'utf8'));
+          const production = config.d1_databases?.find((item) => item.binding === 'DB');
+          const preview1 = config.env?.preview?.d1_databases?.find((item) => item.binding === 'DB');
+          const preview2DbId = process.env.PREVIEW2_DB_ID;
+          const preview2DbName = 'personal-growth-tracker-preview2';
+          const preview2WorkerName = 'personal-growth-tracker-preview2';
+
+          if (config.name !== 'personal-growth-tracker') {
+            throw new Error(`Unexpected Worker base name: ${config.name}`);
+          }
+          if (!production?.database_id || !preview1?.database_id) {
+            throw new Error('Production and Preview 1 DB identities must remain explicit before Preview 2 can deploy.');
+          }
+          if (preview2DbId === production.database_id) {
+            throw new Error('Preview 2 points at Production D1. Refusing deployment.');
+          }
+          if (preview2DbId === preview1.database_id) {
+            throw new Error('Preview 2 points at Preview 1 D1. Refusing deployment.');
+          }
+
+          config.env ||= {};
+          config.env.preview2 = {
+            name: preview2WorkerName,
+            observability: {
+              enabled: true,
+              head_sampling_rate: 1
+            },
+            d1_databases: [
+              {
+                binding: 'DB',
+                database_name: preview2DbName,
+                database_id: preview2DbId,
+                migrations_dir: 'migrations'
+              }
+            ]
+          };
+
+          fs.writeFileSync('.wrangler.preview2.json', JSON.stringify(config, null, 2));
+          NODE
+
+      - name: Refuse automatic Preview 2 database migrations
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          output="$(npx --yes wrangler@4.123.0 d1 migrations list DB --remote --env preview2 --config .wrangler.preview2.json 2>&1)"
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -F 'No migrations to apply' >/dev/null || {
+            echo 'Preview 2 has pending D1 migrations. Automatic Worker deployment is blocked until Preview 2 migrations are reviewed and applied explicitly.'
+            exit 1
+          }
+
+      - name: Preview 2 dry run
+        shell: bash
+        run: npx --yes wrangler@4.123.0 deploy --dry-run --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2
+
+      - name: Deploy Preview 2 only
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: npx --yes wrangler@4.123.0 deploy --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2 --message "git:$TESTED_SHA"
+
+      - name: Verify Access boundary and smoke test Preview 2
+        shell: bash
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          base='https://personal-growth-tracker-preview2.m-nejatmand.workers.dev'
+
+          unauth_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$base/api/health")"
+          case "$unauth_status" in
+            2??)
+              echo "Unauthenticated Preview 2 health access returned HTTP $unauth_status. Cloudflare Access is not enforcing the private-Beta boundary."
+              exit 1
+              ;;
+          esac
+
+          curl_args=(
+            --fail
+            --silent
+            --show-error
+            --retry 5
+            --retry-delay 2
+            --retry-all-errors
+            --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID"
+            --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+          )
+
+          body="$(curl "${curl_args[@]}" "$base/")"
+          printf '%s' "$body" | grep -F 'Growth Compass' >/dev/null
+
+          health="$(curl "${curl_args[@]}" "$base/api/health")"
+          printf '%s' "$health" | grep -F '"status":"ok"' >/dev/null
+          printf '%s' "$health" | grep -F '"database":"ok"' >/dev/null
+
+          echo "Cloudflare Access boundary + UI + D1 health smoke tests passed for Preview 2: $base"
