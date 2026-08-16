@@ -8,6 +8,7 @@ const designCss = await readFile(new URL('public/css/design-system.css', root), 
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
 const screenshotRecoveryCss = await readFile(new URL('public/css/screenshot-recovery.css', root), 'utf8');
 const goalsCss = await readFile(new URL('public/css/modules/goals.css', root), 'utf8');
+const wellbeingCss = await readFile(new URL('public/css/modules/wellbeing.css', root), 'utf8');
 const wellbeingTodayCss = await readFile(new URL('public/css/modules/wellbeing-today-sanctuary.css', root), 'utf8');
 const wellnessBreathingCss = await readFile(new URL('public/css/modules/wellness-breathing.css', root), 'utf8');
 const accessibilityCss = await readFile(new URL('public/css/accessibility-regression.css', root), 'utf8');
@@ -69,6 +70,13 @@ test('Goals owns the Plan goal launcher instead of the global device recovery la
   assert.match(goalsCss, /#planView \.goal-editor>summary\{/);
   assert.match(goalsCss, /min-height:48px!important/);
   assert.doesNotMatch(screenshotRecoveryCss, /#planView \.goal-editor\s*>\s*summary/);
+});
+
+test('Wellbeing owns Energy presentation instead of the global device recovery layer', () => {
+  assert.match(wellbeingCss, /#todayView \.energy-drawer\{/);
+  assert.match(wellbeingCss, /#todayView \.energy-grid\{/);
+  assert.match(wellbeingCss, /#todayView \.energy-cell\.selected/);
+  assert.doesNotMatch(screenshotRecoveryCss, /#todayView \.energy-(?:drawer|grid|cell|axis)/);
 });
 
 test('Today wellbeing presentation is owned by Wellbeing instead of the global device recovery layer', () => {
