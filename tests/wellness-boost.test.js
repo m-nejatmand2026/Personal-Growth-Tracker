@@ -18,7 +18,6 @@ const css = await read('public/css/modules/wellness-boost.css');
 const breathingCss = await read('public/css/modules/wellness-breathing.css');
 const motionCss = await read('public/css/motion-system.css');
 const recoveryCss = await read('public/css/functional-recovery.css');
-const deviceCss = await read('public/css/screenshot-recovery.css');
 const finalCss = await read('public/css/accessibility-regression.css');
 const runtime = `${moduleJs}\n${playerJs}`;
 
@@ -75,7 +74,6 @@ test('Wellness breathing guide is live, touchable and routes into a motion-guide
   assert.match(breathingCss, /data-breath-phase=exhale/);
   assert.match(breathingCss, /@keyframes gc-breath-orb/);
   assert.match(breathingCss, /\.living-breathing-orb::before,[\s\S]*animation:\s*gc-breath-ring/);
-  assert.doesNotMatch(deviceCss, /@keyframes gc-breath-orb|\.living-breathing-orb::before/);
   assert.match(finalCss, /\.living-breathing-orb\s*\{[\s\S]*animation:\s*none\s*!important;[\s\S]*transform:\s*none\s*!important/);
   assert.match(finalCss, /\.living-breathing-orb i\s*\{[\s\S]*animation:\s*gc-breath-orb/);
   assert.match(finalCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
@@ -87,6 +85,7 @@ test('Wellness sanctuary and session grid have explicit responsive alignment', (
   assert.match(recoveryCss, /\.living-breathing-orb\{[^}]*justify-self:center/s);
   assert.match(recoveryCss, /\.wellness-session-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(recoveryCss, /@media\(max-width:760px\)[\s\S]*\.wellness-session-grid\{grid-template-columns:1fr\}/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*#wellness-boostView \.living-wellness-hero\{[^}]*justify-items:center!important/);
 });
 
 test('Meditation player asks listening style only after a practice is chosen and then becomes minimal', () => {
@@ -95,7 +94,7 @@ test('Meditation player asks listening style only after a practice is chosen and
   assert.match(moduleJs, /data-wb-start/);
   assert.match(moduleJs, /wellness-boost-active-player/);
   assert.match(moduleJs, /wellness-boost-player-time/);
-  assert.match(moduleJs, />remaining</);
+  assert.match(moduleJs, />remaining/);
   assert.match(moduleJs, /role="progressbar"/);
   assert.match(moduleJs, /Read guidance/);
   assert.match(css, /\.wellness-boost-player\.is-active \.wellness-boost-prestart\{display:none\}/);

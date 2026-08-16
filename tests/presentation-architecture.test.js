@@ -6,7 +6,6 @@ const root = new URL('../', import.meta.url);
 const indexHtml = await readFile(new URL('public/index.html', root), 'utf8');
 const designCss = await readFile(new URL('public/css/design-system.css', root), 'utf8');
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
-const screenshotRecoveryCss = await readFile(new URL('public/css/screenshot-recovery.css', root), 'utf8');
 const journalCss = await readFile(new URL('public/css/journal.css', root), 'utf8');
 const goalsCss = await readFile(new URL('public/css/modules/goals.css', root), 'utf8');
 const wellbeingCss = await readFile(new URL('public/css/modules/wellbeing.css', root), 'utf8');
@@ -21,7 +20,8 @@ const retiredPresentationFiles = [
   'public/css/figma-current.css',
   'public/css/figma-current-live.css',
   'public/css/figma-current-semantics.css',
-  'public/css/product-polish.css'
+  'public/css/product-polish.css',
+  'public/css/screenshot-recovery.css'
 ];
 
 function stylesheetIndex(path) {
@@ -88,51 +88,45 @@ test('Journal owns the Today preview without rebuilding a specificity arms race'
   assert.match(journalCss, /#todayView \.journal-preview\{/);
   assert.match(journalCss, /grid-template-columns:minmax\(0,1fr\);/);
   assert.match(journalCss, /#todayView \.journal-preview-actions button:first-child/);
-  assert.doesNotMatch(screenshotRecoveryCss, /#todayView \.journal-preview/);
   assert.ok(importantCount(journalCss) <= 8, `Journal Today preview must keep shrinking legacy specificity debt; found ${importantCount(journalCss)} !important declarations`);
 });
 
-test('Goals owns the Plan goal launcher instead of the global device recovery layer', () => {
+test('Goals owns the Plan goal launcher instead of a global device recovery layer', () => {
   assert.match(goalsCss, /#planView \.goal-editor>summary\{/);
   assert.match(goalsCss, /min-height:48px!important/);
-  assert.doesNotMatch(screenshotRecoveryCss, /#planView \.goal-editor\s*>\s*summary/);
 });
 
-test('Wellbeing owns Energy presentation instead of the global device recovery layer', () => {
+test('Wellbeing owns Energy presentation instead of a global device recovery layer', () => {
   assert.match(wellbeingCss, /#todayView \.energy-drawer\{/);
   assert.match(wellbeingCss, /#todayView \.energy-grid\{/);
   assert.match(wellbeingCss, /#todayView \.energy-cell\.selected/);
-  assert.doesNotMatch(screenshotRecoveryCss, /#todayView \.energy-(?:drawer|grid|cell|axis)/);
 });
 
-test('Today wellbeing presentation is owned by Wellbeing instead of the global device recovery layer', () => {
+test('Today wellbeing presentation is owned by Wellbeing instead of a global device recovery layer', () => {
   assert.match(wellbeingTodayCss, /#todayView \.today-state-section\{/);
   assert.match(wellbeingTodayCss, /#todayView \.daily-state-grid\{/);
   assert.match(wellbeingTodayCss, /#todayView \.state-card\{/);
   assert.match(wellbeingTodayCss, /var\(--gc-surface-raised\)/);
   assert.doesNotMatch(wellbeingTodayCss, /background:#fff|color:#17202b|#e6e7e3/);
-  assert.doesNotMatch(screenshotRecoveryCss, /#todayView \.today-state-section|#todayView \.daily-state-grid|#todayView \.state-card(?:\s|\{|:|>)/);
 });
 
-test('Wellness owns mobile sanctuary alignment instead of the global device recovery layer', () => {
+test('Wellness owns mobile sanctuary alignment instead of a global device recovery layer', () => {
   assert.match(wellnessBoostCss, /@media\(max-width:760px\)[\s\S]*#wellness-boostView \.living-wellness-hero/);
   assert.match(wellnessBoostCss, /#wellness-boostView \.wellness-sanctuary-copy p\{margin-inline:auto!important\}/);
-  assert.doesNotMatch(screenshotRecoveryCss, /#wellness-boostView \.living-wellness-hero|#wellness-boostView \.wellness-sanctuary-copy/);
 });
 
 test('wellness breathing owns breathing presentation after recovery layers', () => {
-  const screenshotRecovery = stylesheetIndex('/css/screenshot-recovery.css');
+  const recovery = stylesheetIndex('/css/functional-recovery.css');
   const breathing = stylesheetIndex('/css/modules/wellness-breathing.css');
   const accessibility = stylesheetIndex('/css/accessibility-regression.css');
-  assert.ok(screenshotRecovery >= 0 && breathing > screenshotRecovery && accessibility > breathing, 'wellness breathing must graduate device fixes out of global recovery while accessibility stays final');
+  assert.ok(recovery >= 0 && breathing > recovery && accessibility > breathing, 'wellness breathing must remain later than legacy recovery while accessibility stays final');
   assert.match(wellnessBreathingCss, /\.living-breathing-orb\{/);
   assert.match(wellnessBreathingCss, /@keyframes gc-breath-orb/);
   assert.match(wellnessBreathingCss, /@media\(prefers-reduced-motion:reduce\)[\s\S]*\.living-breathing-orb/);
-  assert.doesNotMatch(screenshotRecoveryCss, /\.living-breathing-orb|gc-breath-orb|gc-breath-ring/);
 });
 
 test('runtime stylesheet count stays bounded while module-owned sheets remain independent', () => {
   const stylesheets = runtimeStylesheets();
-  assert.ok(stylesheets.length <= 31, `runtime stylesheet count grew to ${stylesheets.length}; add styles to an existing owner instead of another global override layer`);
+  assert.ok(stylesheets.length <= 30, `runtime stylesheet count grew to ${stylesheets.length}; add styles to an existing owner instead of another global override layer`);
   assert.ok(stylesheets.filter((path) => path.startsWith('/css/modules/')).length >= 10, 'business modules should keep owning their presentation');
 });

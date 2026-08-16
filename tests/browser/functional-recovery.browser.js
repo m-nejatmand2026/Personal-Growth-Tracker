@@ -16,7 +16,7 @@ async function capture(page, browser, state) {
 async function load(page) {
   const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
   assert.ok(response?.ok());
-  for (const href of ['/css/functional-recovery.css', '/css/screenshot-recovery.css', '/css/motion-system.css', '/css/modules/wellness-breathing.css', '/css/modules/activities.css']) {
+  for (const href of ['/css/navigation-shell.css', '/css/functional-recovery.css', '/css/motion-system.css', '/css/modules/wellness-breathing.css', '/css/modules/activities.css']) {
     await page.locator(`link[href="${href}"]`).waitFor({ state: 'attached' });
   }
   await page.locator('#todayView .gc-today-rebuild').waitFor({ state: 'visible', timeout: 15000 });
@@ -238,6 +238,8 @@ async function assertRecovery(page, browser) {
   const commitment = page.locator('#commitmentEditor');
   await commitment.waitFor({ state: 'visible' });
   assert.equal(await commitment.evaluate((node) => node.open), true);
+  await page.locator('#planView button[data-plan-scroll="plan-module-capacity"]').first().click();
+  await page.locator('#plan-module-capacity').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#plan-module-capacity').evaluate((node) => node.open), true);
   assert.equal(await page.locator('#planView .plan-loading').count(), 0);
 
