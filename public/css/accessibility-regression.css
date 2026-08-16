@@ -45,6 +45,13 @@ body.gc-modal-open {
   outline-offset: 2px !important;
 }
 
+/* A closed Energy disclosure must still expose its summary. This final rule
+   prevents obsolete prototype CSS from suppressing the real module-owned
+   check-in before the visible Energy card opens it. */
+#todayView .energy-drawer {
+  display: block !important;
+}
+
 :where(.shell, .workspace, .view, .os-section, .card, .plan-module-block, .plan-module-stack, .today-command, .today-composition, .progress-dashboard, .insights-hero) {
   min-inline-size: 0;
   max-inline-size: 100%;
@@ -83,6 +90,28 @@ body.gc-modal-open {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+@media (max-width: 760px) {
+  /* Keep the secondary navigation aligned with the first page heading rather
+     than floating into content. The 44px height also preserves touch size. */
+  .topbar {
+    top: max(24px, env(safe-area-inset-top)) !important;
+    height: 44px !important;
+  }
+
+  .top-actions,
+  .top-more,
+  .top-more > summary {
+    height: 44px !important;
+  }
+
+  #topMore > summary .top-more-spark,
+  #topMore > summary .top-more-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+  }
 }
 
 @media (max-width: 375px) {
