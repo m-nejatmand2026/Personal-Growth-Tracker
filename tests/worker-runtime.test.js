@@ -17,6 +17,11 @@ function assertSecurityHeaders(response) {
   assert.match(response.headers.get('strict-transport-security') || '', /max-age=31536000/);
 }
 
+function assetPath(received) {
+  const target = received instanceof Request ? received.url : String(received);
+  return new URL(target).pathname;
+}
+
 test('Worker routes unknown API requests through the real API router', async () => {
   const response = await worker.fetch(
     new Request('https://growth-compass.test/api/does-not-exist'),
@@ -121,6 +126,54 @@ test('Worker does not disclose unexpected internal errors and logs only operatio
   } finally {
     console.error = originalError;
   }
+});
+
+test('Worker serves the Preview 2 selector from its dedicated static entrypoint', async () => {
+  const calls = [];
+  const selector = '<!doctype html><html><body>Current / Recovered · New / Ambient Luxury</body></html>';
+  const response = await worker.fetch(
+    new Request('https://growth-compass.test/'),
+    {
+      ASSETS: {
+        async fetch(received) {
+          calls.push(assetPath(received));
+          return new Response(selector, { status: 200, headers: { 'content-type': 'text/html' } });
+        }
+      }
+    }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(response.headers.get('content-type'), 'text/html; charset=utf-8');
+  assertSecurityHeaders(response);
+  assert.equal(await response.text(), selector);
+  assert.deepEqual(calls, ['/selector/index.html']);
+});
+
+test('Worker serves Experience 1 through the frozen-source runtime adapter', async () => {
+  const calls = [];
+  const recovered = '<!doctype html><html><head><link rel="manifest" href="/manifest.webmanifest"></head><body>Recovered</body></html>';
+  const response = await worker.fetch(
+    new Request('https://growth-compass.test/experience/1/'),
+    {
+      ASSETS: {
+        async fetch(received) {
+          calls.push(assetPath(received));
+          return new Response(recovered, { status: 200, headers: { 'content-type': 'text/html' } });
+        }
+      }
+    }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assertSecurityHeaders(response);
+  const html = await response.text();
+  assert.match(html, /href="\/experience\/1\/manifest\.webmanifest"/);
+  assert.match(html, /src="\/experience\/1\/bootstrap\.js"/);
+  assert.equal(html.includes('href="/manifest.webmanifest"'), false);
+  assert.deepEqual(calls, ['/experience/1/index.html']);
 });
 
 test('Worker delegates non-API requests to the bound asset service and adds browser security headers', async () => {
