@@ -8,12 +8,13 @@ const designCss = await readFile(new URL('public/css/design-system.css', root), 
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
 const accessibilityCss = await readFile(new URL('public/css/accessibility-regression.css', root), 'utf8');
 
-const rejectedPresentationFiles = [
+const retiredPresentationFiles = [
   'public/css/ux-reset.css',
   'public/css/living-canvas.css',
   'public/css/figma-current.css',
   'public/css/figma-current-live.css',
-  'public/css/figma-current-semantics.css'
+  'public/css/figma-current-semantics.css',
+  'public/css/product-polish.css'
 ];
 
 function stylesheetIndex(path) {
@@ -28,8 +29,8 @@ function importantCount(source) {
   return (source.match(/!important/g) || []).length;
 }
 
-test('rejected presentation generations are physically absent and cannot return to runtime', async () => {
-  for (const path of rejectedPresentationFiles) {
+test('retired presentation generations are physically absent and cannot return to runtime', async () => {
+  for (const path of retiredPresentationFiles) {
     assert.doesNotMatch(indexHtml, new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     await assert.rejects(access(new URL(path, root)), undefined, `${path} must stay deleted`);
   }
@@ -62,6 +63,6 @@ test('navigation shell owns desktop Explore geometry without specificity escalat
 
 test('runtime stylesheet count stays bounded while module-owned sheets remain independent', () => {
   const stylesheets = runtimeStylesheets();
-  assert.ok(stylesheets.length <= 32, `runtime stylesheet count grew to ${stylesheets.length}; add styles to an existing owner instead of another global override layer`);
+  assert.ok(stylesheets.length <= 31, `runtime stylesheet count grew to ${stylesheets.length}; add styles to an existing owner instead of another global override layer`);
   assert.ok(stylesheets.filter((path) => path.startsWith('/css/modules/')).length >= 10, 'business modules should keep owning their presentation');
 });
