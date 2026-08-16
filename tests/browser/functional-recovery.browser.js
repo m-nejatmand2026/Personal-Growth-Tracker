@@ -139,10 +139,14 @@ async function assertWellness(page, browser) {
   assert.equal(await orb.evaluate((node) => node.tagName), 'BUTTON', `${browser}: breathing guide must be interactive`);
   const orbStyle = await orb.evaluate((node) => ({
     animationName: getComputedStyle(node).animationName,
+    transform: getComputedStyle(node).transform,
+    innerAnimation: getComputedStyle(node.querySelector('i')).animationName,
     backgroundImage: getComputedStyle(node).backgroundImage,
     backgroundColor: getComputedStyle(node).backgroundColor
   }));
-  assert.notEqual(orbStyle.animationName, 'none', `${browser}: breathing guide must visibly breathe`);
+  assert.equal(orbStyle.animationName, 'none', `${browser}: breathing hit target must stay stable`);
+  assert.ok(orbStyle.transform === 'none' || orbStyle.transform === 'matrix(1, 0, 0, 1, 0, 0)', `${browser}: breathing hit target must not move`);
+  assert.notEqual(orbStyle.innerAnimation, 'none', `${browser}: breathing guide must still visibly breathe`);
   assert.notEqual(orbStyle.backgroundColor, 'rgb(255, 255, 255)', `${browser}: breathing guide must not use a white/light fallback`);
   assert.notEqual(orbStyle.backgroundImage, 'none', `${browser}: breathing guide must use the dark/mint treatment`);
 
