@@ -20,6 +20,10 @@ function stylesheetIndex(path) {
   return indexHtml.indexOf(`href="${path}"`);
 }
 
+function runtimeStylesheets() {
+  return [...indexHtml.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
+}
+
 function importantCount(source) {
   return (source.match(/!important/g) || []).length;
 }
@@ -39,7 +43,7 @@ test('runtime presentation follows foundation then design system then shell then
   const motion = stylesheetIndex('/css/motion-system.css');
   const accessibility = stylesheetIndex('/css/accessibility-regression.css');
   assert.ok(design >= 0 && shell > design && rebuild > shell && pages > rebuild && motion > pages && accessibility > motion);
-  assert.equal(accessibility, indexHtml.lastIndexOf('rel="stylesheet"'), 'accessibility safeguards must remain the final stylesheet');
+  assert.equal(runtimeStylesheets().at(-1), '/css/accessibility-regression.css', 'accessibility safeguards must remain the final stylesheet');
 });
 
 test('canonical design system owns theme tokens instead of composition sheets', () => {
@@ -57,7 +61,7 @@ test('navigation shell owns desktop Explore geometry without specificity escalat
 });
 
 test('runtime stylesheet count stays bounded while module-owned sheets remain independent', () => {
-  const stylesheets = [...indexHtml.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
+  const stylesheets = runtimeStylesheets();
   assert.ok(stylesheets.length <= 32, `runtime stylesheet count grew to ${stylesheets.length}; add styles to an existing owner instead of another global override layer`);
   assert.ok(stylesheets.filter((path) => path.startsWith('/css/modules/')).length >= 10, 'business modules should keep owning their presentation');
 });
