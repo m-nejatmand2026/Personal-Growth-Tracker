@@ -18,7 +18,7 @@ export function renderSettings() {
     </section>
     <section class="gc-settings-section">
       <div class="gc-section-title"><div><span>Planning</span><h3>Managed in context</h3></div></div>
-      <div class="gc-settings-note"><strong>Goals, time budgets and capacity live in Plan.</strong><p>Planning controls stay beside the information they change instead of being duplicated here.</p></div>
+      <div class="gc-settings-note"><strong>Planning belongs in Plan.</strong><p>Goals, time budgets and capacity live in Plan beside the information they change instead of being duplicated here.</p></div>
     </section>
   </section>`;
 }
