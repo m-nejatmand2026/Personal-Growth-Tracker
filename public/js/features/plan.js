@@ -164,6 +164,12 @@ export async function renderPlan({ reload, openLogger } = {}) {
   const root = $('#planView');
   if (!root) return;
 
+  // A module save rerenders Plan. Preserve the user's current disclosure/editor
+  // context so a successful action does not immediately hide its result.
+  const openDisclosureIds = new Set(
+    [...root.querySelectorAll('details[open][id]')].map((node) => node.id)
+  );
+
   const enabled = registry.enabled().filter((module) => module.slots.some((slot) => slot.name === 'plan'));
   const results = {};
 
@@ -211,6 +217,11 @@ export async function renderPlan({ reload, openLogger } = {}) {
     }).join('');
 
   root.innerHTML = `${planOverview(enabled, results)}${planWorkingSurface(enabled, results)}${planNavigation()}<div class="plan-module-stack">${panels}</div><details id="compassSection" class="compass-section plan-module-disclosure"><summary class="plan-module-summary"><div><strong>Compass</strong><small>Long-range direction</small></div><span aria-hidden="true">⌄</span></summary><div class="plan-module-content"><div class="gc-sr-only">Long-term direction. Directional, editable, never contractual.</div>${legacyPlanHtml()}</div></details>`;
+
+  for (const id of openDisclosureIds) {
+    const disclosure = document.getElementById(id);
+    if (disclosure?.matches('details')) disclosure.open = true;
+  }
 
   $('#planActivityButton')?.addEventListener('click', () => void openLogger?.({ entryMode: 'planned', date: state.date }));
 
