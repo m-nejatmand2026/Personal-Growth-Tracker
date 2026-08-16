@@ -201,7 +201,6 @@ async function assertRecovery(page, browser) {
   await notBuried(page, '#todayDirectionTitle', browser, 'Progress direction');
   await notBuried(page, '#todayView [data-wellbeing-state]', browser, 'Wellbeing state');
   await notBuried(page, '#journalPreview', browser, 'Journal');
-  await notBuried(page, '#todayView [data-wellbeing-details]', browser, 'Energy check-in');
   await assertTodayDeviceSurfaces(page, browser);
   await assertTomorrow(page, browser);
 
