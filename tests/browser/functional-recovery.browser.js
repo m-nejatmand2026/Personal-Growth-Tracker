@@ -28,6 +28,37 @@ async function notBuried(page, selector, browser, label) {
   assert.equal(await node.evaluate((element) => Boolean(element.closest('details.gc-today-more'))), false, `${browser}: ${label} must stay visible on Today`);
 }
 
+async function assertTodayDeviceSurfaces(page, browser) {
+  const stateCard = page.locator('#todayView .state-card').first();
+  await stateCard.waitFor({ state: 'visible' });
+  const stateStyle = await stateCard.evaluate((node) => ({
+    backgroundColor: getComputedStyle(node).backgroundColor,
+    color: getComputedStyle(node).color
+  }));
+  assert.notEqual(stateStyle.backgroundColor, 'rgb(255, 255, 255)', `${browser}: wellbeing cards must not regress to white`);
+  assert.notEqual(stateStyle.color, 'rgb(23, 32, 43)', `${browser}: wellbeing text must use the dark Current palette`);
+
+  const energyButton = page.locator('#todayView [data-open-wellbeing-energy]');
+  await energyButton.click();
+  const energyDrawer = page.locator('#todayView [data-wellbeing-details]');
+  await energyDrawer.waitFor({ state: 'visible' });
+  assert.equal(await energyDrawer.evaluate((node) => node.open), true, `${browser}: Energy must open its check-in directly`);
+  await page.locator('#todayView .energy-grid').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#todayView [data-wellbeing-energy-cell]').count(), 36, `${browser}: Energy map must render all 36 states`);
+  await capture(page, browser, 'today-energy-map');
+  await energyDrawer.evaluate((node) => { node.open = false; });
+
+  const journalHeading = page.locator('#journalPreview h2');
+  await journalHeading.waitFor({ state: 'visible' });
+  const journalBox = await journalHeading.boundingBox();
+  assert.ok(journalBox?.width >= 220, `${browser}: Journal prompt must keep a usable mobile line width`);
+  assert.equal(await journalHeading.evaluate((node) => getComputedStyle(node).wordBreak), 'normal');
+
+  const exploreLabel = page.locator('#topMore .top-more-label');
+  const legacyPseudo = await exploreLabel.evaluate((node) => getComputedStyle(node, '::before').content);
+  assert.ok(legacyPseudo === 'none' || legacyPseudo === 'normal' || legacyPseudo === '""', `${browser}: legacy Settings gear must not be generated inside Explore`);
+}
+
 async function assertTomorrow(page, browser) {
   const tomorrow = page.locator('.gc-tomorrow-plan');
   await tomorrow.waitFor({ state: 'visible' });
@@ -70,6 +101,17 @@ async function assertGoalTiles(page, browser) {
   assert.ok(focused.background || before);
 }
 
+async function assertGoalEditorSurface(page, browser) {
+  const goalsDisclosure = page.locator('#plan-module-goals');
+  if (await goalsDisclosure.count()) {
+    if (!(await goalsDisclosure.evaluate((node) => node.open))) await goalsDisclosure.locator(':scope > summary').click();
+    const addGoal = page.locator('#goalEditor > summary');
+    await addGoal.waitFor({ state: 'visible' });
+    const background = await addGoal.evaluate((node) => getComputedStyle(node).backgroundColor);
+    assert.notEqual(background, 'rgb(255, 255, 255)', `${browser}: Add goal must not regress to a white bar`);
+  }
+}
+
 async function assertSettingsContrast(page, browser) {
   const summary = page.locator('#topMore > summary');
   await summary.click();
@@ -91,13 +133,33 @@ async function assertWellness(page, browser) {
   const layout = await tiles.evaluateAll((nodes) => nodes.map((node) => { const rect = node.getBoundingClientRect(); return { left: rect.left, width: rect.width }; }));
   assert.ok(Math.max(...layout.map((item) => item.width)) - Math.min(...layout.map((item) => item.width)) <= 1, `${browser}: Wellness tiles must align to equal widths`);
   assert.ok(Math.max(...layout.map((item) => item.left)) - Math.min(...layout.map((item) => item.left)) <= 1, `${browser}: mobile Wellness tiles must share one grid edge`);
+
+  const orb = page.locator('.living-breathing-orb');
+  await orb.waitFor({ state: 'visible' });
+  assert.equal(await orb.evaluate((node) => node.tagName), 'BUTTON', `${browser}: breathing guide must be interactive`);
+  const orbStyle = await orb.evaluate((node) => ({
+    animationName: getComputedStyle(node).animationName,
+    backgroundImage: getComputedStyle(node).backgroundImage,
+    backgroundColor: getComputedStyle(node).backgroundColor
+  }));
+  assert.notEqual(orbStyle.animationName, 'none', `${browser}: breathing guide must visibly breathe`);
+  assert.notEqual(orbStyle.backgroundColor, 'rgb(255, 255, 255)', `${browser}: breathing guide must not use a white/light fallback`);
+  assert.notEqual(orbStyle.backgroundImage, 'none', `${browser}: breathing guide must use the dark/mint treatment`);
+
   const centers = await page.evaluate(() => {
     const hero = document.querySelector('.living-wellness-hero')?.getBoundingClientRect();
-    const orb = document.querySelector('.living-breathing-orb')?.getBoundingClientRect();
-    return hero && orb ? { hero: hero.left + hero.width / 2, orb: orb.left + orb.width / 2 } : null;
+    const breathing = document.querySelector('.living-breathing-orb')?.getBoundingClientRect();
+    return hero && breathing ? { hero: hero.left + hero.width / 2, orb: breathing.left + breathing.width / 2 } : null;
   });
   assert.ok(centers && Math.abs(centers.hero - centers.orb) <= 5, `${browser}: breathing orb must align with sanctuary on mobile`);
   await capture(page, browser, 'wellness-aligned');
+
+  await orb.click();
+  const player = page.locator('#wellness-boostView .wellness-boost-player-view');
+  await player.waitFor({ state: 'visible' });
+  assert.equal((await page.locator('#wellnessBoostPlayerTitle').innerText()).trim(), 'A steadier breath', `${browser}: breathing guide tap must open the breath practice`);
+  await page.locator('[data-wb-back]').click();
+  await page.locator('#wellness-boostView .wellness-boost-library-view').waitFor({ state: 'visible' });
 }
 
 async function startAndAssertTimer(page, browser, activityName) {
@@ -139,12 +201,14 @@ async function assertRecovery(page, browser) {
   await notBuried(page, '#todayDirectionTitle', browser, 'Progress direction');
   await notBuried(page, '#todayView [data-wellbeing-state]', browser, 'Wellbeing state');
   await notBuried(page, '#journalPreview', browser, 'Journal');
+  await notBuried(page, '#todayView [data-wellbeing-details]', browser, 'Energy check-in');
+  await assertTodayDeviceSurfaces(page, browser);
   await assertTomorrow(page, browser);
 
   const explore = page.locator('#topMore > summary');
   assert.match(await explore.innerText(), /Explore/i);
   const box = await explore.boundingBox();
-  assert.ok(box?.width >= 78, `${browser}: Explore must stay labeled on mobile`);
+  assert.ok(box?.width >= 78 && box.width <= 96, `${browser}: Explore must stay compact and labeled on mobile`);
 
   await page.locator('#quickAddBtn').click();
   await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({ state: 'visible' });
@@ -154,6 +218,7 @@ async function assertRecovery(page, browser) {
   await page.locator('.nav-btn[data-view="plan"]').click();
   await page.locator('#planView .gc-plan-working').waitFor({ state: 'visible' });
   await assertGoalTiles(page, browser);
+  await assertGoalEditorSurface(page, browser);
   const activityName = await createActivity(page, browser);
   await capture(page, browser, 'plan-live-tiles');
 
