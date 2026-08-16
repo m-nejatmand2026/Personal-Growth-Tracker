@@ -1,4 +1,5 @@
 name: Preview 2 Cloudflare Probe
+# Permission recheck after Cloudflare D1 Write was enabled on the shared Preview token.
 
 on:
   push:
