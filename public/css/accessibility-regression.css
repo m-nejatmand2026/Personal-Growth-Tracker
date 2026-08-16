@@ -45,6 +45,18 @@ body.gc-modal-open {
   outline-offset: 2px !important;
 }
 
+/* A live breathing guide must never move its hit target. The button stays
+   geometrically stable while the decorative inner core and outer rings pulse. */
+.living-breathing-orb {
+  animation: none !important;
+  transform: none !important;
+}
+
+.living-breathing-orb i {
+  transform-origin: center !important;
+  animation: gc-breath-orb 8s ease-in-out infinite !important;
+}
+
 /* A closed Energy disclosure must still expose its summary. This final rule
    prevents obsolete prototype CSS from suppressing the real module-owned
    check-in before the visible Energy card opens it. */
@@ -199,5 +211,13 @@ body.gc-modal-open {
 
   .gc-skip-link {
     transition: none;
+  }
+
+  .living-breathing-orb,
+  .living-breathing-orb i,
+  .living-breathing-orb::before,
+  .living-breathing-orb::after {
+    animation: none !important;
+    transform: none !important;
   }
 }
