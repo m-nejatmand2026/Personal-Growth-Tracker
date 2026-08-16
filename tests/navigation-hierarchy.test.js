@@ -32,5 +32,6 @@ test('desktop keeps secondary destinations behind the labeled Explore control', 
   assert.match(indexSource, /<button id="insightsBtn"[^>]*><strong>Insights<\/strong>/);
   assert.match(indexSource, /<button id="journalBtn"[^>]*><strong>Journal<\/strong>/);
   assert.match(indexSource, /<button id="settingsBtn"[^>]*><strong>Settings<\/strong>/);
-  assert.match(finalCss, /@media\(min-width:900px\)\{\.top-actions\{display:flex!important\}\}/);
+  assert.match(finalCss, /@media\(min-width:900px\)\{\.topbar\{display:flex!important/);
+  assert.match(finalCss, /\.topbar-title\{display:none!important\}\.top-actions\{display:flex!important\}/);
 });
