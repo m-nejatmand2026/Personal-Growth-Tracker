@@ -55,6 +55,7 @@
 
 /* Device-validated mobile sanctuary alignment belongs to Wellness. */
 @media(max-width:760px){
+  #wellness-boostView .wellness-current-header{transform:translateY(-1px)!important}
   #wellness-boostView .living-wellness-hero{grid-template-columns:minmax(0,1fr)!important;justify-items:center!important;text-align:center!important}
   #wellness-boostView .wellness-sanctuary-copy{justify-items:center!important}
   #wellness-boostView .wellness-sanctuary-copy p{margin-inline:auto!important}
