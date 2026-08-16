@@ -46,4 +46,20 @@ if [[ "$ready" != "1" ]]; then
   exit 1
 fi
 
-GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser
+base='http://127.0.0.1:8787'
+
+selector="$(curl --fail --silent --show-error "$base/")"
+printf '%s' "$selector" | grep -F 'Current / Recovered' >/dev/null
+printf '%s' "$selector" | grep -F 'New / Ambient Luxury' >/dev/null
+printf '%s' "$selector" | grep -F 'href="/experience/1/"' >/dev/null
+printf '%s' "$selector" | grep -F 'href="/experience/2/"' >/dev/null
+
+e1="$(curl --fail --silent --show-error "$base/experience/1/")"
+printf '%s' "$e1" | grep -F '/experience/1/manifest.webmanifest' >/dev/null
+printf '%s' "$e1" | grep -F '/experience/1/bootstrap.js' >/dev/null
+
+e2="$(curl --fail --silent --show-error "$base/experience/2/")"
+printf '%s' "$e2" | grep -F 'Growth Compass Preview 2 — Ambient Luxury experience.' >/dev/null
+printf '%s' "$e2" | grep -F '/experience/2/js/app.js' >/dev/null
+
+GC_E2E_BASE_URL="$base/experience/1/" npm run test:browser
