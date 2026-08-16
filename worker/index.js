@@ -36,11 +36,11 @@ async function serveHtmlAsset(request, env, assetPath, { transform } = {}) {
 }
 
 function serveSelector(request, env) {
-  return serveHtmlAsset(request, env, '/selector/index.html');
+  return serveHtmlAsset(request, env, '/selector/');
 }
 
 function serveExperienceOne(request, env) {
-  return serveHtmlAsset(request, env, '/experience/1/index.html', {
+  return serveHtmlAsset(request, env, '/experience/1/', {
     transform: (html) => html
       .replace('href="/manifest.webmanifest"', 'href="/experience/1/manifest.webmanifest"')
       .replace('</body>', '<script type="module" src="/experience/1/bootstrap.js"></script></body>')
