@@ -17,6 +17,7 @@ const playerJs = await read('public/js/modules/wellness-boost/player.js');
 const css = await read('public/css/modules/wellness-boost.css');
 const recoveryCss = await read('public/css/functional-recovery.css');
 const deviceCss = await read('public/css/screenshot-recovery.css');
+const finalCss = await read('public/css/accessibility-regression.css');
 const runtime = `${moduleJs}\n${playerJs}`;
 
 test('Wellness owns an independent dependency-free capability', () => {
@@ -63,8 +64,10 @@ test('Wellness breathing guide is live, touchable and routes into the existing b
   assert.match(moduleJs, /BREATHING_PRACTICE_ID\s*=\s*'meditation-steadier-breath'/);
   assert.match(moduleJs, /querySelector\('\[data-wb-breathe\]'\)[\s\S]*addEventListener\('click'/);
   assert.match(deviceCss, /@keyframes gc-breath-orb/);
-  assert.match(deviceCss, /\.living-breathing-orb\s*\{[\s\S]*animation:\s*gc-breath-orb/);
-  assert.match(deviceCss, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(deviceCss, /\.living-breathing-orb::before,[\s\S]*animation:\s*gc-breath-ring/);
+  assert.match(finalCss, /\.living-breathing-orb\s*\{[\s\S]*animation:\s*none\s*!important;[\s\S]*transform:\s*none\s*!important/);
+  assert.match(finalCss, /\.living-breathing-orb i\s*\{[\s\S]*animation:\s*gc-breath-orb/);
+  assert.match(finalCss, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
 test('Wellness sanctuary and session grid have explicit responsive alignment', () => {
