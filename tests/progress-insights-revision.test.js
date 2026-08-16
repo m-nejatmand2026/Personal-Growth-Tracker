@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const progressJs = await readFile(new URL('../public/js/modules/progress/ui.js', import.meta.url), 'utf8');
 const insightsJs = await readFile(new URL('../public/js/modules/insights/ui.js', import.meta.url), 'utf8');
-const liveCss = await readFile(new URL('../public/css/figma-current-live.css', import.meta.url), 'utf8');
+const pagesCss = await readFile(new URL('../public/css/product-rebuild-pages.css', import.meta.url), 'utf8');
 const indexHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
 test('Progress keeps factual actuals separate from optional minimum and target guidance', () => {
@@ -62,10 +62,11 @@ test('Insights distinguishes unavailable evidence from an honest empty sample', 
   assert.ok(catchReturn >= 0 && catchReturn < trackedDays, 'failure state must return before evidence-count rendering');
 });
 
-test('Progress and Insights Figma Current presentation remains responsive and touch-safe', () => {
-  assert.match(indexHtml, /\/css\/figma-current-live\.css/);
-  assert.match(liveCss, /\.progress-current-metrics\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-  assert.match(liveCss, /\.insights-current \.insight-summary-grid\{display:grid!important;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/);
-  assert.match(liveCss, /@media\(max-width:760px\)/);
-  assert.match(liveCss, /\.insights-more\{width:44px;height:44px/);
+test('Progress and Insights Product Rebuild presentation remains responsive and touch-safe', () => {
+  assert.match(indexHtml, /\/css\/product-rebuild-pages\.css/);
+  assert.doesNotMatch(indexHtml, /\/css\/figma-current(?:-live|-semantics)?\.css/);
+  assert.match(pagesCss, /\.gc-progress-stats\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(pagesCss, /\.gc-insight-facts\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(pagesCss, /\.gc-progress-fact>button\{min-width:44px;min-height:44px/);
+  assert.match(pagesCss, /@media\(max-width:760px\)/);
 });
