@@ -14,6 +14,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
+assert_contains() {
+  local label="$1"
+  local body="$2"
+  local expected="$3"
+  if ! grep -F -- "$expected" <<<"$body" >/dev/null; then
+    echo "Preview 2 route smoke failed: $label did not contain: $expected" >&2
+    printf '%s\n' "$body" | head -c 2400 >&2
+    printf '\n' >&2
+    cat "$WORKER_LOG" >&2 || true
+    exit 1
+  fi
+}
+
 rm -rf "$STATE_DIR"
 
 ./node_modules/.bin/wrangler d1 migrations apply DB \
@@ -49,17 +62,20 @@ fi
 base='http://127.0.0.1:8787'
 
 selector="$(curl --fail --silent --show-error "$base/")"
-printf '%s' "$selector" | grep -F 'Current / Recovered' >/dev/null
-printf '%s' "$selector" | grep -F 'New / Ambient Luxury' >/dev/null
-printf '%s' "$selector" | grep -F 'href="/experience/1/"' >/dev/null
-printf '%s' "$selector" | grep -F 'href="/experience/2/"' >/dev/null
+assert_contains 'selector /' "$selector" 'Current / Recovered'
+assert_contains 'selector /' "$selector" 'New / Ambient Luxury'
+assert_contains 'selector /' "$selector" 'href="/experience/1/"'
+assert_contains 'selector /' "$selector" 'href="/experience/2/"'
+echo 'Preview 2 selector route smoke passed.'
 
 e1="$(curl --fail --silent --show-error "$base/experience/1/")"
-printf '%s' "$e1" | grep -F '/experience/1/manifest.webmanifest' >/dev/null
-printf '%s' "$e1" | grep -F '/experience/1/bootstrap.js' >/dev/null
+assert_contains 'Experience 1 /experience/1/' "$e1" '/experience/1/manifest.webmanifest'
+assert_contains 'Experience 1 /experience/1/' "$e1" '/experience/1/bootstrap.js'
+echo 'Preview 2 Experience 1 adapter route smoke passed.'
 
 e2="$(curl --fail --silent --show-error "$base/experience/2/")"
-printf '%s' "$e2" | grep -F 'Growth Compass Preview 2 — Ambient Luxury experience.' >/dev/null
-printf '%s' "$e2" | grep -F '/experience/2/js/app.js' >/dev/null
+assert_contains 'Experience 2 /experience/2/' "$e2" 'Growth Compass Preview 2 — Ambient Luxury experience.'
+assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/js/app.js'
+echo 'Preview 2 Experience 2 route smoke passed.'
 
 GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser
