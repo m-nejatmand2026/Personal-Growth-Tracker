@@ -148,7 +148,7 @@ test('Worker serves the Preview 2 selector from its dedicated static entrypoint'
   assert.equal(response.headers.get('content-type'), 'text/html; charset=utf-8');
   assertSecurityHeaders(response);
   assert.equal(await response.text(), selector);
-  assert.deepEqual(calls, ['/selector/index.html']);
+  assert.deepEqual(calls, ['/selector/']);
 });
 
 test('Worker serves Experience 1 through the frozen-source runtime adapter', async () => {
@@ -173,7 +173,7 @@ test('Worker serves Experience 1 through the frozen-source runtime adapter', asy
   assert.match(html, /href="\/experience\/1\/manifest\.webmanifest"/);
   assert.match(html, /src="\/experience\/1\/bootstrap\.js"/);
   assert.equal(html.includes('href="/manifest.webmanifest"'), false);
-  assert.deepEqual(calls, ['/experience/1/index.html']);
+  assert.deepEqual(calls, ['/experience/1/']);
 });
 
 test('Worker delegates non-API requests to the bound asset service and adds browser security headers', async () => {
