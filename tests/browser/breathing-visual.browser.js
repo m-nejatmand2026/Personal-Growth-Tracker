@@ -29,6 +29,12 @@ function assertVisibleRing(state, browser, phase) {
   assert.notEqual(state.background, 'rgba(0, 0, 0, 0)', `${browser} ${phase}: breathing disc needs a visible fill`);
 }
 
+function assertStableTarget(before, after, browser, phase) {
+  assert.ok(before && after, `${browser} ${phase}: breathing touch target must have measurable geometry`);
+  assert.ok(Math.abs(before.width - after.width) <= 1 && Math.abs(before.height - after.height) <= 1, `${browser} ${phase}: breathing touch target size must stay fixed; before=${JSON.stringify(before)}, after=${JSON.stringify(after)}`);
+  assert.ok(Math.abs(before.x - after.x) <= 1 && Math.abs(before.y - after.y) <= 1, `${browser} ${phase}: breathing touch target position must stay fixed; before=${JSON.stringify(before)}, after=${JSON.stringify(after)}`);
+}
+
 async function waitPhase(page, phase, timeout) {
   await page.waitForFunction((wanted) => document.querySelector('[data-wb-breath-start]')?.dataset.breathPhase === wanted, phase, { timeout });
 }
@@ -55,6 +61,8 @@ async function runBreathingVisual(page, browser) {
   await waitPhase(page, 'inhale', 1500);
   await page.waitForTimeout(1900);
   const inhaleMid = await ringState(guide);assertVisibleRing(inhaleMid,browser,'inhale');
+  const targetInhaleMid = await guide.boundingBox();
+  assertStableTarget(targetBefore,targetInhaleMid,browser,'inhale');
   await shot(page, browser, 'inhale-mid');
   assert.ok(inhaleMid.width >= ready.width * 1.35, `${browser}: ring must visibly open during inhale; ready=${ready.width}, mid=${inhaleMid.width}`);
 
@@ -66,6 +74,8 @@ async function runBreathingVisual(page, browser) {
   await waitPhase(page, 'exhale', 3500);
   await page.waitForTimeout(3900);
   const exhaleMid = await ringState(guide);assertVisibleRing(exhaleMid,browser,'exhale');
+  const targetExhaleMid = await guide.boundingBox();
+  assertStableTarget(targetBefore,targetExhaleMid,browser,'exhale');
   await shot(page, browser, 'exhale-mid');
   assert.ok(exhaleMid.width <= open.width * .82, `${browser}: ring must visibly close during exhale; open=${open.width}, mid=${exhaleMid.width}`);
 
@@ -76,7 +86,7 @@ async function runBreathingVisual(page, browser) {
   assert.ok(open.width >= closed.width * 2.2, `${browser}: open/closed contrast must be unmistakable; open=${open.width}, closed=${closed.width}`);
 
   const targetAfter = await guide.boundingBox();
-  assert.ok(targetBefore && targetAfter && Math.abs(targetBefore.width - targetAfter.width) <= 1 && Math.abs(targetBefore.height - targetAfter.height) <= 1, `${browser}: touch target must stay fixed while ring breathes`);
+  assertStableTarget(targetBefore,targetAfter,browser,'completed cycle');
   await page.locator('[data-wb-breath-end]').click();
 }
 
