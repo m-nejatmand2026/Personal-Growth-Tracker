@@ -1,6 +1,11 @@
 import { escapeHtml } from '../../core/dom.js';
 import { boostContent } from './content.js';
-import { createMeditationPlayer, formatMeditationClock } from './player.js';
+import {
+  BREATHING_PATTERN_4_2_8_2,
+  createBreathingGuide,
+  createMeditationPlayer,
+  formatMeditationClock
+} from './player.js';
 
 const MODES = Object.freeze([
   Object.freeze({ id: 'voice', label: 'Guided' }),
@@ -10,8 +15,10 @@ const MODES = Object.freeze([
 const TONES = Object.freeze({ Reset: 'reset', Calm: 'calm', Focus: 'focus', Restore: 'restore' });
 const BREATHING_PRACTICE_ID = 'meditation-steadier-breath';
 const player = createMeditationPlayer();
+const breathingGuide = createBreathingGuide();
 let activePracticeId = null;
 let selectedMode = 'voice';
+let breathingSound = true;
 
 const toneFor = (item) => TONES[item.category] || 'calm';
 
@@ -31,9 +38,18 @@ function renderPlayer(item) {
   return `<div class="wellness-boost-view wellness-boost-player-view gc-page-frame" data-module="wellness-boost" aria-label="Wellness"><button type="button" class="wellness-boost-back" data-wb-back>← Wellness</button><section class="wellness-boost-player"><div class="wellness-boost-player-copy"><span class="wellness-boost-category">${escapeHtml(item.category)}</span><div class="wellness-boost-player-title"><h2 id="wellnessBoostPlayerTitle">${escapeHtml(item.title)}</h2><span class="wellness-boost-duration">${item.durationMinutes} min</span></div><p>${escapeHtml(item.description)}</p></div><div class="wellness-boost-prestart"><h3>How would you like to listen?</h3>${modePicker(item)}<button type="button" class="gc-button gc-button--primary wellness-boost-start" data-wb-start>Start session</button><p class="wellness-boost-ready-status" data-wb-ready-status role="status" aria-live="polite">Ready when you are.</p><details class="wellness-boost-audio-note"><summary>About audio</summary><p>Guided uses your device’s built-in speech voice. Ambient sound is generated locally in your browser. No meditation recording is uploaded, and nothing here is added to Progress or Wellbeing.</p></details></div><div class="wellness-boost-active-player"><div class="wellness-boost-player-time" data-wb-time>${formatMeditationClock(item.durationMinutes * 60)}</div><div class="wellness-boost-time-label">remaining</div><div class="wellness-boost-progress" data-wb-progress-track role="progressbar" aria-label="Meditation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span data-wb-progress></span></div><p class="wellness-boost-player-status" data-wb-status role="status" aria-live="polite">In progress.</p><div class="wellness-boost-player-controls"><button type="button" class="gc-button gc-button--primary" data-wb-toggle disabled>Pause</button><button type="button" class="gc-button gc-button--secondary" data-wb-end disabled>End</button></div></div><details class="wellness-boost-script"><summary>Read guidance</summary><ol>${item.cues.map((cue) => `<li><span>${formatMeditationClock(cue.atSeconds)}</span><p>${escapeHtml(cue.text)}</p></li>`).join('')}</ol></details></section></div>`;
 }
 
+function breathingPatternMarkup() {
+  return BREATHING_PATTERN_4_2_8_2.map((phase) => `<span><b>${phase.seconds}</b>${escapeHtml(phase.label.toLowerCase())}</span>`).join('');
+}
+
+function renderBreathingPlayer(item) {
+  return `<div class="wellness-boost-view wellness-boost-player-view wellness-breathing-view gc-page-frame" data-module="wellness-boost" aria-label="Wellness"><button type="button" class="wellness-boost-back" data-wb-back>← Wellness</button><section class="wellness-breathing-session"><header class="wellness-breathing-copy"><span class="wellness-boost-category">Guided breathing</span><h2 id="wellnessBoostPlayerTitle">${escapeHtml(item.title)}</h2><p>Follow the motion instead of watching a clock. Breathe comfortably; stop or return to normal breathing if the rhythm feels uncomfortable.</p></header><div class="breathing-guide-stage"><button type="button" class="living-breathing-orb breathing-guide-orb" data-wb-breath-start data-breath-running="false" data-breath-paused="false" data-breath-phase="ready" aria-label="Start guided breathing"><i aria-hidden="true"></i><span data-wb-breath-phase>Ready</span><small data-wb-breath-count>Tap to start</small></button></div><div class="breathing-pattern" aria-label="Breathing rhythm: inhale 4 seconds, hold 2 seconds, exhale 8 seconds, hold 2 seconds">${breathingPatternMarkup()}</div><div class="breathing-session-meta"><button type="button" class="breathing-sound-toggle" data-wb-breath-sound aria-pressed="${breathingSound}"><span aria-hidden="true">♪</span><span data-wb-breath-sound-label>Ambient sound · ${breathingSound ? 'On' : 'Off'}</span></button><div class="breathing-session-progress" data-wb-progress-track role="progressbar" aria-label="Breathing session progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span data-wb-progress></span></div><div class="breathing-session-time"><strong data-wb-time>${formatMeditationClock(item.durationMinutes * 60)}</strong><span>remaining</span></div><p class="breathing-session-status" data-wb-breath-status role="status" aria-live="polite">Tap the circle when you are ready.</p><div class="breathing-session-controls"><button type="button" class="gc-button gc-button--secondary" data-wb-breath-toggle disabled>Pause</button><button type="button" class="gc-button gc-button--secondary" data-wb-breath-end disabled>End</button></div></div><details class="wellness-boost-audio-note"><summary>About this guide</summary><p>The motion follows a 4-second inhale, 2-second hold, 8-second exhale and 2-second hold. Ambient sound is generated locally in your browser and fades in and out; no recording is uploaded and this session does not write Progress or Wellbeing data.</p></details></section></div>`;
+}
+
 const renderView = () => {
   const item = boostContent.find((practice) => practice.id === activePracticeId);
-  return item ? renderPlayer(item) : renderLibrary();
+  if (!item) return renderLibrary();
+  return item.id === BREATHING_PRACTICE_ID ? renderBreathingPlayer(item) : renderPlayer(item);
 };
 
 function bindView({ root, rerender } = {}) {
@@ -42,18 +58,20 @@ function bindView({ root, rerender } = {}) {
 
   root.querySelector('[data-wb-breathe]')?.addEventListener('click', () => {
     activePracticeId = BREATHING_PRACTICE_ID;
-    selectedMode = 'voice';
+    breathingSound = true;
     void rerender?.();
   });
 
   root.querySelectorAll('[data-wb-open]').forEach((button) => button.addEventListener('click', () => {
     activePracticeId = button.dataset.wbOpen;
     selectedMode = 'voice';
+    breathingSound = activePracticeId === BREATHING_PRACTICE_ID;
     void rerender?.();
   }));
 
   root.querySelector('[data-wb-back]')?.addEventListener('click', () => {
     player.stop({ root, quiet: true, item });
+    breathingGuide.stop({ root, quiet: true, item });
     activePracticeId = null;
     void rerender?.();
   });
@@ -64,15 +82,33 @@ function bindView({ root, rerender } = {}) {
     void rerender?.();
   }));
 
-  if (item) {
-    root.querySelector('[data-wb-start]')?.addEventListener('click', () => player.start(root, item, selectedMode));
-    root.querySelector('[data-wb-toggle]')?.addEventListener('click', () => player.toggle(root));
-    root.querySelector('[data-wb-end]')?.addEventListener('click', () => player.stop({ root, item }));
+  if (!item) return;
+
+  if (item.id === BREATHING_PRACTICE_ID) {
+    root.querySelector('[data-wb-breath-start]')?.addEventListener('click', () => {
+      if (!breathingGuide.isActive()) breathingGuide.start(root, item, { sound: breathingSound });
+    });
+    root.querySelector('[data-wb-breath-toggle]')?.addEventListener('click', () => breathingGuide.toggle(root));
+    root.querySelector('[data-wb-breath-end]')?.addEventListener('click', () => breathingGuide.stop({ root, item }));
+    root.querySelector('[data-wb-breath-sound]')?.addEventListener('click', (event) => {
+      breathingSound = !breathingSound;
+      const actualSound = breathingGuide.isActive() ? breathingGuide.setSound(breathingSound) : breathingSound;
+      if (breathingGuide.isActive() && breathingSound && !actualSound) breathingSound = false;
+      event.currentTarget.setAttribute('aria-pressed', String(breathingSound));
+      const label = event.currentTarget.querySelector('[data-wb-breath-sound-label]');
+      if (label) label.textContent = `Ambient sound · ${breathingSound ? 'On' : 'Off'}`;
+    });
+    return;
   }
+
+  root.querySelector('[data-wb-start]')?.addEventListener('click', () => player.start(root, item, selectedMode));
+  root.querySelector('[data-wb-toggle]')?.addEventListener('click', () => player.toggle(root));
+  root.querySelector('[data-wb-end]')?.addEventListener('click', () => player.stop({ root, item }));
 }
 
 function deactivate() {
   player.stop({ quiet: true });
+  breathingGuide.stop({ quiet: true });
   activePracticeId = null;
 }
 
