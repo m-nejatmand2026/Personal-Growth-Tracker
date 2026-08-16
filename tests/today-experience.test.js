@@ -104,10 +104,9 @@ test('Canonical rebuild layers replace rejected presentation and accessibility s
   const rebuild = indexHtml.indexOf('/css/product-rebuild.css');
   const pages = indexHtml.indexOf('/css/product-rebuild-pages.css');
   const recovery = indexHtml.indexOf('/css/functional-recovery.css');
-  const screenshot = indexHtml.indexOf('/css/screenshot-recovery.css');
   const motion = indexHtml.indexOf('/css/motion-system.css');
   const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
-  assert.ok(rebuild >= 0 && rebuild < pages && pages < recovery && recovery < screenshot && screenshot < motion && motion < accessibility);
-  assert.doesNotMatch(indexHtml, /\/css\/(?:ux-reset|living-canvas|figma-current(?:-live|-semantics)?)\.css/);
+  assert.ok(rebuild >= 0 && rebuild < pages && pages < recovery && recovery < motion && motion < accessibility);
+  assert.doesNotMatch(indexHtml, /\/css\/(?:ux-reset|living-canvas|figma-current(?:-live|-semantics)?|screenshot-recovery)\.css/);
   assert.match(rebuildCss, /@media\(prefers-reduced-motion:reduce\)/);
 });
