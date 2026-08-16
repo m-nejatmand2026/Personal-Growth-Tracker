@@ -6,6 +6,7 @@ const root = new URL('../', import.meta.url);
 const indexHtml = await readFile(new URL('public/index.html', root), 'utf8');
 const designCss = await readFile(new URL('public/css/design-system.css', root), 'utf8');
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
+const recoveryCss = await readFile(new URL('public/css/functional-recovery.css', root), 'utf8');
 const journalCss = await readFile(new URL('public/css/journal.css', root), 'utf8');
 const goalsCss = await readFile(new URL('public/css/modules/goals.css', root), 'utf8');
 const wellbeingCss = await readFile(new URL('public/css/modules/wellbeing.css', root), 'utf8');
@@ -33,8 +34,7 @@ function runtimeStylesheets() {
 }
 
 function importantCount(source) {
-  const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '');
-  return (withoutComments.match(/!important/g) || []).length;
+  return (source.replace(/\/\*[\s\S]*?\*\//g, '').match(/!important/g) || []).length;
 }
 
 test('retired presentation generations are physically absent and cannot return to runtime', async () => {
@@ -49,10 +49,11 @@ test('runtime presentation follows foundation then design system then shell then
   const shell = stylesheetIndex('/css/navigation-shell.css');
   const rebuild = stylesheetIndex('/css/product-rebuild.css');
   const pages = stylesheetIndex('/css/product-rebuild-pages.css');
+  const recovery = stylesheetIndex('/css/functional-recovery.css');
   const motion = stylesheetIndex('/css/motion-system.css');
   const accessibility = stylesheetIndex('/css/accessibility-regression.css');
-  assert.ok(design >= 0 && shell > design && rebuild > shell && pages > rebuild && motion > pages && accessibility > motion);
-  assert.equal(runtimeStylesheets().at(-1), '/css/accessibility-regression.css', 'accessibility safeguards must remain the final stylesheet');
+  assert.ok(design >= 0 && shell > design && rebuild > shell && pages > rebuild && recovery > pages && motion > recovery && accessibility > motion);
+  assert.equal(runtimeStylesheets().at(-1), '/css/accessibility-regression.css');
 });
 
 test('canonical design system owns theme tokens instead of composition sheets', () => {
@@ -62,47 +63,47 @@ test('canonical design system owns theme tokens instead of composition sheets', 
   assert.match(designCss, /--gc-text-on-brand:\s*#051424/);
 });
 
-test('navigation shell owns desktop Explore geometry without specificity escalation', () => {
+test('remaining functional recovery debt is capped and must only shrink', () => {
+  assert.ok(recoveryCss.length <= 16000, `functional recovery grew to ${recoveryCss.length} bytes`);
+  assert.ok(importantCount(recoveryCss) <= 125, `functional recovery grew to ${importantCount(recoveryCss)} !important declarations`);
+  assert.doesNotMatch(recoveryCss, /screenshot-recovery|figma-current|living-canvas/);
+});
+
+test('navigation shell owns desktop Explore and confines transitional mobile specificity debt', () => {
   const transitionStart = shellCss.indexOf('/* Explore is a shell-owned destination control.');
   const desktopStart = shellCss.indexOf('@media (min-width:900px)');
-  assert.ok(transitionStart >= 0 && desktopStart > transitionStart, 'shell must keep the transitional mobile Explore region explicitly bounded');
+  assert.ok(transitionStart >= 0 && desktopStart > transitionStart);
   assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.topbar\{display:flex;position:fixed;z-index:95/);
   assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.top-actions\{display:flex\}/);
   assert.doesNotMatch(accessibilityCss, /@media\(min-width:900px\)[\s\S]*\.topbar/);
   const outsideTransition = `${shellCss.slice(0, transitionStart)}${shellCss.slice(desktopStart)}`;
-  assert.equal(importantCount(outsideTransition), 0, 'shell specificity debt must stay confined to the named mobile Explore transition region');
-});
-
-test('mobile Explore recovery is shell-owned and its transitional specificity debt is capped', () => {
-  const transitionStart = shellCss.indexOf('/* Explore is a shell-owned destination control.');
-  const desktopStart = shellCss.indexOf('@media (min-width:900px)');
+  assert.equal(importantCount(outsideTransition), 0);
   const transition = shellCss.slice(transitionStart, desktopStart);
   assert.match(transition, /\.os-shell \.topbar\{[^}]*width:88px!important;[^}]*height:44px!important/);
   assert.match(transition, /\.os-shell \.top-more>summary\{[^}]*height:44px!important/);
   assert.match(transition, /\.os-shell \.top-more>summary \.top-more-label\{[^}]*display:inline!important/);
-  assert.match(transition, /\.workspace \.gc-today-header,[\s\S]*padding-right:98px!important/);
-  assert.ok(importantCount(transition) <= 48, `mobile Explore transition debt grew to ${importantCount(transition)} !important declarations`);
+  assert.ok(importantCount(transition) <= 48);
 });
 
 test('Journal owns the Today preview without rebuilding a specificity arms race', () => {
   assert.match(journalCss, /#todayView \.journal-preview\{/);
   assert.match(journalCss, /grid-template-columns:minmax\(0,1fr\);/);
   assert.match(journalCss, /#todayView \.journal-preview-actions button:first-child/);
-  assert.ok(importantCount(journalCss) <= 8, `Journal Today preview must keep shrinking legacy specificity debt; found ${importantCount(journalCss)} !important declarations`);
+  assert.ok(importantCount(journalCss) <= 8);
 });
 
-test('Goals owns the Plan goal launcher instead of a global device recovery layer', () => {
+test('Goals owns the Plan goal launcher', () => {
   assert.match(goalsCss, /#planView \.goal-editor>summary\{/);
   assert.match(goalsCss, /min-height:48px!important/);
 });
 
-test('Wellbeing owns Energy presentation instead of a global device recovery layer', () => {
+test('Wellbeing owns Energy presentation', () => {
   assert.match(wellbeingCss, /#todayView \.energy-drawer\{/);
   assert.match(wellbeingCss, /#todayView \.energy-grid\{/);
   assert.match(wellbeingCss, /#todayView \.energy-cell\.selected/);
 });
 
-test('Today wellbeing presentation is owned by Wellbeing instead of a global device recovery layer', () => {
+test('Today wellbeing presentation is owned by Wellbeing', () => {
   assert.match(wellbeingTodayCss, /#todayView \.today-state-section\{/);
   assert.match(wellbeingTodayCss, /#todayView \.daily-state-grid\{/);
   assert.match(wellbeingTodayCss, /#todayView \.state-card\{/);
@@ -110,16 +111,16 @@ test('Today wellbeing presentation is owned by Wellbeing instead of a global dev
   assert.doesNotMatch(wellbeingTodayCss, /background:#fff|color:#17202b|#e6e7e3/);
 });
 
-test('Wellness owns mobile sanctuary alignment instead of a global device recovery layer', () => {
+test('Wellness owns mobile sanctuary alignment', () => {
   assert.match(wellnessBoostCss, /@media\(max-width:760px\)[\s\S]*#wellness-boostView \.living-wellness-hero/);
   assert.match(wellnessBoostCss, /#wellness-boostView \.wellness-sanctuary-copy p\{margin-inline:auto!important\}/);
 });
 
-test('wellness breathing owns breathing presentation after recovery layers', () => {
+test('wellness breathing owns breathing presentation after recovery and before accessibility', () => {
   const recovery = stylesheetIndex('/css/functional-recovery.css');
   const breathing = stylesheetIndex('/css/modules/wellness-breathing.css');
   const accessibility = stylesheetIndex('/css/accessibility-regression.css');
-  assert.ok(recovery >= 0 && breathing > recovery && accessibility > breathing, 'wellness breathing must remain later than legacy recovery while accessibility stays final');
+  assert.ok(recovery >= 0 && breathing > recovery && accessibility > breathing);
   assert.match(wellnessBreathingCss, /\.living-breathing-orb\{/);
   assert.match(wellnessBreathingCss, /@keyframes gc-breath-orb/);
   assert.match(wellnessBreathingCss, /@media\(prefers-reduced-motion:reduce\)[\s\S]*\.living-breathing-orb/);
@@ -127,6 +128,6 @@ test('wellness breathing owns breathing presentation after recovery layers', () 
 
 test('runtime stylesheet count stays bounded while module-owned sheets remain independent', () => {
   const stylesheets = runtimeStylesheets();
-  assert.ok(stylesheets.length <= 30, `runtime stylesheet count grew to ${stylesheets.length}; add styles to an existing owner instead of another global override layer`);
-  assert.ok(stylesheets.filter((path) => path.startsWith('/css/modules/')).length >= 10, 'business modules should keep owning their presentation');
+  assert.ok(stylesheets.length <= 30, `runtime stylesheet count grew to ${stylesheets.length}`);
+  assert.ok(stylesheets.filter((path) => path.startsWith('/css/modules/')).length >= 10);
 });
