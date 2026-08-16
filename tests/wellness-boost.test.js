@@ -15,6 +15,8 @@ const app = await read('public/js/app.js');
 const moduleJs = await read('public/js/modules/wellness-boost/module.js');
 const playerJs = await read('public/js/modules/wellness-boost/player.js');
 const css = await read('public/css/modules/wellness-boost.css');
+const breathingCss = await read('public/css/modules/wellness-breathing.css');
+const motionCss = await read('public/css/motion-system.css');
 const recoveryCss = await read('public/css/functional-recovery.css');
 const deviceCss = await read('public/css/screenshot-recovery.css');
 const finalCss = await read('public/css/accessibility-regression.css');
@@ -56,18 +58,26 @@ test('Wellness landing page uses one coherent whole-surface tile language', () =
   assert.match(recoveryCss, /\.wellness-session-tile/);
 });
 
-test('Wellness breathing guide is live, touchable and routes into the existing breath practice', () => {
+test('Wellness breathing guide is live, touchable and routes into a motion-guided breath practice', () => {
   const html = wellnessBoostModule.renderView();
   assert.match(html, /<button[^>]*class="living-breathing-orb"[^>]*data-wb-breathe/);
   assert.match(html, /Open A steadier breath session/);
   assert.match(html, /Tap to begin/);
   assert.match(moduleJs, /BREATHING_PRACTICE_ID\s*=\s*'meditation-steadier-breath'/);
   assert.match(moduleJs, /querySelector\('\[data-wb-breathe\]'\)[\s\S]*addEventListener\('click'/);
+  assert.match(playerJs, /BREATHING_PATTERN_4_2_8_2/);
+  for (const token of ["id:'inhale',label:'Inhale',seconds:4", "id:'hold-in',label:'Hold',seconds:2", "id:'exhale',label:'Exhale',seconds:8", "id:'hold-out',label:'Hold',seconds:2"]) assert.match(playerJs, new RegExp(token));
+  assert.match(moduleJs, /data-wb-breath-start/);
+  assert.match(moduleJs, /Ambient sound ·/);
+  assert.match(motionCss, /view-transition-name:gc-breathing-orb/);
+  assert.match(breathingCss, /--breath-phase-duration/);
+  assert.match(breathingCss, /data-breath-phase=inhale/);
+  assert.match(breathingCss, /data-breath-phase=exhale/);
   assert.match(deviceCss, /@keyframes gc-breath-orb/);
   assert.match(deviceCss, /\.living-breathing-orb::before,[\s\S]*animation:\s*gc-breath-ring/);
   assert.match(finalCss, /\.living-breathing-orb\s*\{[\s\S]*animation:\s*none\s*!important;[\s\S]*transform:\s*none\s*!important/);
   assert.match(finalCss, /\.living-breathing-orb i\s*\{[\s\S]*animation:\s*gc-breath-orb/);
-  assert.match(finalCss, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(finalCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 });
 
 test('Wellness sanctuary and session grid have explicit responsive alignment', () => {
@@ -93,7 +103,7 @@ test('Meditation player asks listening style only after a practice is chosen and
 
 test('Meditation playback is local rights-safe and never creates Progress or Wellbeing facts', () => {
   assert.match(playerJs, /SpeechSynthesisUtterance/);
-  assert.match(playerJs, /window\.AudioContext \|\| window\.webkitAudioContext/);
+  assert.match(playerJs, /window\.AudioContext\s*\|\|\s*window\.webkitAudioContext/);
   assert.match(moduleJs, /Ambient sound is generated locally in your browser/);
   assert.match(moduleJs, /No meditation recording is uploaded/);
   assert.match(moduleJs, /nothing here is added to Progress or Wellbeing/);
@@ -113,7 +123,7 @@ test('Meditation player owns start pause resume end and navigation cleanup lifec
   assert.match(moduleJs, /data-wb-start/);
   assert.match(moduleJs, /data-wb-toggle/);
   assert.match(moduleJs, /data-wb-end/);
-  assert.match(playerJs, /formatMeditationClock\(total - safeElapsed\)/);
+  assert.match(playerJs, /formatMeditationClock\(total\s*-\s*safeElapsed\)/);
   assert.match(playerJs, /speechSynthesis\.pause\(\)/);
   assert.match(playerJs, /speechSynthesis\.resume\(\)/);
   assert.match(moduleJs, /function deactivate\(\)/);
@@ -153,6 +163,7 @@ test('Wellness destination and player remain phone-first accessible', () => {
   assert.match(css, /@media\(max-width:650px\)/);
   assert.match(css, /\.wellness-boost-mode-picker\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(breathingCss, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(moduleJs, /role="status" aria-live="polite"/);
   assert.match(moduleJs, /role="group" aria-label="Playback style"/);
   assert.match(moduleJs, /aria-label="\$\{escapeHtml\(item\.title\)\}, \$\{item\.durationMinutes\} minutes/);
