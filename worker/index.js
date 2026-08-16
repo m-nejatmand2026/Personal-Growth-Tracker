@@ -22,18 +22,29 @@ function logApiFailure(request, url, error) {
   console.error(JSON.stringify({ event: 'api_error', path: url.pathname, method: request.method, status, error_name: error?.name || 'Error', message: error?.message || 'Unexpected error', ray_id: request.headers.get('cf-ray') || null }));
 }
 
-async function serveExperienceOne(request, env) {
+async function serveHtmlAsset(request, env, assetPath, { transform } = {}) {
   if (!env.ASSETS) return new Response('Not found', { status: 404 });
-  const assetUrl = new URL('/experience/1/index.html', request.url);
+  const assetUrl = new URL(assetPath, request.url);
   const source = await env.ASSETS.fetch(new Request(assetUrl, request));
   if (!source.ok) return source;
-  const html = (await source.text())
-    .replace('href="/manifest.webmanifest"', 'href="/experience/1/manifest.webmanifest"')
-    .replace('</body>', '<script type="module" src="/experience/1/bootstrap.js"></script></body>');
+  const original = await source.text();
+  const html = transform ? transform(original) : original;
   const headers = new Headers(source.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('cache-control', 'no-store');
   return new Response(html, { status: source.status, statusText: source.statusText, headers });
+}
+
+function serveSelector(request, env) {
+  return serveHtmlAsset(request, env, '/selector/index.html');
+}
+
+function serveExperienceOne(request, env) {
+  return serveHtmlAsset(request, env, '/experience/1/index.html', {
+    transform: (html) => html
+      .replace('href="/manifest.webmanifest"', 'href="/experience/1/manifest.webmanifest"')
+      .replace('</body>', '<script type="module" src="/experience/1/bootstrap.js"></script></body>')
+  });
 }
 
 export default {
@@ -41,6 +52,7 @@ export default {
     const url = new URL(request.url);
 
     if (!url.pathname.startsWith('/api/')) {
+      if (url.pathname === '/') return secureResponse(await serveSelector(request, env));
       if (url.pathname === '/experience/1') return Response.redirect(new URL('/experience/1/', request.url), 308);
       if (url.pathname === '/experience/1/') return secureResponse(await serveExperienceOne(request, env));
       const response = env.ASSETS ? await env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
