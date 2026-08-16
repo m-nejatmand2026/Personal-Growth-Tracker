@@ -73,8 +73,9 @@ test('Wellness breathing guide is live, touchable and routes into a motion-guide
   assert.match(breathingCss, /--breath-phase-duration/);
   assert.match(breathingCss, /data-breath-phase=inhale/);
   assert.match(breathingCss, /data-breath-phase=exhale/);
-  assert.match(deviceCss, /@keyframes gc-breath-orb/);
-  assert.match(deviceCss, /\.living-breathing-orb::before,[\s\S]*animation:\s*gc-breath-ring/);
+  assert.match(breathingCss, /@keyframes gc-breath-orb/);
+  assert.match(breathingCss, /\.living-breathing-orb::before,[\s\S]*animation:\s*gc-breath-ring/);
+  assert.doesNotMatch(deviceCss, /@keyframes gc-breath-orb|\.living-breathing-orb::before/);
   assert.match(finalCss, /\.living-breathing-orb\s*\{[\s\S]*animation:\s*none\s*!important;[\s\S]*transform:\s*none\s*!important/);
   assert.match(finalCss, /\.living-breathing-orb i\s*\{[\s\S]*animation:\s*gc-breath-orb/);
   assert.match(finalCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
