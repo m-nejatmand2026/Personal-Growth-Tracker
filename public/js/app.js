@@ -34,6 +34,34 @@ let lastPrimaryView = 'today';
 let journalFilters = { query: '', filterDate: '' };
 let viewTransitionToken = 0;
 
+function reducedMotionPreferred() {
+  return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+}
+
+function fallbackEnter(root) {
+  if (!root || reducedMotionPreferred()) return;
+  root.classList.remove('gc-motion-enter');
+  void root.offsetWidth;
+  root.classList.add('gc-motion-enter');
+  window.setTimeout(() => root.classList.remove('gc-motion-enter'), 380);
+}
+
+function commitWithMotion(update, fallbackRoot = null) {
+  if (reducedMotionPreferred() || typeof document.startViewTransition !== 'function') {
+    update();
+    fallbackEnter(fallbackRoot);
+    return null;
+  }
+
+  try {
+    return document.startViewTransition(() => update());
+  } catch {
+    update();
+    fallbackEnter(fallbackRoot);
+    return null;
+  }
+}
+
 async function load() {
   await renderCurrentView(state.view);
   await activeSession.refresh();
@@ -132,11 +160,20 @@ async function renderJournalView(overrides = null) {
   }
 }
 
-function renderWellnessBoostView() {
+function renderWellnessBoostView({ animate = false } = {}) {
   const root = $('#wellness-boostView');
   if (!root) return;
-  root.innerHTML = wellnessBoost?.renderView?.() || '<section class="os-section"><div class="empty">Wellness is unavailable.</div></section>';
-  wellnessBoost?.bindView?.({ root, rerender: renderWellnessBoostView });
+
+  const commit = () => {
+    root.innerHTML = wellnessBoost?.renderView?.() || '<section class="os-section"><div class="empty">Wellness is unavailable.</div></section>';
+    wellnessBoost?.bindView?.({
+      root,
+      rerender: () => renderWellnessBoostView({ animate: true })
+    });
+  };
+
+  if (animate) commitWithMotion(commit, root);
+  else commit();
 }
 
 async function renderCurrentView(viewName = state.view) {
@@ -194,7 +231,7 @@ function revealView(name) {
   updateNavigation(name);
   $('#pageTitle').textContent = viewTitles[name];
   document.title = `${viewTitles[name]} — Growth Compass`;
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 async function showView(name) {
@@ -232,7 +269,9 @@ async function showView(name) {
   }
 
   if (token !== viewTransitionToken || state.view !== name) return;
-  revealView(name);
+  commitWithMotion(() => {
+    if (token === viewTransitionToken && state.view === name) revealView(name);
+  }, destination);
 }
 
 eventBus.subscribe('daily-plan.completion-selected', async (input) => {
