@@ -6,9 +6,10 @@ const quality = await readFile(new URL('../.github/workflows/quality.yml', impor
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const browserTest = await readFile(new URL('./browser/browser-e2e.browser.js', import.meta.url), 'utf8');
 const recoveryBrowserTest = await readFile(new URL('./browser/functional-recovery.browser.js', import.meta.url), 'utf8');
+const breathingVisualTest = await readFile(new URL('./browser/breathing-visual.browser.js', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../scripts/run-browser-e2e.sh', import.meta.url), 'utf8');
 
-const browserCommand = 'node --test tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js';
+const browserCommand = 'node --test tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js tests/browser/breathing-visual.browser.js';
 
 test('Quality keeps pinned Chromium and WebKit browser acceptance release-blocking', () => {
   assert.equal(packageJson.devDependencies.playwright, '1.62.0');
@@ -57,4 +58,13 @@ test('browser acceptance proves recovered everyday workflows on 375px Chromium a
   assert.match(recoveryBrowserTest, /commitmentEditor/);
   assert.match(recoveryBrowserTest, /plan-loading/);
   assert.doesNotMatch(recoveryBrowserTest, /https:\/\//);
+});
+
+test('browser acceptance proves visible breathing motion on 375px Chromium and WebKit', () => {
+  assert.match(breathingVisualTest, /chromium/);
+  assert.match(breathingVisualTest, /webkit/);
+  assert.match(breathingVisualTest, /inhaleMid/);
+  assert.match(breathingVisualTest, /exhaleMid/);
+  assert.match(breathingVisualTest, /open\/closed contrast must be unmistakable/);
+  assert.doesNotMatch(breathingVisualTest, /https:\/\//);
 });
