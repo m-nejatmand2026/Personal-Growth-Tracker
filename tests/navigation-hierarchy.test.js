@@ -17,11 +17,11 @@ test('secondary Explore destinations do not become primary navigation state', ()
 
 test('mobile primary navigation remains Today, Plan, Add, Progress, Wellness', () => {
   const nav = indexSource.match(/<nav class="bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
-  assert.match(nav, />Today<\/button>/);
-  assert.match(nav, />Plan<\/button>/);
-  assert.match(nav, /<b>Add<\/b>/);
-  assert.match(nav, />Progress<\/button>/);
-  assert.match(nav, />Wellness<\/button>/);
+  assert.match(nav, /data-view="today"[^>]*>[\s\S]*?Today<\/button>/);
+  assert.match(nav, /data-view="plan"[^>]*>[\s\S]*?Plan<\/button>/);
+  assert.match(nav, /id="quickAddBtn"[^>]*>[\s\S]*?<b>Add<\/b>/);
+  assert.match(nav, /data-view="progress"[^>]*>[\s\S]*?Progress<\/button>/);
+  assert.match(nav, /data-view="wellness-boost"[^>]*>[\s\S]*?Wellness<\/button>/);
   assert.doesNotMatch(nav, />Insights<\/button>|>Journal<\/button>|>Settings<\/button>/);
 });
 
