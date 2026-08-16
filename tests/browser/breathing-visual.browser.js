@@ -13,8 +13,20 @@ async function shot(page, browser, state) {
   await page.screenshot({ path: `${SCREENSHOT_DIR}/${browser.toLowerCase()}-375-breath-${state}.png`, fullPage: false });
 }
 
-async function ringWidth(guide) {
-  return guide.locator('i').evaluate((node) => node.getBoundingClientRect().width);
+async function ringState(guide) {
+  return guide.locator('i').evaluate((node) => {
+    const style = getComputedStyle(node);
+    const rect = node.getBoundingClientRect();
+    return { width: rect.width, display: style.display, visibility: style.visibility, opacity: Number(style.opacity), filter: style.filter, background: style.backgroundColor, border: style.borderTopColor };
+  });
+}
+
+function assertVisibleRing(state, browser, phase) {
+  assert.notEqual(state.display, 'none', `${browser} ${phase}: breathing disc must render`);
+  assert.notEqual(state.visibility, 'hidden', `${browser} ${phase}: breathing disc must be visible`);
+  assert.ok(state.opacity >= .7, `${browser} ${phase}: breathing disc must not fade away; ${JSON.stringify(state)}`);
+  assert.equal(state.filter, 'none', `${browser} ${phase}: breathing disc must stay crisp rather than inherit a legacy blur`);
+  assert.notEqual(state.background, 'rgba(0, 0, 0, 0)', `${browser} ${phase}: breathing disc needs a visible fill`);
 }
 
 async function waitPhase(page, phase, timeout) {
@@ -36,32 +48,32 @@ async function runBreathingVisual(page, browser) {
   if ((await sound.getAttribute('aria-pressed')) === 'true') await sound.click();
 
   const targetBefore = await guide.boundingBox();
-  const ready = await ringWidth(guide);
+  const ready = await ringState(guide);assertVisibleRing(ready,browser,'ready');
   await shot(page, browser, 'ready');
 
   await guide.click();
   await waitPhase(page, 'inhale', 1500);
   await page.waitForTimeout(1900);
-  const inhaleMid = await ringWidth(guide);
+  const inhaleMid = await ringState(guide);assertVisibleRing(inhaleMid,browser,'inhale');
   await shot(page, browser, 'inhale-mid');
-  assert.ok(inhaleMid >= ready * 1.35, `${browser}: ring must visibly open during inhale; ready=${ready}, mid=${inhaleMid}`);
+  assert.ok(inhaleMid.width >= ready.width * 1.35, `${browser}: ring must visibly open during inhale; ready=${ready.width}, mid=${inhaleMid.width}`);
 
   await waitPhase(page, 'hold-in', 3500);
-  const open = await ringWidth(guide);
+  const open = await ringState(guide);assertVisibleRing(open,browser,'open hold');
   await shot(page, browser, 'open-hold');
-  assert.ok(open >= inhaleMid * 1.18, `${browser}: ring must finish opening before hold; mid=${inhaleMid}, open=${open}`);
+  assert.ok(open.width >= inhaleMid.width * 1.18, `${browser}: ring must finish opening before hold; mid=${inhaleMid.width}, open=${open.width}`);
 
   await waitPhase(page, 'exhale', 3500);
   await page.waitForTimeout(3900);
-  const exhaleMid = await ringWidth(guide);
+  const exhaleMid = await ringState(guide);assertVisibleRing(exhaleMid,browser,'exhale');
   await shot(page, browser, 'exhale-mid');
-  assert.ok(exhaleMid <= open * .82, `${browser}: ring must visibly close during exhale; open=${open}, mid=${exhaleMid}`);
+  assert.ok(exhaleMid.width <= open.width * .82, `${browser}: ring must visibly close during exhale; open=${open.width}, mid=${exhaleMid.width}`);
 
   await waitPhase(page, 'hold-out', 5200);
-  const closed = await ringWidth(guide);
+  const closed = await ringState(guide);assertVisibleRing(closed,browser,'closed hold');
   await shot(page, browser, 'closed-hold');
-  assert.ok(closed <= exhaleMid * .82, `${browser}: ring must finish closing before final hold; mid=${exhaleMid}, closed=${closed}`);
-  assert.ok(open >= closed * 2.2, `${browser}: open/closed contrast must be unmistakable; open=${open}, closed=${closed}`);
+  assert.ok(closed.width <= exhaleMid.width * .82, `${browser}: ring must finish closing before final hold; mid=${exhaleMid.width}, closed=${closed.width}`);
+  assert.ok(open.width >= closed.width * 2.2, `${browser}: open/closed contrast must be unmistakable; open=${open.width}, closed=${closed.width}`);
 
   const targetAfter = await guide.boundingBox();
   assert.ok(targetBefore && targetAfter && Math.abs(targetBefore.width - targetAfter.width) <= 1 && Math.abs(targetBefore.height - targetAfter.height) <= 1, `${browser}: touch target must stay fixed while ring breathes`);
