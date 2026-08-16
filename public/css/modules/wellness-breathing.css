@@ -1,0 +1,289 @@
+/* Module-owned guided breathing experience. The outer button stays physically
+   stable; its inner pulse and rings carry the breathing cadence. */
+
+.wellness-breathing-view {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.wellness-breathing-session {
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  padding: clamp(22px, 5vw, 42px);
+  border: 1px solid color-mix(in srgb, var(--gc-brand) 15%, var(--gc-border));
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--gc-brand) 9%, transparent), transparent 35%),
+    linear-gradient(155deg, var(--gc-surface-raised), var(--gc-surface));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+.wellness-breathing-copy {
+  max-width: 620px;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.wellness-breathing-copy .wellness-boost-category {
+  color: var(--gc-brand);
+}
+
+.wellness-breathing-copy h2 {
+  margin: 0;
+  color: var(--gc-text);
+  font-size: clamp(30px, 7vw, 46px);
+  line-height: 1.04;
+  letter-spacing: -.04em;
+}
+
+.wellness-breathing-copy p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--gc-text-muted);
+  line-height: 1.55;
+}
+
+.breathing-guide-stage {
+  width: 100%;
+  min-height: 290px;
+  display: grid;
+  place-items: center;
+  padding: 18px 0 8px;
+}
+
+/* Overrides the smaller sanctuary dimensions from the library while preserving
+   the same visual identity and View Transition name. */
+.breathing-guide-orb.living-breathing-orb {
+  --breath-phase-duration: 4000ms;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  width: min(62vw, 232px) !important;
+  height: min(62vw, 232px) !important;
+  min-width: 188px !important;
+  min-height: 188px !important;
+  justify-self: center !important;
+  align-self: center !important;
+  gap: 7px !important;
+  padding: 0 !important;
+  touch-action: manipulation;
+}
+
+.breathing-guide-orb.living-breathing-orb span {
+  color: var(--gc-text) !important;
+  font-size: clamp(22px, 6vw, 32px) !important;
+  font-weight: 780 !important;
+  letter-spacing: -.025em !important;
+}
+
+.breathing-guide-orb.living-breathing-orb small {
+  min-height: 19px;
+  color: var(--gc-brand) !important;
+  font-size: 12px !important;
+  font-weight: 760 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+
+/* The pulse is the guide. Do not animate the button itself: a moving hit target
+   feels slippery on touch screens and is difficult to activate reliably. */
+.breathing-guide-orb.living-breathing-orb i {
+  inset: 21% !important;
+  background: radial-gradient(circle at 38% 32%, rgba(78, 222, 163, .20), rgba(78, 222, 163, .055)) !important;
+  box-shadow: 0 0 42px rgba(78, 222, 163, .09);
+  transform: scale(.88);
+  transform-origin: center;
+  transition:
+    transform var(--breath-phase-duration) linear,
+    background var(--gc-motion-medium) ease,
+    box-shadow var(--gc-motion-medium) ease;
+  will-change: transform;
+}
+
+.breathing-guide-orb[data-breath-running="true"]::before,
+.breathing-guide-orb[data-breath-running="true"]::after {
+  animation: none !important;
+  transform-origin: center;
+  transition:
+    transform var(--breath-phase-duration) linear,
+    opacity var(--gc-motion-medium) ease !important;
+  will-change: transform;
+}
+
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="inhale"] i,
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="hold-in"] i {
+  transform: scale(1.58);
+  background: radial-gradient(circle at 38% 32%, rgba(78, 222, 163, .31), rgba(78, 222, 163, .075)) !important;
+  box-shadow: 0 0 62px rgba(78, 222, 163, .16);
+}
+
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="inhale"]::before,
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="hold-in"]::before {
+  transform: scale(1.13);
+  opacity: .72 !important;
+}
+
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="inhale"]::after,
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="hold-in"]::after {
+  transform: scale(1.18);
+  opacity: .40 !important;
+}
+
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="exhale"] i,
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="hold-out"] i {
+  transform: scale(.76);
+  background: radial-gradient(circle at 38% 32%, rgba(78, 222, 163, .13), rgba(78, 222, 163, .028)) !important;
+  box-shadow: 0 0 30px rgba(78, 222, 163, .06);
+}
+
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="exhale"]::before,
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="hold-out"]::before {
+  transform: scale(.90);
+  opacity: .32 !important;
+}
+
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="exhale"]::after,
+.breathing-guide-orb[data-breath-running="true"][data-breath-phase="hold-out"]::after {
+  transform: scale(.84);
+  opacity: .15 !important;
+}
+
+.breathing-guide-orb[data-breath-paused="true"] i,
+.breathing-guide-orb[data-breath-paused="true"]::before,
+.breathing-guide-orb[data-breath-paused="true"]::after {
+  transition-duration: var(--gc-motion-fast) !important;
+}
+
+.breathing-pattern {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  color: var(--gc-text-muted);
+  font-size: 11px;
+}
+
+.breathing-pattern span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--gc-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gc-surface-subtle) 76%, transparent);
+}
+
+.breathing-pattern b {
+  margin-right: 4px;
+  color: var(--gc-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.breathing-session-meta {
+  width: min(100%, 520px);
+  display: grid;
+  gap: 12px;
+}
+
+.breathing-sound-toggle {
+  width: fit-content;
+  min-height: 44px;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid var(--gc-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gc-surface-subtle) 76%, transparent);
+  color: var(--gc-text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 720;
+  cursor: pointer;
+}
+
+.breathing-sound-toggle[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--gc-brand) 48%, var(--gc-border));
+  background: color-mix(in srgb, var(--gc-brand) 9%, var(--gc-surface-subtle));
+  color: var(--gc-brand);
+}
+
+.breathing-session-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--gc-border);
+}
+
+.breathing-session-progress > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gc-brand);
+  transition: width .25s linear;
+}
+
+.breathing-session-time {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  color: var(--gc-text-muted);
+  font-size: 11px;
+}
+
+.breathing-session-time strong {
+  color: var(--gc-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.breathing-session-status {
+  min-height: 21px;
+  margin: 0;
+  color: var(--gc-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.breathing-session-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 150px));
+  justify-content: center;
+  gap: 9px;
+}
+
+.breathing-session-controls button {
+  width: 100%;
+  min-height: 44px;
+}
+
+@media (max-width: 650px) {
+  .wellness-breathing-session {
+    gap: 18px;
+    padding: 22px 16px 26px;
+    border-radius: 22px;
+  }
+
+  .breathing-guide-stage {
+    min-height: 250px;
+    padding-top: 8px;
+  }
+
+  .breathing-guide-orb.living-breathing-orb {
+    width: min(66vw, 220px) !important;
+    height: min(66vw, 220px) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathing-guide-orb.living-breathing-orb i,
+  .breathing-guide-orb.living-breathing-orb::before,
+  .breathing-guide-orb.living-breathing-orb::after,
+  .breathing-session-progress > span {
+    transition: none !important;
+    animation: none !important;
+  }
+}
