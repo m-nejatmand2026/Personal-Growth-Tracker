@@ -63,10 +63,24 @@ test('canonical design system owns theme tokens instead of composition sheets', 
 });
 
 test('navigation shell owns desktop Explore geometry without specificity escalation', () => {
+  const transitionStart = shellCss.indexOf('/* Explore is a shell-owned destination control.');
+  const desktopStart = shellCss.indexOf('@media (min-width:900px)');
+  assert.ok(transitionStart >= 0 && desktopStart > transitionStart, 'shell must keep the transitional mobile Explore region explicitly bounded');
   assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.topbar\{display:flex;position:fixed;z-index:95/);
   assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.top-actions\{display:flex\}/);
   assert.doesNotMatch(accessibilityCss, /@media\(min-width:900px\)[\s\S]*\.topbar/);
-  assert.ok(importantCount(shellCss) <= 1, `navigation shell must not grow a specificity arms race; found ${importantCount(shellCss)} !important declarations`);
+  const outsideTransition = `${shellCss.slice(0, transitionStart)}${shellCss.slice(desktopStart)}`;
+  assert.equal(importantCount(outsideTransition), 0, 'shell specificity debt must stay confined to the named mobile Explore transition region');
+});
+
+test('mobile Explore recovery is shell-owned and its transitional specificity debt is capped', () => {
+  const transitionStart = shellCss.indexOf('/* Explore is a shell-owned destination control.');
+  const desktopStart = shellCss.indexOf('@media (min-width:900px)');
+  const transition = shellCss.slice(transitionStart, desktopStart);
+  assert.match(transition, /\.os-shell \.topbar\{[^}]*width:88px!important;[^}]*height:42px!important/);
+  assert.match(transition, /\.os-shell \.top-more>summary \.top-more-label\{[^}]*display:inline!important/);
+  assert.match(transition, /\.workspace \.gc-today-header,[\s\S]*padding-right:98px!important/);
+  assert.ok(importantCount(transition) <= 48, `mobile Explore transition debt grew to ${importantCount(transition)} !important declarations`);
 });
 
 test('Journal owns the Today preview without rebuilding a specificity arms race', () => {

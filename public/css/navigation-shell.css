@@ -45,12 +45,28 @@ body{min-width:320px;overflow-x:clip}
 
 .app-rail{display:none}
 
+/* Explore is a shell-owned destination control. The extra .os-shell/.workspace
+ * specificity lets the owner safely outrank the remaining legacy recovery
+ * layer until that layer is decomposed. */
+.os-shell .top-more>summary span::before,
+.os-shell .top-more>summary span::after{content:none!important;display:none!important}
+
 @media (max-width:760px){
   /* The shell contributes a 14px outer inset. Secondary destination sheets
    * therefore use a 10px inner top inset so their first heading shares the
    * same 24px viewport band as Today and the fixed Explore control. */
   .workspace>.view:not(#todayView){padding-top:10px!important}
   .top-log-btn{display:none}
+
+  .os-shell .topbar{top:max(18px,env(safe-area-inset-top))!important;right:max(14px,env(safe-area-inset-right))!important;left:auto!important;width:88px!important;height:42px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .os-shell .topbar-title{display:none!important}
+  .os-shell .top-actions,.os-shell .top-more{width:88px!important;height:42px!important}
+  .os-shell .top-more>summary{width:88px!important;min-width:88px!important;max-width:88px!important;height:42px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;overflow:hidden!important;padding:0 10px!important;border:1px solid color-mix(in srgb,var(--gc-border) 92%,transparent)!important;border-radius:13px!important;background:color-mix(in srgb,var(--gc-surface) 92%,transparent)!important;color:var(--gc-text)!important;box-shadow:0 8px 24px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.035)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important}
+  .os-shell .top-more>summary::before,.os-shell .top-more>summary::after{content:none!important;display:none!important}
+  .os-shell .top-more>summary .top-more-spark{display:inline!important;color:var(--gc-brand)!important;font-size:12px!important;line-height:1!important}
+  .os-shell .top-more>summary .top-more-label{display:inline!important;color:var(--gc-text)!important;font-size:10.5px!important;font-weight:800!important;line-height:1!important;white-space:nowrap!important}
+  .workspace .gc-today-header,.workspace .gc-product-page-header,.workspace .wellness-current-header{padding-right:98px!important}
+  .workspace .gc-plan-header>div:first-child{padding-right:98px!important}
 }
 
 @media (max-width:420px){
