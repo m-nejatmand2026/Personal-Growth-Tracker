@@ -46,4 +46,4 @@ if [[ "$ready" != "1" ]]; then
   exit 1
 fi
 
-GC_E2E_BASE_URL=http://127.0.0.1:8787 npm run test:browser
+GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser

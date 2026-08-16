@@ -12,35 +12,28 @@ const SECURITY_HEADERS = Object.freeze({
 
 function secureResponse(response) {
   const headers = new Headers(response.headers);
-
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    headers.set(name, value);
-  }
-
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
 function logApiFailure(request, url, error) {
   const status = error instanceof HttpError ? error.status : 500;
-
-  // Expected client/validation errors remain visible through invocation status
-  // metrics without copying request content or validation details into custom
-  // logs. Custom error logs are reserved for server-side failures.
   if (status < 500) return;
+  console.error(JSON.stringify({ event: 'api_error', path: url.pathname, method: request.method, status, error_name: error?.name || 'Error', message: error?.message || 'Unexpected error', ray_id: request.headers.get('cf-ray') || null }));
+}
 
-  console.error(JSON.stringify({
-    event: 'api_error',
-    path: url.pathname,
-    method: request.method,
-    status,
-    error_name: error?.name || 'Error',
-    message: error?.message || 'Unexpected error',
-    ray_id: request.headers.get('cf-ray') || null
-  }));
+async function serveExperienceOne(request, env) {
+  if (!env.ASSETS) return new Response('Not found', { status: 404 });
+  const assetUrl = new URL('/experience/1/index.html', request.url);
+  const source = await env.ASSETS.fetch(new Request(assetUrl, request));
+  if (!source.ok) return source;
+  const html = (await source.text())
+    .replace('href="/manifest.webmanifest"', 'href="/experience/1/manifest.webmanifest"')
+    .replace('</body>', '<script type="module" src="/experience/1/bootstrap.js"></script></body>');
+  const headers = new Headers(source.headers);
+  headers.set('content-type', 'text/html; charset=utf-8');
+  headers.set('cache-control', 'no-store');
+  return new Response(html, { status: source.status, statusText: source.statusText, headers });
 }
 
 export default {
@@ -48,29 +41,18 @@ export default {
     const url = new URL(request.url);
 
     if (!url.pathname.startsWith('/api/')) {
-      const response = env.ASSETS
-        ? await env.ASSETS.fetch(request)
-        : new Response('Not found', { status: 404 });
-
+      if (url.pathname === '/experience/1') return Response.redirect(new URL('/experience/1/', request.url), 308);
+      if (url.pathname === '/experience/1/') return secureResponse(await serveExperienceOne(request, env));
+      const response = env.ASSETS ? await env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
       return secureResponse(response);
     }
 
     try {
-      return secureResponse(
-        await routeApi(request, env)
-      );
+      return secureResponse(await routeApi(request, env));
     } catch (error) {
       logApiFailure(request, url, error);
-
-      if (error instanceof HttpError) {
-        return secureResponse(
-          json({ error: error.message }, error.status)
-        );
-      }
-
-      return secureResponse(
-        json({ error: 'Unexpected server error' }, 500)
-      );
+      if (error instanceof HttpError) return secureResponse(json({ error: error.message }, error.status));
+      return secureResponse(json({ error: 'Unexpected server error' }, 500));
     }
   }
 };
