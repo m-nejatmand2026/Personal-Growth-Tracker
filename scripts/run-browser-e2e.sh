@@ -62,4 +62,4 @@ e2="$(curl --fail --silent --show-error "$base/experience/2/")"
 printf '%s' "$e2" | grep -F 'Growth Compass Preview 2 — Ambient Luxury experience.' >/dev/null
 printf '%s' "$e2" | grep -F '/experience/2/js/app.js' >/dev/null
 
-GC_E2E_BASE_URL="$base/experience/1/" npm run test:browser
+GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser
