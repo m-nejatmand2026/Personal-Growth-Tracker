@@ -6,6 +6,8 @@ const root = new URL('../', import.meta.url);
 const indexHtml = await readFile(new URL('public/index.html', root), 'utf8');
 const designCss = await readFile(new URL('public/css/design-system.css', root), 'utf8');
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
+const screenshotRecoveryCss = await readFile(new URL('public/css/screenshot-recovery.css', root), 'utf8');
+const wellnessBreathingCss = await readFile(new URL('public/css/modules/wellness-breathing.css', root), 'utf8');
 const accessibilityCss = await readFile(new URL('public/css/accessibility-regression.css', root), 'utf8');
 
 const retiredPresentationFiles = [
@@ -59,6 +61,17 @@ test('navigation shell owns desktop Explore geometry without specificity escalat
   assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.top-actions\{display:flex\}/);
   assert.doesNotMatch(accessibilityCss, /@media\(min-width:900px\)[\s\S]*\.topbar/);
   assert.ok(importantCount(shellCss) <= 1, `navigation shell must not grow a specificity arms race; found ${importantCount(shellCss)} !important declarations`);
+});
+
+test('wellness breathing owns breathing presentation after recovery layers', () => {
+  const screenshotRecovery = stylesheetIndex('/css/screenshot-recovery.css');
+  const breathing = stylesheetIndex('/css/modules/wellness-breathing.css');
+  const accessibility = stylesheetIndex('/css/accessibility-regression.css');
+  assert.ok(screenshotRecovery >= 0 && breathing > screenshotRecovery && accessibility > breathing, 'wellness breathing must graduate device fixes out of global recovery while accessibility stays final');
+  assert.match(wellnessBreathingCss, /\.living-breathing-orb\{/);
+  assert.match(wellnessBreathingCss, /@keyframes gc-breath-orb/);
+  assert.match(wellnessBreathingCss, /@media\(prefers-reduced-motion:reduce\)[\s\S]*\.living-breathing-orb/);
+  assert.doesNotMatch(screenshotRecoveryCss, /\.living-breathing-orb|gc-breath-orb|gc-breath-ring/);
 });
 
 test('runtime stylesheet count stays bounded while module-owned sheets remain independent', () => {
