@@ -32,7 +32,8 @@ function runtimeStylesheets() {
 }
 
 function importantCount(source) {
-  return (source.match(/!important/g) || []).length;
+  const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '');
+  return (withoutComments.match(/!important/g) || []).length;
 }
 
 test('retired presentation generations are physically absent and cannot return to runtime', async () => {
