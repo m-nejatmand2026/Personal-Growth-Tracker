@@ -1,0 +1,107 @@
+/* Growth Compass shared motion system.
+   Motion should clarify state changes, not slow down work. Module-specific motion
+   remains owned by the module; this file provides shared timing and transitions. */
+
+:root {
+  --gc-motion-fast: 140ms;
+  --gc-motion-medium: 260ms;
+  --gc-motion-slow: 420ms;
+  --gc-ease-standard: cubic-bezier(.2, .8, .2, 1);
+  --gc-ease-emphasized: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* Keep touch feedback quick, while avoiding the instant state swaps that made
+   the Preview feel mechanical. Do not apply transforms to every button because
+   some controls own motion of their own. */
+:where(.gc-button, .gc-live-tile, .nav-btn, .rail-nav-btn, .state-card, .top-more > summary, .logger-mode-choice > span, .energy-cell) {
+  transition-duration: var(--gc-motion-fast) !important;
+  transition-timing-function: var(--gc-ease-standard) !important;
+}
+
+:where(.gc-button, .nav-btn, .rail-nav-btn, .state-card, .top-more > summary):not(:disabled):active {
+  transform: scale(.975);
+  transition-duration: 80ms !important;
+}
+
+/* Native details elements still change open state immediately. Their revealed
+   content enters softly so expanding Energy, Tomorrow, Plan modules, etc. has a
+   perceptible but compact transition. */
+details[open] > :not(summary) {
+  animation: gc-disclosure-enter var(--gc-motion-medium) var(--gc-ease-emphasized) both;
+  transform-origin: top center;
+}
+
+@keyframes gc-disclosure-enter {
+  from { opacity: 0; transform: translateY(-5px) scaleY(.985); }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+/* Fallback used when the View Transitions API is unavailable. */
+.gc-motion-enter {
+  animation: gc-page-enter 320ms var(--gc-ease-emphasized) both;
+}
+
+@keyframes gc-page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Only the active page participates. Navigation and the persistent shell stay
+   physically stable while content changes beneath them. */
+.view.active {
+  view-transition-name: gc-current-page;
+}
+
+::view-transition-group(gc-current-page) {
+  animation-duration: 360ms;
+  animation-timing-function: var(--gc-ease-emphasized);
+}
+
+::view-transition-old(gc-current-page) {
+  animation: gc-page-old 180ms ease-out both;
+}
+
+::view-transition-new(gc-current-page) {
+  animation: gc-page-new 340ms var(--gc-ease-emphasized) both;
+}
+
+@keyframes gc-page-old {
+  to { opacity: 0; transform: translateY(-3px) scale(.995); }
+}
+
+@keyframes gc-page-new {
+  from { opacity: 0; transform: translateY(8px) scale(.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* The sanctuary orb and breathing-session orb share this name, allowing a
+   supported browser to visually carry the same object into the breathing page. */
+.living-breathing-orb {
+  view-transition-name: gc-breathing-orb;
+}
+
+::view-transition-group(gc-breathing-orb) {
+  animation-duration: 520ms;
+  animation-timing-function: var(--gc-ease-emphasized);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --gc-motion-fast: 0ms;
+    --gc-motion-medium: 0ms;
+    --gc-motion-slow: 0ms;
+  }
+
+  details[open] > :not(summary),
+  .gc-motion-enter {
+    animation: none !important;
+  }
+
+  ::view-transition-group(gc-current-page),
+  ::view-transition-old(gc-current-page),
+  ::view-transition-new(gc-current-page),
+  ::view-transition-group(gc-breathing-orb) {
+    animation-duration: 0s !important;
+    animation: none !important;
+  }
+}
