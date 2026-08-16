@@ -16,13 +16,27 @@ test('Recovered Today keeps daily action and time reality first then visible sup
   const heading = render.indexOf('gc-today-header');
   const dailyPlan = render.indexOf('${dailyPlanPanel}');
   const capacity = render.indexOf('${capacityCard(capacityModel)}');
-  const context = render.indexOf('${visibleContext({ directionModel, wellbeingState, journalPreview })}');
+  const context = render.indexOf('${visibleContext({ directionModel, wellbeingState, wellbeingDetails, journalPreview })}');
   const more = render.indexOf('gc-today-more');
   assert.ok(heading >= 0 && heading < dailyPlan && dailyPlan < capacity && capacity < context && context < more);
   assert.match(todayJs, /function visibleContext/);
   assert.match(todayJs, /directionSection\(directionModel\)/);
   assert.match(todayJs, /\$\{wellbeingState\}/);
+  assert.match(todayJs, /\$\{wellbeingDetails\}/);
   assert.match(todayJs, /\$\{journalPreview\}/);
+});
+
+test('Energy check-in is not buried inside the separate More detail disclosure', () => {
+  const visibleStart = todayJs.indexOf('function visibleContext');
+  const visibleEnd = todayJs.indexOf('export function focusTodayActivities');
+  const visible = todayJs.slice(visibleStart, visibleEnd);
+  const render = todayJs.slice(todayJs.indexOf('root.innerHTML'));
+  const context = render.indexOf('${visibleContext({ directionModel, wellbeingState, wellbeingDetails, journalPreview })}');
+  const more = render.indexOf('<details class="gc-today-more">');
+  assert.match(visible, /\$\{wellbeingDetails\}/);
+  assert.ok(context >= 0 && more > context);
+  assert.match(render, /<small>Recent facts<\/small>/);
+  assert.doesNotMatch(render.slice(more), /\$\{wellbeingDetails\}/);
 });
 
 test('Today uses live module data rather than placeholder dashboard values', () => {
