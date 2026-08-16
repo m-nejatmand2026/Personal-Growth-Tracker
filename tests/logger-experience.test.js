@@ -42,8 +42,8 @@ test('Logger uses human-facing Plan Start now Done while only Done writes factua
 
 test('contextual Activity creation stays behind the Activities public capability', () => {
   assert.match(loggerManifest, /dependsOn:\s*\['activities',\s*'progress',\s*'daily-plan'\]/);
-  assert.match(appJs, /const activities = moduleRegistry\.get\('activities'\)/);
-  assert.match(appJs, /create\(\{ onSaved: load, activities \}\)/);
+  assert.match(appJs, /activities\s*=\s*moduleRegistry\.get\('activities'\)/);
+  assert.match(appJs, /create\(\{\s*onSaved:\s*load,\s*activities\s*\}\)/);
   assert.match(loggerJs, /activityCapability\.create\(\{/);
   assert.match(loggerJs, /Create “\$\{String\(query\)\.trim\(\)\}”/);
   assert.match(loggerJs, /What does this support\?/);
