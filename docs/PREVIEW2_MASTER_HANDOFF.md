@@ -4,15 +4,24 @@ Handoff date: 2026-08-16
 
 Purpose: hand complete ownership of the new Growth Compass experience to a fresh specialist chat without losing the current recovered application.
 
+## Latest authority
+
+For the complete Figma Make + Figma Design + Figma MCP + GitHub + Codex workflow and the two-experience selector architecture, read:
+
+`docs/PREVIEW2_FIGMA_MCP_CODEX_FULL_HANDOFF.md`
+
+That file is the latest authority for Preview 2 frontend separation.
+
 ## 1. Operating model
 
-There are now three separate lanes:
+There are now four protected references/lanes:
 
 1. **Production / `main` runtime** — protected release baseline. Do not deploy Production or mutate Production D1 without explicit user authorization.
-2. **Preview 1 / `feature/experience-refinement`** — the current recovered experience. Preserve it as the behavioral/regression baseline.
-3. **Preview 2 / `feature/experience-v2`** — the new design/experience lane. All Figma-driven redesign work goes here.
+2. **Preview 1 / `feature/experience-refinement`** — the current recovered experience. Preserve it as an independent behavioral/regression baseline.
+3. **Frozen recovered baseline / `baseline/preview1-recovered-2026-08-16`** — immutable reference at SHA `3cf2a65b5918f73e4f182abfdce8589c98d85277`.
+4. **Preview 2 / `feature/experience-v2`** — the new design/experience lane. All Figma-driven redesign work goes here.
 
-Preview 2 starts from exact Preview 1 checkpoint:
+Preview 2 started from exact validated Preview 1 checkpoint:
 
 `3cf2a65b5918f73e4f182abfdce8589c98d85277`
 
@@ -32,7 +41,37 @@ Do not use `feature/experience-refinement` for new-design changes.
 
 Do not push redesign work directly to `main`.
 
-## 3. Current architecture authority
+## 3. Preview 2 must contain two separate experiences
+
+The Preview 2 base URL must open a neutral selector:
+
+- **Experience 1 — Current/Recovered**
+- **Experience 2 — New/Ambient Luxury**
+
+Recommended routes:
+
+```text
+/                 → Experience Selector
+/experience/1/     → frozen current/recovered experience
+/experience/2/     → new Figma-driven experience
+/api/*             → shared Preview 2 backend
+```
+
+Experience 1 and Experience 2 must be separate frontend implementations, not one app with a theme class or giant conditional stylesheet.
+
+They require separate HTML/CSS/JS entrypoints, PWA/service-worker scopes, cache namespaces and browser preference namespaces.
+
+Both may share the same Preview 2 backend and Preview 2 D1 so the founder can compare both with the same data.
+
+Neither may use Preview 1 D1 or Production D1.
+
+Experience 1 is a frozen frontend copy based on `baseline/preview1-recovered-2026-08-16` and should be guarded by an automated hash/manifest test.
+
+Quality should also reject direct frontend imports across Experience 1 and Experience 2.
+
+The independent live Preview 1 branch/Worker/D1 remain untouched.
+
+## 4. Current architecture authority
 
 Preserve the modular monolith.
 
@@ -51,7 +90,7 @@ The current application uses a Cloudflare Worker + D1 modular monolith with nati
 
 Do **not** rewrite the application into Figma Make's generated React architecture.
 
-## 4. Current product semantics that must survive the redesign
+## 5. Current product semantics that must survive the redesign
 
 - Goal = long-term direction.
 - Daily Plan = dated intention.
@@ -63,33 +102,33 @@ Do **not** rewrite the application into Figma Make's generated React architectur
 - Wellbeing observations remain separate from Wellness Boost practices.
 - Today and Plan are composition surfaces, not owners of every business domain.
 
-## 5. Current Preview 1 capabilities to preserve
+## 6. Current recovered capabilities to preserve
 
-The new experience must not regress these validated flows:
+Experience 2 must not regress:
 
-- Today loads with direct Start / Done / Plans changed actions.
-- Tomorrow is one tap away.
-- Progress, Wellbeing/Energy and Journal remain discoverable.
-- Global Add distinguishes Done / Plan / Start now and defaults according to the approved product contract.
-- Start now creates a persistent active session from real server `started_at`.
-- Done creates factual completion through the real completion path.
-- Activities can be created, edited and archived.
-- Goals remain real planning objects.
-- recurring commitments and Capacity remain real.
-- Progress remains factual.
-- Insights remain evidence-gated.
-- Journal remains functional.
-- Wellness Boost remains an independent practice/player capability.
-- breathing interaction and its browser visual acceptance must not be casually removed.
-- accessibility focus/keyboard/mobile safeguards remain release-blocking.
+- Today with direct Start / Done / Plans changed actions;
+- Tomorrow one tap away;
+- Progress, Wellbeing/Energy and Journal discoverability;
+- Add distinguishing Done / Plan / Start now;
+- persistent active session from real server `started_at`;
+- factual completion path;
+- Activity create/edit/archive;
+- Goal planning objects;
+- recurring commitments and Capacity;
+- factual Progress;
+- evidence-gated Insights;
+- Journal;
+- Wellness Boost;
+- breathing interaction and visual acceptance;
+- accessibility focus/keyboard/mobile safeguards.
 
-## 6. New experience goal
+## 7. New experience goal
 
-Preview 2 is not a small reskin.
+Preview 2 Experience 2 is not a small reskin.
 
-It is allowed to create a substantially new visual and interaction experience while keeping the validated product/domain foundation.
+It may create a substantially new visual and interaction experience while keeping the validated product/domain foundation.
 
-Target experience:
+Target:
 
 **Ambient Luxury + Living UI**
 
@@ -104,31 +143,26 @@ Characteristics:
 - subtle purposeful motion;
 - no gamification, guilt, fake scores or decorative fake intelligence.
 
-## 7. Figma authority
+## 8. Figma authority
 
 Current Figma Make source:
 
 `https://www.figma.com/make/CWcG1y922g7XTslPrfBZrU/Personal-Planning-Application-Design?p=f&t=fYughkbfBBJLkxJ0-0`
 
-Use Figma Make as:
-
-- interactive prototype reference;
-- visual direction;
-- state/motion reference;
-- design exploration source.
+Use Figma Make as interactive prototype reference, visual direction, state/motion reference and design exploration source.
 
 Do not copy its generated React code blindly into production.
 
-Recommended next step is to create/use a normal Figma Design file for stable visual specification, components, variables and exact screen states.
+Create/use a normal Figma Design file for stable visual specification, components, variables and exact screen states.
 
-## 8. Figma MCP workflow
+## 9. Figma MCP workflow
 
 The new design chat should connect Figma MCP and use it actively.
 
 For each implementation family:
 
 1. inspect the current GitHub implementation;
-2. inspect the Figma Make behavior through MCP;
+2. inspect Figma Make behavior through MCP;
 3. inspect the exact Figma Design node through MCP when available;
 4. classify differences as visual-only / interaction / domain / data;
 5. preserve production semantics;
@@ -140,34 +174,23 @@ For each implementation family:
 
 Figma is visual/interaction authority only where it does not conflict with real domain/product contracts.
 
-## 9. Code Connect
+## 10. Code Connect
 
 Code Connect is optional and must not block Preview 2.
 
-Use it later if/when it is available on the user's Figma plan and when stable production components exist.
+Use it later if/when available on the user's Figma plan and when stable production components exist.
 
-High-value future mappings include:
-
-- LivingSurface
-- StaticSurface
-- Button
-- FloatingDock / navigation
-- Timeline/Day item
-- CapacitySurface
-- Goal surfaces
-- progress/chart primitives
+Potential mappings include LivingSurface, StaticSurface, Button, Navigation/FloatingDock, Timeline/Day item, CapacitySurface, Goal surfaces and progress/chart primitives.
 
 MCP alone is sufficient to begin.
 
-## 10. Design-system implementation strategy
+## 11. Design-system implementation strategy
 
-Do **not** add one more permanent override stylesheet on top of every historical layer.
+Do not add one more permanent override stylesheet on top of every historical layer.
 
-First task on Preview 2:
+Experience 1 is frozen.
 
-### Design baseline audit/reset
-
-Inventory current presentation layers and classify them as:
+Experience 2 begins with a presentation audit/reset:
 
 - foundation;
 - module-owned;
@@ -175,61 +198,43 @@ Inventory current presentation layers and classify them as:
 - transitional;
 - obsolete.
 
-Known layers include historical/recovery/Figma-era CSS. Some are necessary; some should be consolidated or removed.
-
-Preserve recent high-value improvements:
-
-- shared motion infrastructure;
-- View Transition/fallback behavior;
-- Reduced Motion behavior;
-- breathing interaction;
-- direct Energy access;
-- current functional browser acceptance.
+Preserve recent high-value improvements such as shared motion infrastructure, View Transition/fallback behavior, Reduced Motion, breathing interaction, direct Energy access and current browser acceptance.
 
 Remove visual debt surgically, not blindly.
 
-## 11. Recommended implementation order
+## 12. Recommended implementation order
 
-1. CSS/design-system audit and cleanup.
-2. canonical tokens/themes.
-3. shared Static / Raised / Living surface primitives.
-4. controls and navigation shell.
-5. Today.
-6. real Capacity / Plan summary.
-7. Logger/Add.
-8. Progress.
-9. Insights.
-10. Wellness Boost.
-11. Journal.
-12. Settings.
-13. deeper Goal experience.
-14. tablet/desktop refinement.
-15. only then consider new domain capabilities such as full week scheduling, forecasting, Focus Timer or AI Mentor.
+1. Preview 2 selector.
+2. Frozen Experience 1 under `/experience/1/`.
+3. Clean Experience 2 shell under `/experience/2/`.
+4. Experience 1 freeze/hash check.
+5. Cross-experience boundary test.
+6. Separate PWA/service-worker scopes.
+7. CSS/design-system audit and cleanup for Experience 2.
+8. canonical tokens/themes.
+9. shared Static / Raised / Living surface primitives for Experience 2.
+10. controls and navigation shell.
+11. Today.
+12. real Capacity / Plan summary.
+13. Logger/Add.
+14. Goals.
+15. Progress.
+16. Insights.
+17. Wellness Boost.
+18. Journal.
+19. Settings.
+20. tablet/desktop refinement.
+21. only then consider new domain capabilities such as full week scheduling, forecasting, Focus Timer or AI Mentor.
 
-## 12. Living Surface rule
+## 13. Living Surface rule
 
 LivingSurface is a shared presentation primitive, not a business owner.
 
-It may visually render real states such as:
+It may visually render real states such as Now, Next, Free window, real Capacity conflict and active session.
 
-- Now;
-- Next;
-- Free window;
-- real Capacity conflict;
-- active session;
-- future real forecast;
-- future real Mentor recommendation.
+It must not calculate Capacity, create forecasts, write Progress, schedule activities, call AI or invent state.
 
-It must not itself:
-
-- calculate Capacity;
-- create forecasts;
-- write Progress;
-- schedule activities;
-- call AI;
-- invent state.
-
-## 13. Important Figma concepts: adopt vs defer
+## 14. Important Figma concepts: adopt vs defer
 
 ### Safe to adopt now
 
@@ -255,82 +260,60 @@ It must not itself:
 
 Never ship hardcoded demo data as real product intelligence.
 
-## 14. Preview 2 deployment architecture
+## 15. Preview 2 deployment architecture
 
-Preview 2 Worker target:
+Preview 2 Worker target: `personal-growth-tracker-preview2`.
 
-`personal-growth-tracker-preview2`
+Expected URL: `https://personal-growth-tracker-preview2.m-nejatmand.workers.dev`.
 
-Expected URL:
-
-`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev`
-
-Preview 2 must have its own D1 database:
-
-`personal-growth-tracker-preview2`
+Preview 2 must have its own D1: `personal-growth-tracker-preview2`.
 
 Do not point Preview 2 at Production D1 or Preview 1 D1.
 
-A guarded workflow exists on `main`:
+A guarded workflow exists on `main`: `.github/workflows/deploy-preview2.yml`.
 
-`.github/workflows/deploy-preview2.yml`
+It listens to Quality and only deploys when Quality succeeded; run came from a pull request; head branch is exactly `feature/experience-v2`; head repository is this repository; and `GC_PREVIEW2_ENABLED` is exactly `true`.
 
-It listens to the existing `Quality` workflow and only deploys when:
+It checks out the exact tested SHA, uses an isolated Preview 2 Wrangler config, refuses pending migrations, deploys Preview 2 only, and verifies Cloudflare Access + root UI + D1 health.
 
-- Quality succeeded;
-- the run came from a pull request;
-- head branch is exactly `feature/experience-v2`;
-- head repository is this repository;
-- repository variable `GC_PREVIEW2_ENABLED` is exactly `true`.
+## 16. One-time Preview 2 bootstrap still required
 
-It then checks out the exact tested SHA, builds an isolated Preview 2 Wrangler config, refuses pending migrations, deploys Preview 2 only, and verifies Cloudflare Access + root UI + D1 health.
-
-## 15. One-time Preview 2 bootstrap still required
-
-Before automatic Preview 2 deployment can run, perform these explicit environment steps:
-
-1. Create Cloudflare D1 database named `personal-growth-tracker-preview2`.
-2. Record its D1 UUID.
-3. In GitHub repository variables create:
-   - `GC_PREVIEW2_D1_ID` = the new Preview 2 D1 UUID
-   - `GC_PREVIEW2_ENABLED` = `false` initially
-4. Apply the existing migrations explicitly to **Preview 2 only** and verify D1 integrity.
-5. Configure Cloudflare Access for `personal-growth-tracker-preview2.m-nejatmand.workers.dev` before enabling automatic deployment.
-6. Permit the existing Preview CI service token for the Preview 2 Access application, or create dedicated Preview 2 CI credentials if preferred.
+1. Create D1 `personal-growth-tracker-preview2`.
+2. Record UUID.
+3. Create GitHub variables `GC_PREVIEW2_D1_ID=<UUID>` and `GC_PREVIEW2_ENABLED=false`.
+4. Apply existing migrations explicitly to Preview 2 only and verify integrity.
+5. Configure Cloudflare Access for `personal-growth-tracker-preview2.m-nejatmand.workers.dev`.
+6. Permit Preview CI service-token access or create dedicated credentials.
 7. Verify anonymous requests are blocked.
 8. Set `GC_PREVIEW2_ENABLED=true`.
 
 After that, ordinary Preview 2 commits should require no manual deployment.
 
-## 16. Pull-request workflow
+## 17. Pull-request workflow
 
-Keep Preview 2 in a long-lived draft PR against `main` during redesign.
+Keep Preview 2 in long-lived draft PR #7 against `main` during redesign.
 
 Normal loop:
 
 ```text
-New design chat edits feature/experience-v2
+feature/experience-v2
         ↓
-Quality runs automatically
+Quality
         ↓
-Quality green
+exact tested SHA
         ↓
-Deploy Preview 2 workflow checks exact SHA
-        ↓
-Preview 2 deploys automatically
+automatic Preview 2 deployment
         ↓
 Access + UI + D1 smoke
         ↓
-user tests Preview 2
+user compares Experience 1 vs Experience 2
         ↓
 continue
 ```
 
 Do not merge merely because Preview 2 is green.
 
-## 17. Preview 1 preservation
-
-The existing Preview 1 branch and Worker remain independent.
+## 18. Preview 1 preservation
 
 Do not modify or delete:
 
@@ -339,44 +322,18 @@ Do not modify or delete:
 - `personal-growth-tracker-preview` D1;
 - the existing Preview 1 deployment workflow.
 
-This allows side-by-side comparison of old/current vs new experience.
+The frozen baseline branch gives Preview 2 its internal Experience 1 without coupling to the live Preview 1 lane.
 
-## 18. Production rule
+## 19. Production rule
 
 **DO NOT DEPLOY PREVIEW 2 TO PRODUCTION.**
 
-No Preview 2 work authorizes:
-
-- merging to Production;
-- Production Worker deployment;
-- Production D1 migrations;
-- Production data mutation.
-
-Production remains an explicit later decision.
-
-## 19. New-chat startup instruction
-
-Use the following as the first message in the new design/development chat:
-
-> You are taking over the Growth Compass Preview 2 experience rebuild. Read `docs/PREVIEW2_MASTER_HANDOFF.md` completely before making changes. Work only on `feature/experience-v2`. Preserve Preview 1 and Production. Use the current application as the functional/domain baseline and the current Figma Make/Figma Design as the visual/interaction reference. Connect and use Figma MCP. Do not copy Figma Make React code into production blindly. Begin by auditing/consolidating the current presentation layers and establishing the clean design-system foundation, then implement the new experience screen family by screen family. Run Quality after every coherent change and rely on the automatic Preview 2 deployment only after its environment bootstrap is enabled. Never invent forecasts, AI output, scheduling intelligence, health facts or progress data that the real domain does not support.
+No Preview 2 work authorizes merging to Production, Production Worker deployment, Production D1 migrations or Production data mutation.
 
 ## 20. Autonomous operating rule
 
-For ordinary implementation decisions:
-
-- inspect;
-- decide;
-- implement;
-- test;
-- fix;
-- deploy to Preview 2 automatically when green;
-- continue.
+For ordinary implementation decisions: inspect; decide; implement; test; fix; deploy to Preview 2 automatically when green; inspect evidence; continue.
 
 Do not repeatedly stop for approval on normal engineering choices.
 
-Stop only when:
-
-- a major product/domain decision genuinely cannot be inferred;
-- a schema/data operation needs explicit environment review;
-- Production would be affected;
-- the user needs to personally test/choose between substantially different UX directions.
+Stop only when a major product/domain decision genuinely cannot be inferred; schema/data operation needs explicit environment review; Production or Preview 1 would be affected; external authorization is required; or the user must personally test/choose a substantially different UX direction.
