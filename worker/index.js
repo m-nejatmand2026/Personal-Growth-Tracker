@@ -25,7 +25,7 @@ function logApiFailure(request, url, error) {
 async function serveHtmlAsset(request, env, assetPath, { transform } = {}) {
   if (!env.ASSETS) return new Response('Not found', { status: 404 });
   const assetUrl = new URL(assetPath, request.url);
-  const source = await env.ASSETS.fetch(new Request(assetUrl, request));
+  const source = await env.ASSETS.fetch(assetUrl);
   if (!source.ok) return source;
   const original = await source.text();
   const html = transform ? transform(original) : original;
