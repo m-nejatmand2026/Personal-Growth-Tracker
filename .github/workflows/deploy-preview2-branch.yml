@@ -1,0 +1,213 @@
+name: Preview 2 Branch Deploy
+
+on:
+  push:
+    branches: [feature/experience-v2]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: growth-compass-preview2-branch
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview2:
+    name: Test, bootstrap and deploy isolated Preview 2
+    if: github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' && github.ref == 'refs/heads/feature/experience-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout exact Preview 2 commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Verify isolated Preview 2 credentials and branch
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/feature/experience-v2'
+          test "$GITHUB_REPOSITORY" = 'm-nejatmand2026/Personal-Growth-Tracker'
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN repository secret.'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID repository secret.'; exit 1; }
+          test -n "$CF_ACCESS_CLIENT_ID" || { echo 'Missing CF_ACCESS_CLIENT_ID repository secret.'; exit 1; }
+          test -n "$CF_ACCESS_CLIENT_SECRET" || { echo 'Missing CF_ACCESS_CLIENT_SECRET repository secret.'; exit 1; }
+
+      - name: Run unit, contract and modularity boundary tests
+        shell: bash
+        run: npm test
+
+      - name: Install pinned Worker and browser test runtimes
+        run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4.123.0 playwright@1.62.0
+
+      - name: Run real Worker and isolated D1 integration tests
+        shell: bash
+        run: npm run test:integration
+
+      - name: Install pinned browser binaries
+        run: ./node_modules/.bin/playwright install --with-deps chromium webkit
+
+      - name: Run local Worker browser acceptance gate
+        env:
+          GC_E2E_SCREENSHOT_DIR: .artifacts/ui-preview2-branch
+        shell: bash
+        run: bash scripts/run-browser-e2e.sh
+
+      - name: Find or create isolated Preview 2 D1
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          name='personal-growth-tracker-preview2'
+
+          npx --yes wrangler@4.123.0 d1 list --json > .preview2-d1-list.json
+          db_id="$(node <<'NODE'
+          const fs = require('fs');
+          const raw = JSON.parse(fs.readFileSync('.preview2-d1-list.json', 'utf8'));
+          const list = Array.isArray(raw) ? raw : (raw.result || raw.databases || []);
+          const matches = list.filter((item) => item && item.name === 'personal-growth-tracker-preview2');
+          if (matches.length > 1) throw new Error('Multiple D1 databases named personal-growth-tracker-preview2; refusing ambiguous bootstrap.');
+          if (matches.length === 1) process.stdout.write(matches[0].uuid || matches[0].id || matches[0].database_id || '');
+          NODE
+          )"
+
+          if [ -z "$db_id" ]; then
+            echo 'Preview 2 D1 does not exist; creating isolated database.'
+            npx --yes wrangler@4.123.0 d1 create "$name"
+            npx --yes wrangler@4.123.0 d1 list --json > .preview2-d1-list.json
+            db_id="$(node <<'NODE'
+            const fs = require('fs');
+            const raw = JSON.parse(fs.readFileSync('.preview2-d1-list.json', 'utf8'));
+            const list = Array.isArray(raw) ? raw : (raw.result || raw.databases || []);
+            const matches = list.filter((item) => item && item.name === 'personal-growth-tracker-preview2');
+            if (matches.length !== 1) throw new Error(`Expected exactly one Preview 2 D1 after creation, found ${matches.length}.`);
+            const id = matches[0].uuid || matches[0].id || matches[0].database_id || '';
+            if (!id) throw new Error('Preview 2 D1 exists but no database identifier was returned.');
+            process.stdout.write(id);
+            NODE
+            )"
+          fi
+
+          printf '%s' "$db_id" > .preview2-db-id
+          echo 'Preview 2 D1 resolved successfully.'
+
+      - name: Build isolated Preview 2 Wrangler config and enforce D1 separation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('wrangler.jsonc', 'utf8'));
+          const production = config.d1_databases?.find((item) => item.binding === 'DB');
+          const preview1 = config.env?.preview?.d1_databases?.find((item) => item.binding === 'DB');
+          const preview2DbId = fs.readFileSync('.preview2-db-id', 'utf8').trim();
+
+          if (config.name !== 'personal-growth-tracker') throw new Error(`Unexpected Worker base name: ${config.name}`);
+          if (!production?.database_id || !preview1?.database_id) throw new Error('Production and Preview 1 D1 identities must remain explicit.');
+          if (!preview2DbId) throw new Error('Preview 2 D1 id is empty.');
+          if (preview2DbId === production.database_id) throw new Error('Preview 2 points at Production D1. Refusing deployment.');
+          if (preview2DbId === preview1.database_id) throw new Error('Preview 2 points at Preview 1 D1. Refusing deployment.');
+
+          config.env ||= {};
+          config.env.preview2 = {
+            name: 'personal-growth-tracker-preview2',
+            observability: { enabled: true, head_sampling_rate: 1 },
+            d1_databases: [{
+              binding: 'DB',
+              database_name: 'personal-growth-tracker-preview2',
+              database_id: preview2DbId,
+              migrations_dir: 'migrations'
+            }]
+          };
+
+          fs.writeFileSync('.wrangler.preview2.json', JSON.stringify(config, null, 2));
+          NODE
+
+      - name: Apply migrations to Preview 2 D1 only
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.123.0 d1 migrations apply DB --remote --env preview2 --config .wrangler.preview2.json
+          output="$(npx --yes wrangler@4.123.0 d1 migrations list DB --remote --env preview2 --config .wrangler.preview2.json 2>&1)"
+          printf '%s\n' "$output"
+          printf '%s\n' "$output" | grep -F 'No migrations to apply' >/dev/null
+
+      - name: Preview 2 deployment dry run
+        shell: bash
+        run: npx --yes wrangler@4.123.0 deploy --dry-run --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2
+
+      - name: Deploy Preview 2 Worker only
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.123.0 deploy --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2 --message "git:${GITHUB_SHA}"
+
+      - name: Verify private Access boundary, selector, both experiences and D1 health
+        shell: bash
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          base='https://personal-growth-tracker-preview2.m-nejatmand.workers.dev'
+
+          unauth_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$base/api/health")"
+          case "$unauth_status" in
+            2??)
+              echo "Unauthenticated Preview 2 health access returned HTTP $unauth_status. Cloudflare Access is not enforcing the private-Beta boundary."
+              exit 1
+              ;;
+          esac
+
+          curl_args=(
+            --fail
+            --silent
+            --show-error
+            --retry 5
+            --retry-delay 2
+            --retry-all-errors
+            --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID"
+            --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+          )
+
+          selector="$(curl "${curl_args[@]}" "$base/")"
+          printf '%s' "$selector" | grep -F 'Experience 1' >/dev/null
+          printf '%s' "$selector" | grep -F 'Current / Recovered' >/dev/null
+          printf '%s' "$selector" | grep -F '/experience/1/' >/dev/null
+          printf '%s' "$selector" | grep -F 'Experience 2' >/dev/null
+          printf '%s' "$selector" | grep -F 'New / Ambient Luxury' >/dev/null
+          printf '%s' "$selector" | grep -F '/experience/2/' >/dev/null
+
+          experience1="$(curl "${curl_args[@]}" "$base/experience/1/")"
+          printf '%s' "$experience1" | grep -F '<title>Growth Compass</title>' >/dev/null
+          printf '%s' "$experience1" | grep -F '/experience/1/manifest.webmanifest' >/dev/null
+
+          experience2="$(curl "${curl_args[@]}" "$base/experience/2/")"
+          printf '%s' "$experience2" | grep -F 'Experience 2' >/dev/null
+          printf '%s' "$experience2" | grep -F 'Ambient Luxury' >/dev/null
+
+          health="$(curl "${curl_args[@]}" "$base/api/health")"
+          printf '%s' "$health" | grep -F '"status":"ok"' >/dev/null
+          printf '%s' "$health" | grep -F '"database":"ok"' >/dev/null
+
+          echo "Preview 2 deployment and protected smoke tests passed: $base"
