@@ -10,6 +10,7 @@ const activitiesJs = await readFile(new URL('../public/js/modules/activities/mod
 const loggerCss = await readFile(new URL('../public/css/modules/logger.css', import.meta.url), 'utf8');
 const rebuildCss = await readFile(new URL('../public/css/product-rebuild.css', import.meta.url), 'utf8');
 const pagesCss = await readFile(new URL('../public/css/product-rebuild-pages.css', import.meta.url), 'utf8');
+const recoveryCss = await readFile(new URL('../public/css/functional-recovery.css', import.meta.url), 'utf8');
 
 test('Product Rebuild Logger easy path is intent then Activity then duration then date then details', () => {
   const render = loggerJs.slice(loggerJs.indexOf('host.innerHTML'));
@@ -80,10 +81,12 @@ test('mobile center action is explicitly labeled Add and destination icons use o
   assert.match(pagesCss, /mask-image:url/);
 });
 
-test('legacy Logger CSS remains module-owned while rebuild layer loads before final accessibility safeguards', () => {
+test('Logger owns recovered presentation after global recovery and before final safeguards', () => {
   assert.doesNotMatch(loggerCss, /daily-plan|journal|time-reality|today-goal|energy-grid|progress-dashboard/);
+  assert.doesNotMatch(recoveryCss, /logger-backdrop|gc-add-activity-sheet|gc-intent-tabs|logger-activity-search|logger-save/);
+  assert.match(loggerCss, /\.gc-add-activity-sheet\{/);
+  const recovery = indexHtml.indexOf('/css/functional-recovery.css');
   const logger = indexHtml.indexOf('/css/modules/logger.css');
-  const rebuild = indexHtml.indexOf('/css/product-rebuild.css');
   const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
-  assert.ok(logger >= 0 && logger < rebuild && rebuild < accessibility);
+  assert.ok(recovery >= 0 && recovery < logger && logger < accessibility);
 });
