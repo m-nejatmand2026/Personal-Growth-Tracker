@@ -17,9 +17,24 @@ test('canonical design system loads after legacy experience variables and before
   assert.ok(moduleSheets > designSystem);
 });
 
+test('design system owns the canonical dark Growth Compass theme', () => {
+  for (const declaration of [
+    /color-scheme:\s*dark/,
+    /--gc-bg:\s*#051424/,
+    /--gc-surface:\s*#0d1c2d/,
+    /--gc-surface-raised:\s*#122131/,
+    /--gc-text:\s*#ffffff/,
+    /--gc-text-on-brand:\s*#051424/,
+    /--gc-brand:\s*#4edea3/,
+    /--gc-border:\s*#273647/
+  ]) assert.match(designCss, declaration);
+  assert.match(designCss, /html\s*\{[\s\S]*background:\s*var\(--gc-bg\)[\s\S]*color:\s*var\(--gc-text\)/);
+  assert.match(designCss, /body\s*\{[\s\S]*background:\s*var\(--gc-bg\)[\s\S]*color:\s*var\(--gc-text\)/);
+});
+
 test('design system defines canonical tokens accessibility focus touch and reduced motion primitives', () => {
   for (const token of [
-    '--gc-bg', '--gc-surface', '--gc-text', '--gc-text-muted', '--gc-border',
+    '--gc-bg', '--gc-surface', '--gc-surface-raised', '--gc-text', '--gc-text-muted', '--gc-border',
     '--gc-brand', '--gc-brand-strong', '--gc-focus', '--gc-focus-halo', '--gc-target-min'
   ]) assert.match(designCss, new RegExp(token.replace('--', '\\-\\-')));
 
@@ -31,9 +46,9 @@ test('design system defines canonical tokens accessibility focus touch and reduc
   assert.match(designCss, /\.gc-sr-only/);
 });
 
-test('Revision B focus styling remains visible but belongs to the Growth Compass palette', () => {
-  assert.match(designCss, /--gc-focus:\s*#0a6664/);
-  assert.match(designCss, /--gc-focus-halo:\s*rgba\(15,\s*119,\s*117,\s*0\.16\)/);
+test('canonical dark focus styling is visible and belongs to the Growth Compass palette', () => {
+  assert.match(designCss, /--gc-focus:\s*#4edea3/);
+  assert.match(designCss, /--gc-focus-halo:\s*rgba\(78,\s*222,\s*163,\s*0\.22\)/);
   assert.match(designCss, /outline:\s*2px solid var\(--gc-focus\)/);
   assert.match(designCss, /box-shadow:\s*0 0 0 3px var\(--gc-focus-halo\)/);
   assert.doesNotMatch(designCss, /#0b5fff/i);
