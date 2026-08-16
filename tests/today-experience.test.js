@@ -100,12 +100,14 @@ test('Wellbeing remains module-owned and exposes accessible progressive Energy s
   assert.match(wellbeingJs, /<details class="energy-drawer"/);
 });
 
-test('Product Rebuild and recovery layers load after rejected Current while accessibility stays last', () => {
-  const semantics = indexHtml.indexOf('/css/figma-current-semantics.css');
+test('Canonical rebuild layers replace rejected presentation and accessibility stays last', () => {
   const rebuild = indexHtml.indexOf('/css/product-rebuild.css');
   const pages = indexHtml.indexOf('/css/product-rebuild-pages.css');
   const recovery = indexHtml.indexOf('/css/functional-recovery.css');
+  const screenshot = indexHtml.indexOf('/css/screenshot-recovery.css');
+  const motion = indexHtml.indexOf('/css/motion-system.css');
   const accessibility = indexHtml.indexOf('/css/accessibility-regression.css');
-  assert.ok(semantics >= 0 && semantics < rebuild && rebuild < pages && pages < recovery && recovery < accessibility);
+  assert.ok(rebuild >= 0 && rebuild < pages && pages < recovery && recovery < screenshot && screenshot < motion && motion < accessibility);
+  assert.doesNotMatch(indexHtml, /\/css\/(?:ux-reset|living-canvas|figma-current(?:-live|-semantics)?)\.css/);
   assert.match(rebuildCss, /@media\(prefers-reduced-motion:reduce\)/);
 });
