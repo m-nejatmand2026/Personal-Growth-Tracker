@@ -13,6 +13,7 @@ const goalsCss = await readFile(new URL('public/css/modules/goals.css', root), '
 const wellbeingCss = await readFile(new URL('public/css/modules/wellbeing.css', root), 'utf8');
 const wellbeingTodayCss = await readFile(new URL('public/css/modules/wellbeing-today-sanctuary.css', root), 'utf8');
 const wellnessBoostCss = await readFile(new URL('public/css/modules/wellness-boost.css', root), 'utf8');
+const wellnessRecoveryCss = await readFile(new URL('public/css/modules/wellness-recovery.css', root), 'utf8');
 const wellnessBreathingCss = await readFile(new URL('public/css/modules/wellness-breathing.css', root), 'utf8');
 const accessibilityCss = await readFile(new URL('public/css/accessibility-regression.css', root), 'utf8');
 
@@ -51,9 +52,10 @@ test('runtime presentation follows foundation then design system then shell then
   const rebuild = stylesheetIndex('/css/product-rebuild.css');
   const pages = stylesheetIndex('/css/product-rebuild-pages.css');
   const recovery = stylesheetIndex('/css/functional-recovery.css');
+  const wellnessRecovery = stylesheetIndex('/css/modules/wellness-recovery.css');
   const motion = stylesheetIndex('/css/motion-system.css');
   const accessibility = stylesheetIndex('/css/accessibility-regression.css');
-  assert.ok(design >= 0 && shell > design && rebuild > shell && pages > rebuild && recovery > pages && motion > recovery && accessibility > motion);
+  assert.ok(design >= 0 && shell > design && rebuild > shell && pages > rebuild && recovery > pages && wellnessRecovery > recovery && motion > wellnessRecovery && accessibility > motion);
   assert.equal(runtimeStylesheets().at(-1), '/css/accessibility-regression.css');
 });
 
@@ -65,9 +67,10 @@ test('canonical design system owns theme tokens instead of composition sheets', 
 });
 
 test('remaining functional recovery debt is capped and must only shrink', () => {
-  assert.ok(recoveryCss.length <= 13000, `functional recovery grew to ${recoveryCss.length} bytes`);
-  assert.ok(importantCount(recoveryCss) <= 100, `functional recovery grew to ${importantCount(recoveryCss)} !important declarations`);
+  assert.ok(recoveryCss.length <= 10500, `functional recovery grew to ${recoveryCss.length} bytes`);
+  assert.ok(importantCount(recoveryCss) <= 75, `functional recovery grew to ${importantCount(recoveryCss)} !important declarations`);
   assert.doesNotMatch(recoveryCss, /screenshot-recovery|figma-current|living-canvas/);
+  assert.doesNotMatch(recoveryCss, /wellness-boost-library-view|living-wellness-hero|wellness-session-grid|wellness-session-tile/);
 });
 
 test('Logger owns recovered Add presentation without rebuilding specificity debt', () => {
@@ -124,6 +127,17 @@ test('Today wellbeing presentation is owned by Wellbeing', () => {
   assert.doesNotMatch(wellbeingTodayCss, /background:#fff|color:#17202b|#e6e7e3/);
 });
 
+test('Wellness owns recovered sanctuary and session presentation', () => {
+  const recovery = stylesheetIndex('/css/functional-recovery.css');
+  const wellnessRecovery = stylesheetIndex('/css/modules/wellness-recovery.css');
+  const breathing = stylesheetIndex('/css/modules/wellness-breathing.css');
+  assert.ok(recovery >= 0 && wellnessRecovery > recovery && breathing > wellnessRecovery);
+  assert.match(wellnessRecoveryCss, /\.living-wellness-hero\{/);
+  assert.match(wellnessRecoveryCss, /\.wellness-session-grid\{/);
+  assert.match(wellnessRecoveryCss, /\.wellness-session-tile\{/);
+  assert.doesNotMatch(recoveryCss, /living-wellness-hero|wellness-session-grid|wellness-session-tile/);
+});
+
 test('Wellness owns mobile sanctuary alignment', () => {
   assert.match(wellnessBoostCss, /@media\(max-width:760px\)[\s\S]*#wellness-boostView \.living-wellness-hero/);
   assert.match(wellnessBoostCss, /#wellness-boostView \.wellness-sanctuary-copy p\{margin-inline:auto!important\}/);
@@ -141,6 +155,6 @@ test('wellness breathing owns breathing presentation after recovery and before a
 
 test('runtime stylesheet count stays bounded while module-owned sheets remain independent', () => {
   const stylesheets = runtimeStylesheets();
-  assert.ok(stylesheets.length <= 30, `runtime stylesheet count grew to ${stylesheets.length}`);
-  assert.ok(stylesheets.filter((path) => path.startsWith('/css/modules/')).length >= 10);
+  assert.ok(stylesheets.length <= 31, `runtime stylesheet count grew to ${stylesheets.length}`);
+  assert.ok(stylesheets.filter((path) => path.startsWith('/css/modules/')).length >= 11);
 });

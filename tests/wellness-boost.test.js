@@ -15,6 +15,7 @@ const app = await read('public/js/app.js');
 const moduleJs = await read('public/js/modules/wellness-boost/module.js');
 const playerJs = await read('public/js/modules/wellness-boost/player.js');
 const css = await read('public/css/modules/wellness-boost.css');
+const wellnessRecoveryCss = await read('public/css/modules/wellness-recovery.css');
 const breathingCss = await read('public/css/modules/wellness-breathing.css');
 const motionCss = await read('public/css/motion-system.css');
 const recoveryCss = await read('public/css/functional-recovery.css');
@@ -53,8 +54,8 @@ test('Wellness landing page uses one coherent whole-surface tile language', () =
   assert.equal((html.match(/data-wb-open=/g) || []).length, 4);
   assert.doesNotMatch(html, /wellness-boost-featured|gc-feature-card|gc-choice-row|Open practice|>Open</);
   assert.doesNotMatch(html, /How would you like to listen\?|data-wb-mode=/);
-  assert.match(recoveryCss, /\.wellness-session-grid/);
-  assert.match(recoveryCss, /\.wellness-session-tile/);
+  assert.match(wellnessRecoveryCss, /\.wellness-session-grid/);
+  assert.match(wellnessRecoveryCss, /\.wellness-session-tile/);
 });
 
 test('Wellness breathing guide is live, touchable and routes into a motion-guided breath practice', () => {
@@ -81,10 +82,10 @@ test('Wellness breathing guide is live, touchable and routes into a motion-guide
 
 test('Wellness sanctuary and session grid have explicit responsive alignment', () => {
   assert.match(moduleJs, /wellness-sanctuary-copy/);
-  assert.match(recoveryCss, /\.living-wellness-hero\{[^}]*grid-template-columns:minmax\(0,1fr\) 150px/s);
-  assert.match(recoveryCss, /\.living-breathing-orb\{[^}]*justify-self:center/s);
-  assert.match(recoveryCss, /\.wellness-session-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(recoveryCss, /@media\(max-width:760px\)[\s\S]*\.wellness-session-grid\{grid-template-columns:1fr\}/);
+  assert.match(wellnessRecoveryCss, /\.living-wellness-hero\{[^}]*grid-template-columns:minmax\(0,1fr\) 150px/s);
+  assert.match(wellnessRecoveryCss, /\.living-breathing-orb\{[^}]*justify-self:center/s);
+  assert.match(wellnessRecoveryCss, /\.wellness-session-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(wellnessRecoveryCss, /@media\(max-width:760px\)[\s\S]*\.wellness-session-grid\{grid-template-columns:1fr\}/);
   assert.match(css, /@media\(max-width:760px\)[\s\S]*#wellness-boostView \.living-wellness-hero\{[^}]*justify-items:center!important/);
 });
 
@@ -157,7 +158,7 @@ test('module removal leaves unrelated capabilities available', () => {
 });
 
 test('Wellness destination and player remain phone-first accessible', () => {
-  assert.match(recoveryCss, /\.wellness-session-tile\{[^}]*min-height:100px/s);
+  assert.match(wellnessRecoveryCss, /\.wellness-session-tile\{[^}]*min-height:100px/s);
   assert.match(recoveryCss, /\.gc-live-tile:focus-visible/);
   assert.match(css, /min-height:var\(--gc-target-min\)/);
   assert.match(css, /@media\(max-width:650px\)/);
