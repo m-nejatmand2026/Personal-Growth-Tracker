@@ -7,6 +7,7 @@ const indexHtml = await readFile(new URL('public/index.html', root), 'utf8');
 const designCss = await readFile(new URL('public/css/design-system.css', root), 'utf8');
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
 const recoveryCss = await readFile(new URL('public/css/functional-recovery.css', root), 'utf8');
+const loggerCss = await readFile(new URL('public/css/modules/logger.css', root), 'utf8');
 const journalCss = await readFile(new URL('public/css/journal.css', root), 'utf8');
 const goalsCss = await readFile(new URL('public/css/modules/goals.css', root), 'utf8');
 const wellbeingCss = await readFile(new URL('public/css/modules/wellbeing.css', root), 'utf8');
@@ -64,9 +65,21 @@ test('canonical design system owns theme tokens instead of composition sheets', 
 });
 
 test('remaining functional recovery debt is capped and must only shrink', () => {
-  assert.ok(recoveryCss.length <= 16000, `functional recovery grew to ${recoveryCss.length} bytes`);
-  assert.ok(importantCount(recoveryCss) <= 125, `functional recovery grew to ${importantCount(recoveryCss)} !important declarations`);
+  assert.ok(recoveryCss.length <= 13000, `functional recovery grew to ${recoveryCss.length} bytes`);
+  assert.ok(importantCount(recoveryCss) <= 100, `functional recovery grew to ${importantCount(recoveryCss)} !important declarations`);
   assert.doesNotMatch(recoveryCss, /screenshot-recovery|figma-current|living-canvas/);
+});
+
+test('Logger owns recovered Add presentation without rebuilding specificity debt', () => {
+  const recovery = stylesheetIndex('/css/functional-recovery.css');
+  const logger = stylesheetIndex('/css/modules/logger.css');
+  const motion = stylesheetIndex('/css/motion-system.css');
+  assert.ok(recovery >= 0 && logger > recovery && motion > logger);
+  assert.match(loggerCss, /\.gc-add-activity-sheet\{/);
+  assert.match(loggerCss, /\.gc-intent-tabs \.logger-mode-choice\.selected>span\{/);
+  assert.match(loggerCss, /\.logger-save\{/);
+  assert.doesNotMatch(recoveryCss, /logger-backdrop|gc-add-activity-sheet|gc-intent-tabs|logger-activity-search|logger-save/);
+  assert.ok(importantCount(loggerCss) <= 1, `logger specificity debt grew to ${importantCount(loggerCss)} !important declarations`);
 });
 
 test('navigation shell owns desktop Explore and confines transitional mobile specificity debt', () => {

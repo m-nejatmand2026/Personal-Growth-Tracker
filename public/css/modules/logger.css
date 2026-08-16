@@ -87,3 +87,21 @@
   .duration-presets{gap:3px}
   .duration-presets button{font-size:9px}
 }
+
+/* Recovered logger polish belongs to the logger module. This sheet loads after legacy recovery so normal cascade can replace the old specificity layer. */
+.logger-backdrop{background:rgba(1,10,18,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.gc-add-activity-sheet{border:1px solid color-mix(in srgb,var(--gc-brand) 13%,var(--gc-border));background:linear-gradient(155deg,color-mix(in srgb,var(--gc-surface-raised) 94%,#051424),var(--gc-bg) 48%);box-shadow:0 36px 90px rgba(0,0,0,.52),inset 0 1px rgba(255,255,255,.035)}
+.gc-add-head{background:color-mix(in srgb,var(--gc-surface-raised) 82%,transparent);backdrop-filter:blur(20px)}
+.gc-intent-tabs{gap:7px;padding:0;background:transparent}
+.gc-intent-tabs .logger-mode-choice>span{min-height:58px;border:1px solid var(--gc-border);border-radius:15px;background:color-mix(in srgb,var(--gc-surface) 84%,transparent);transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.gc-intent-tabs .logger-mode-choice:hover>span{border-color:color-mix(in srgb,var(--gc-brand) 38%,var(--gc-border));transform:translateY(-1px)}
+.gc-intent-tabs .logger-mode-choice.selected>span{border-color:color-mix(in srgb,var(--gc-brand) 72%,var(--gc-border));background:linear-gradient(145deg,color-mix(in srgb,var(--gc-brand) 15%,var(--gc-surface-raised)),var(--gc-surface));color:var(--gc-brand);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gc-brand) 12%,transparent)}
+.logger-activity-search{border-color:color-mix(in srgb,var(--gc-border) 85%,transparent);background:color-mix(in srgb,var(--gc-surface) 72%,transparent);backdrop-filter:blur(14px)}
+.logger-activity-option,.logger-recent-choice,.logger-selected-activity{border-color:color-mix(in srgb,var(--gc-border) 84%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--gc-surface-raised) 84%,transparent),var(--gc-surface));transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.logger-activity-option:hover,.logger-recent-choice:hover,.logger-activity-option:focus-visible,.logger-recent-choice:focus-visible{border-color:color-mix(in srgb,var(--gc-brand) 48%,var(--gc-border));background:color-mix(in srgb,var(--gc-brand) 8%,var(--gc-surface));transform:translateY(-1px)}
+.logger-activity-option:active,.logger-recent-choice:active{transform:scale(.985)}
+.logger-activity-option>b{font-size:0}
+.logger-activity-option>b::after{content:'›';font-size:19px;color:var(--gc-brand)}
+.logger-selected-activity{border-color:color-mix(in srgb,var(--gc-brand) 48%,var(--gc-border));background:color-mix(in srgb,var(--gc-brand) 8%,var(--gc-surface))}
+.logger-field>span,.logger-field label>span,.duration-field>span{color:var(--gc-text-muted)}
+.logger-save{background:linear-gradient(135deg,var(--gc-brand),color-mix(in srgb,var(--gc-brand) 82%,white));color:var(--gc-text-on-brand,#051424);box-shadow:0 12px 32px color-mix(in srgb,var(--gc-brand) 18%,transparent)}
