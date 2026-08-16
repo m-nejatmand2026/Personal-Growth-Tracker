@@ -10,11 +10,7 @@ const BROWSERS = [['Chromium', chromium], ['WebKit', webkit]];
 async function capture(page, browser, state) {
   if (!SCREENSHOT_DIR) return;
   await mkdir(SCREENSHOT_DIR, { recursive: true });
-  await page.screenshot({
-    path: `${SCREENSHOT_DIR}/${browser.toLowerCase()}-375-${state}-recovery.png`,
-    fullPage: false,
-    animations: 'disabled'
-  });
+  await page.screenshot({ path: `${SCREENSHOT_DIR}/${browser.toLowerCase()}-375-${state}-recovery.png`, fullPage: false, animations: 'disabled' });
 }
 
 async function load(page) {
@@ -37,8 +33,7 @@ async function assertTomorrow(page, browser) {
   await tomorrow.waitFor({ state: 'visible' });
   await tomorrow.locator(':scope > summary').click();
   await tomorrow.locator('.gc-tomorrow-plan-body').waitFor({ state: 'visible' });
-  const planButton = tomorrow.locator('[data-plan-capture="planned"][data-plan-date]');
-  await planButton.waitFor({ state: 'visible' });
+  await tomorrow.locator('[data-plan-capture="planned"][data-plan-date]').waitFor({ state: 'visible' });
   assert.match(await tomorrow.innerText(), /Tomorrow/i, `${browser}: Tomorrow planning must be one tap away`);
   await capture(page, browser, 'tomorrow-open');
 }
@@ -70,10 +65,7 @@ async function assertGoalTiles(page, browser) {
   assert.ok((await tile.getAttribute('class')).includes('gc-live-tile'));
   const before = await tile.evaluate((node) => getComputedStyle(node).backgroundImage);
   await tile.focus();
-  const focused = await tile.evaluate((node) => ({
-    outline: getComputedStyle(node).outlineStyle,
-    background: getComputedStyle(node).backgroundImage
-  }));
+  const focused = await tile.evaluate((node) => ({ outline: getComputedStyle(node).outlineStyle, background: getComputedStyle(node).backgroundImage }));
   assert.notEqual(focused.outline, 'none');
   assert.ok(focused.background || before);
 }
@@ -84,10 +76,7 @@ async function assertSettingsContrast(page, browser) {
   assert.match((await summary.innerText()).trim(), /Explore/i);
   await page.locator('#settingsBtn').click();
   await page.locator('#settingsView .gc-settings-rebuild').waitFor({ state: 'visible' });
-  const style = await page.locator('#settingsView .gc-settings-note').evaluate((node) => ({
-    background: getComputedStyle(node).backgroundImage,
-    color: getComputedStyle(node).color
-  }));
+  const style = await page.locator('#settingsView .gc-settings-note').evaluate((node) => ({ background: getComputedStyle(node).backgroundImage, color: getComputedStyle(node).color }));
   assert.notEqual(style.background, 'none', `${browser}: Settings note must use dark surface styling`);
   assert.doesNotMatch(style.background, /rgb\(255, 255, 255\)/, `${browser}: Settings must not regress to white blocks`);
   assert.equal(await page.locator('#settingsView .gc-settings-note p').evaluate((node) => getComputedStyle(node).opacity), '1');
@@ -99,10 +88,7 @@ async function assertWellness(page, browser) {
   await page.locator('#wellness-boostView .wellness-boost-library-view').waitFor({ state: 'visible' });
   const tiles = page.locator('.wellness-session-tile');
   assert.equal(await tiles.count(), 4);
-  const layout = await tiles.evaluateAll((nodes) => nodes.map((node) => {
-    const rect = node.getBoundingClientRect();
-    return { left: rect.left, width: rect.width };
-  }));
+  const layout = await tiles.evaluateAll((nodes) => nodes.map((node) => { const rect = node.getBoundingClientRect(); return { left: rect.left, width: rect.width }; }));
   assert.ok(Math.max(...layout.map((item) => item.width)) - Math.min(...layout.map((item) => item.width)) <= 1, `${browser}: Wellness tiles must align to equal widths`);
   assert.ok(Math.max(...layout.map((item) => item.left)) - Math.min(...layout.map((item) => item.left)) <= 1, `${browser}: mobile Wellness tiles must share one grid edge`);
   const centers = await page.evaluate(() => {
@@ -135,11 +121,17 @@ async function startAndAssertTimer(page, browser, activityName) {
   assert.notEqual(second, first, `${browser}: live timer must visibly advance`);
   await capture(page, browser, 'live-timer');
 
+  // Finish through the real factual Done path instead of cancelling the sheet.
+  // This proves the timer lifecycle closes and prevents one browser engine from
+  // leaving an active session behind for the next engine in the shared local D1.
   await page.locator('[data-session-done]').click();
-  await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({ state: 'visible' });
+  const doneSheet = page.locator('#loggerHost .gc-add-activity-sheet');
+  await doneSheet.waitFor({ state: 'visible' });
   assert.equal(await page.locator('input[name="loggerEntryMode"][value="done"]').isChecked(), true);
   assert.ok(Number(await page.locator('#loggerDuration').inputValue()) >= 1);
-  await page.keyboard.press('Escape');
+  await page.locator('#loggerSaveButton').click();
+  await doneSheet.waitFor({ state: 'hidden', timeout: 15000 });
+  await session.waitFor({ state: 'hidden', timeout: 15000 });
 }
 
 async function assertRecovery(page, browser) {
