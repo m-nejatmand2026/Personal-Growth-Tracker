@@ -1,57 +1,69 @@
-/* Wellbeing-owned Today treatment for the sanctuary prototype. */
+/* Wellbeing-owned Today presentation. Device-validated dark Current treatment. */
 #todayView .today-state-section{
   margin:0;
-  padding:0;
-  border:0;
-  border-radius:0;
-  background:transparent;
+  padding:16px!important;
+  border:1px solid var(--gc-border)!important;
+  border-radius:18px!important;
+  background:linear-gradient(145deg,var(--gc-surface-raised),var(--gc-surface))!important;
+  color:var(--gc-text)!important;
   box-shadow:none;
 }
-#todayView .today-state-section .os-section-head{margin:0 0 8px;padding-inline:2px}
-#todayView .today-state-section .os-section-head h2{margin:0;color:#17202b;font-size:.92rem;font-weight:720}
+#todayView .today-state-section .os-section-head{margin:0 0 12px!important;padding:0!important}
+#todayView .today-state-section .os-section-head h2{margin:0;color:var(--gc-text)!important;font-size:17px!important;font-weight:720}
 #todayView .today-state-section .os-section-head>small{display:none}
 #todayView .daily-state-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:0;
-  overflow:hidden;
-  border:1px solid #e6e7e3;
-  border-radius:18px;
-  background:#fff;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
 }
 #todayView .state-card{
-  min-width:0;
-  min-height:82px;
-  display:flex;
-  align-items:center;
-  gap:9px;
-  padding:12px;
-  border:0;
-  border-right:1px solid #e6e7e3;
-  border-radius:0;
-  background:transparent;
-  box-shadow:none;
+  min-width:0!important;
+  min-height:98px!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  align-content:start!important;
+  justify-items:start!important;
+  gap:7px!important;
+  padding:11px!important;
+  border:1px solid color-mix(in srgb,var(--gc-border) 88%,transparent)!important;
+  border-radius:15px!important;
+  background:color-mix(in srgb,var(--gc-surface-raised) 86%,transparent)!important;
+  color:var(--gc-text)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
 }
-#todayView .state-card:last-child{border-right:0}
-#todayView button.state-card:hover{background:#fbfaf7}
-#todayView .state-icon{flex:0 0 32px;width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:#dff3ea;color:#256b5e}
-#todayView .sleep-icon{background:#f0ebf7;color:#735a9c}
-#todayView .context-icon{background:#eaf1f5;color:#476d8e}
-#todayView .state-card>div{min-width:0}
-#todayView .state-card>div>span{color:#6f777d;font-size:.58rem;font-weight:720;letter-spacing:.05em;text-transform:uppercase}
-#todayView .state-card strong{display:block;margin-top:2px;overflow:hidden;color:#17202b;font-size:.78rem;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
-#todayView .state-card small{display:none}
-
-@media (max-width:600px){
-  #todayView .daily-state-grid{grid-template-columns:1fr}
-  #todayView .state-card{min-height:64px;border-right:0;border-bottom:1px solid #e6e7e3}
-  #todayView .state-card:last-child{border-bottom:0}
-  #todayView .state-card strong{font-size:.82rem}
+#todayView button.state-card{cursor:pointer!important}
+#todayView button.state-card:hover,#todayView button.state-card:focus-visible{
+  border-color:color-mix(in srgb,var(--gc-brand) 48%,var(--gc-border))!important;
+  background:color-mix(in srgb,var(--gc-brand) 8%,var(--gc-surface-raised))!important;
 }
-
-@media (min-width:900px){
-  #todayView .today-state-section{position:sticky;top:92px}
-  #todayView .daily-state-grid{grid-template-columns:1fr}
-  #todayView .state-card{border-right:0;border-bottom:1px solid #e6e7e3}
-  #todayView .state-card:last-child{border-bottom:0}
+#todayView .state-icon{
+  width:30px!important;
+  height:30px!important;
+  flex:none!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:999px!important;
+  background:color-mix(in srgb,var(--gc-brand) 12%,var(--gc-surface-subtle))!important;
+  color:var(--gc-brand)!important;
 }
+#todayView .sleep-icon{background:color-mix(in srgb,#9e8bc7 14%,var(--gc-surface-subtle))!important;color:#c9b9eb!important}
+#todayView .context-icon{background:color-mix(in srgb,#78a9c8 14%,var(--gc-surface-subtle))!important;color:#9cc9e3!important}
+#todayView .state-card>div{min-width:0!important;width:100%!important}
+#todayView .state-card>div>span{color:var(--gc-text-muted)!important;font-size:8px!important;font-weight:800!important;letter-spacing:.055em!important;text-transform:uppercase!important}
+#todayView .state-card strong{
+  display:block!important;
+  margin-top:3px!important;
+  overflow:visible!important;
+  color:var(--gc-text)!important;
+  font-size:12px!important;
+  font-weight:700;
+  line-height:1.25!important;
+  text-overflow:clip!important;
+  white-space:normal!important;
+}
+#todayView .state-card small{display:block!important;margin-top:3px!important;color:var(--gc-text-muted)!important;font-size:8.5px!important;line-height:1.35!important}
+@media(min-width:900px){#todayView .today-state-section{position:sticky;top:92px}}

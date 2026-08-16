@@ -7,6 +7,7 @@ const indexHtml = await readFile(new URL('public/index.html', root), 'utf8');
 const designCss = await readFile(new URL('public/css/design-system.css', root), 'utf8');
 const shellCss = await readFile(new URL('public/css/navigation-shell.css', root), 'utf8');
 const screenshotRecoveryCss = await readFile(new URL('public/css/screenshot-recovery.css', root), 'utf8');
+const wellbeingTodayCss = await readFile(new URL('public/css/modules/wellbeing-today-sanctuary.css', root), 'utf8');
 const wellnessBreathingCss = await readFile(new URL('public/css/modules/wellness-breathing.css', root), 'utf8');
 const accessibilityCss = await readFile(new URL('public/css/accessibility-regression.css', root), 'utf8');
 
@@ -61,6 +62,15 @@ test('navigation shell owns desktop Explore geometry without specificity escalat
   assert.match(shellCss, /@media \(min-width:900px\)[\s\S]*\.top-actions\{display:flex\}/);
   assert.doesNotMatch(accessibilityCss, /@media\(min-width:900px\)[\s\S]*\.topbar/);
   assert.ok(importantCount(shellCss) <= 1, `navigation shell must not grow a specificity arms race; found ${importantCount(shellCss)} !important declarations`);
+});
+
+test('Today wellbeing presentation is owned by Wellbeing instead of the global device recovery layer', () => {
+  assert.match(wellbeingTodayCss, /#todayView \.today-state-section\{/);
+  assert.match(wellbeingTodayCss, /#todayView \.daily-state-grid\{/);
+  assert.match(wellbeingTodayCss, /#todayView \.state-card\{/);
+  assert.match(wellbeingTodayCss, /var\(--gc-surface-raised\)/);
+  assert.doesNotMatch(wellbeingTodayCss, /background:#fff|color:#17202b|#e6e7e3/);
+  assert.doesNotMatch(screenshotRecoveryCss, /#todayView \.today-state-section|#todayView \.daily-state-grid|#todayView \.state-card(?:\s|\{|:|>)/);
 });
 
 test('wellness breathing owns breathing presentation after recovery layers', () => {
