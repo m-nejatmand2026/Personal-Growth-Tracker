@@ -10,69 +10,6 @@
   display: none !important;
 }
 
-/* Today Journal must not keep a desktop split-column layout at phone width. */
-#todayView .journal-preview {
-  width: 100% !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 15px !important;
-  align-items: start !important;
-  padding: 18px !important;
-  border: 1px solid var(--gc-border) !important;
-  border-radius: 18px !important;
-  background: linear-gradient(145deg, var(--gc-surface-raised), var(--gc-surface)) !important;
-}
-
-#todayView .journal-preview-copy {
-  width: 100% !important;
-  min-width: 0 !important;
-  display: grid !important;
-  gap: 5px !important;
-}
-
-#todayView .journal-preview h2 {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  color: var(--gc-text) !important;
-  font-size: 20px !important;
-  line-height: 1.25 !important;
-  overflow-wrap: normal !important;
-  word-break: normal !important;
-}
-
-#todayView .journal-preview p {
-  max-width: 34rem !important;
-  margin: 0 !important;
-  color: var(--gc-text-muted) !important;
-  font-size: 10px !important;
-  line-height: 1.45 !important;
-}
-
-#todayView .journal-preview-actions {
-  width: 100% !important;
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 9px !important;
-}
-
-#todayView .journal-preview-actions button {
-  width: 100% !important;
-  min-height: 46px !important;
-  border: 1px solid var(--gc-border) !important;
-  border-radius: 14px !important;
-  background: var(--gc-surface-subtle) !important;
-  color: var(--gc-text) !important;
-  font-size: 11px !important;
-  font-weight: 800 !important;
-}
-
-#todayView .journal-preview-actions button:first-child {
-  border-color: color-mix(in srgb, var(--gc-brand) 56%, var(--gc-border)) !important;
-  background: color-mix(in srgb, var(--gc-brand) 14%, var(--gc-surface-raised)) !important;
-  color: var(--gc-brand) !important;
-}
-
 @media (max-width: 760px) {
   /* Keep Explore compact and remove the accidental legacy gear glyph. */
   .topbar {
