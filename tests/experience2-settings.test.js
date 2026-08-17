@@ -42,7 +42,7 @@ test('Settings exposes theme and an accessibility-safe reduce-motion option', ()
 });
 
 test('Experience 2 offline shell includes Settings and remains namespace-versioned', () => {
-  assert.match(sw, /growth-compass-preview2-e2-v9/);
+  assert.match(sw, /growth-compass-preview2-e2-v10/);
   assert.match(sw, /\/experience\/2\/css\/settings\.css/);
   assert.match(sw, /\/experience\/2\/js\/views\/settings\.js/);
   assert.match(sw, /key\.startsWith\('growth-compass-preview2-e2-'\)/);
