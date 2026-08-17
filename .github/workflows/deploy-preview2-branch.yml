@@ -90,7 +90,39 @@ jobs:
           set -euo pipefail
           node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('wrangler.jsonc','utf8'));const prod=c.d1_databases?.find(x=>x.binding==='DB');const p1=c.env?.preview?.d1_databases?.find(x=>x.binding==='DB');const id=fs.readFileSync('.preview2-db-id','utf8').trim();if(c.name!=='personal-growth-tracker')throw new Error('Unexpected Worker base name: '+c.name);if(!prod?.database_id||!p1?.database_id)throw new Error('Production and Preview 1 D1 identities must remain explicit.');if(!id)throw new Error('Preview 2 D1 id is empty.');if(id===prod.database_id)throw new Error('Preview 2 points at Production D1. Refusing deployment.');if(id===p1.database_id)throw new Error('Preview 2 points at Preview 1 D1. Refusing deployment.');c.env||={};c.env.preview2={name:'personal-growth-tracker-preview2',observability:{enabled:true,head_sampling_rate:1},d1_databases:[{binding:'DB',database_name:'personal-growth-tracker-preview2',database_id:id,migrations_dir:'migrations'}]};fs.writeFileSync('.wrangler.preview2.json',JSON.stringify(c,null,2));"
 
-      - name: Refuse pending Preview 2 migrations
+      - name: Apply only the explicitly authorized Preview 2 migration set
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GC_PREVIEW2_MIGRATION_CONFIRM: personal-growth-tracker-preview2
+        run: |
+          set -euo pipefail
+          authorized_count='7'
+          actual_count="$(find migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d '[:space:]')"
+          test "$actual_count" = "$authorized_count" || {
+            echo "Preview 2 migration set changed: expected $authorized_count SQL files, found $actual_count. Refusing migration."
+            exit 1
+          }
+          verify_blob() {
+            file="$1"
+            expected="$2"
+            actual="$(git rev-parse "HEAD:migrations/$file")"
+            test "$actual" = "$expected" || {
+              echo "Unauthorized Preview 2 migration content for $file. Refusing migration."
+              exit 1
+            }
+          }
+          verify_blob '0001_init.sql' 'dc9c757af309667e1bf70f66614b5166ac27dce7'
+          verify_blob '0002_version_one_core_model.sql' '04753e438bd6bc19868ea700a99961b3696441c3'
+          verify_blob '0003_capacity_schedule_flexibility.sql' 'd4f8d9c1250d85ac0865e321fc8a7ed3226ac489'
+          verify_blob '0004_daily_plan.sql' 'feca2348e3a4780695db8b01cfef9fe104ae355c'
+          verify_blob '0005_journal.sql' '0d1e2c0e4988bb313d154d6db06827db203c56a5'
+          verify_blob '0006_activities_contract.sql' '5b6d5b038738fd055ff3b7456e8c2f69dd20c89b'
+          verify_blob '0007_wellbeing_energy.sql' '3c3a3c25a28ff6c23b00c2d4828d55e9c0217201'
+          bash scripts/migrate-preview2.sh
+
+      - name: Verify no pending Preview 2 migrations before deploy
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -100,7 +132,7 @@ jobs:
           output="$(npx --yes wrangler@4.123.0 d1 migrations list DB --remote --env preview2 --config .wrangler.preview2.json 2>&1)"
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -F 'No migrations to apply' >/dev/null || {
-            echo 'Preview 2 has pending D1 migrations. Automatic deployment remains blocked until migrations are applied explicitly outside automatic CI.'
+            echo 'Preview 2 still has pending D1 migrations after the authorized migration operation. Refusing Worker deployment.'
             exit 1
           }
 
