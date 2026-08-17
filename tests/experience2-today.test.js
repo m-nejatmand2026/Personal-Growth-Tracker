@@ -58,10 +58,17 @@ test('Experience 2 API adapter supports the Today mutation verbs without legacy 
   assert.doesNotMatch(experience2,/\/api\/session|\/api\/history|\/api\/goals(?!\/)/);
 });
 
-test('Experience 2 Today has responsive product styling and accessible modal structure',()=>{
+test('Experience 2 Today has responsive product styling and keyboard-safe modal structure',()=>{
   assert.match(css,/\.today-grid/);
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(today,/role="dialog" aria-modal="true"/);
   assert.match(today,/aria-labelledby="todayDoneTitle"/);
   assert.match(today,/aria-labelledby="todayChangeTitle"/);
+  assert.match(today,/event\.key==='Escape'/);
+  assert.match(today,/event\.key!=='Tab'/);
+  assert.match(today,/host\.addEventListener\('keydown',keyHandler\)/);
+  assert.match(today,/host\.removeEventListener\('keydown',keyHandler\)/);
+  assert.match(today,/opener\?\.focus\?\.\(\{preventScroll:true\}\)/);
+  assert.match(today,/initialFocus:'#todayDoneMinutes'/);
+  assert.match(today,/initialFocus:'\[data-today-keep\]'/);
 });
