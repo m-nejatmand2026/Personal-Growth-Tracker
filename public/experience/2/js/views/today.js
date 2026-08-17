@@ -35,9 +35,10 @@ function itemHtml(item,{future=false}={}){
   </article>`;
 }
 
-function nowHtml(active){
-  if(!active)return `<section class="living-surface today-now"><p class="eyebrow">Now</p><div class="today-now-empty"><div><h2>Nothing running</h2><p>Start only what you intend to do now. Progress is recorded separately when factual work is confirmed.</p></div><button type="button" class="secondary-button" data-today-jump-plan>Choose from today</button></div></section>`;
-  return `<section class="living-surface today-now is-active"><p class="eyebrow">Now</p><div class="today-now-active"><span class="today-now-glyph" aria-hidden="true">${glyph(active)}</span><div><h2>${escapeHtml(active.title)}</h2><p>${escapeHtml(itemMeta(active)||'In focus now')}</p></div></div><div class="today-now-actions"><button type="button" class="primary-button" data-today-done="${active.id}">Done</button><button type="button" class="ghost-button" data-today-change="${active.id}">Plans changed?</button></div></section>`;
+function nowHtml(activeItems=[]){
+  if(!activeItems.length)return `<section class="living-surface today-now"><p class="eyebrow">Now</p><div class="today-now-empty"><div><h2>Nothing running</h2><p>Start only what you intend to do now. Progress is recorded separately when factual work is confirmed.</p></div><button type="button" class="secondary-button" data-today-jump-plan>Choose from today</button></div></section>`;
+  const [active,...additional]=activeItems;
+  return `<section class="living-surface today-now is-active"><p class="eyebrow">Now</p><div class="today-now-active"><span class="today-now-glyph" aria-hidden="true">${glyph(active)}</span><div><h2>${escapeHtml(active.title)}</h2><p>${escapeHtml(itemMeta(active)||'In focus now')}</p></div></div><div class="today-now-actions"><button type="button" class="primary-button" data-today-done="${active.id}">Done</button><button type="button" class="ghost-button" data-today-change="${active.id}">Plans changed?</button></div>${additional.length?`<div class="today-now-also"><div class="today-now-also-head"><span>Also in progress</span><strong>${additional.length}</strong></div><div class="today-now-also-list">${additional.map(item=>itemHtml(item)).join('')}</div></div>`:''}</section>`;
 }
 
 function progressHtml(progress=[]){
@@ -46,11 +47,11 @@ function progressHtml(progress=[]){
 }
 
 export function renderToday(model){
-  const active=model.today.find(item=>item.status==='in_progress')||null;
+  const activeItems=model.today.filter(item=>item.status==='in_progress');
   const planned=model.today.filter(item=>item.status==='planned');
   const plannedMinutes=model.today.reduce((sum,item)=>sum+Math.max(0,Number(item.planned_minutes)||0),0);
   return `<div class="today-view">
-    ${nowHtml(active)}
+    ${nowHtml(activeItems)}
     <section class="today-grid">
       <div class="today-main-column">
         <section class="static-surface today-day" id="todayPlanList"><header class="today-section-head"><div><p class="eyebrow">Daily Plan · intention</p><h2>Your day</h2></div><span>${model.today.length} ${model.today.length===1?'item':'items'}${plannedMinutes?` · ${minutesLabel(plannedMinutes)}`:''}</span></header>
