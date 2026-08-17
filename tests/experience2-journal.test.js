@@ -50,8 +50,11 @@ test('Journal editor and delete confirmation are modal keyboard-safe and restore
   assert.match(view,/event\.key==='Escape'/);
   assert.match(view,/event\.key!=='Tab'/);
   assert.match(view,/host\.onkeydown=null/);
+  assert.match(view,/document\.body\.classList\.add\('journal-modal-open'\)/);
+  assert.match(view,/document\.body\.classList\.remove\('journal-modal-open'\)/);
   assert.match(view,/opener instanceof HTMLElement/);
   assert.match(view,/opener\.focus\(\{preventScroll:true\}\)/);
+  assert.match(css,/\.journal-modal-open\{overflow:hidden\}/);
   assert.match(css,/\.journal-delete-dialog\{/);
   assert.match(css,/env\(safe-area-inset-bottom\)/);
   assert.match(css,/@media\(max-width:760px\)/);
