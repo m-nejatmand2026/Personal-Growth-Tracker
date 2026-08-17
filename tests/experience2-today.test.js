@@ -26,9 +26,11 @@ test('Experience 2 Today preserves Plan versus Progress semantics',()=>{
   assert.match(today,/Completing an Activity asks for the factual measurement before Progress is written/);
   assert.match(today,/What actually happened\?/);
   assert.match(today,/Record factual Progress/);
-  assert.match(today,/await api\.post\('\/v1\/progress'/);
-  assert.match(today,/await api\.put\(`\/v1\/daily-plan\/\$\{item\.id\}`\s*,\s*\{status:'completed'\}\)/);
-  assert.ok(today.indexOf("await api.post('/v1/progress'") < today.indexOf("await api.put(`/v1/daily-plan/${item.id}`,{status:'completed'})"),'linked Activity must record factual Progress before closing its plan item');
+  const progressWrite=today.indexOf("await api.post('/v1/progress'");
+  assert.notEqual(progressWrite,-1);
+  const linkedCompletion=today.slice(progressWrite);
+  assert.match(linkedCompletion,/await api\.put\(`\/v1\/daily-plan\/\$\{item\.id\}`\s*,\s*\{status:'completed'\}\)/);
+  assert.ok(linkedCompletion.indexOf("await api.post('/v1/progress'") < linkedCompletion.indexOf("await api.put(`/v1/daily-plan/${item.id}`,{status:'completed'})"),'linked Activity must record factual Progress before closing its plan item');
 });
 
 test('Experience 2 Today supports direct Start Done and Plans changed recovery without rollover',()=>{
