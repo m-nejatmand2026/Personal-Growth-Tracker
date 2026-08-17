@@ -77,6 +77,15 @@ test('Experience 2 Logger modal is accessible and phone-first',()=>{
   assert.match(css,/\.logger-save\{min-height:54px/);
 });
 
+test('Logger surfaces use semantic Experience 2 tokens instead of a dark-only sheet',()=>{
+  assert.match(css,/\.logger-panel\{[^}]*border:1px solid var\(--gc-border-strong\)[^}]*background:var\(--gc-surface\)/s);
+  assert.match(css,/\.logger-search input,[^{]+\{[^}]*border:1px solid var\(--gc-border-strong\)[^}]*background:var\(--gc-raised\)/s);
+  assert.match(css,/\.logger-mode-choice\.selected\{[^}]*background:var\(--gc-primary-subtle\)/s);
+  assert.doesNotMatch(css,/\.logger-panel\{[^}]*linear-gradient\([^}]*rgba\(18,22,33/s);
+  assert.match(browserTest,/light semantic surface/);
+  assert.match(browserTest,/light semantic text/);
+});
+
 test('Experience 2 Logger remains physically independent from frozen Experience 1',()=>{
   assert.doesNotMatch(logger,/experience\/1|\.\.\/\.\.\/\.\.\/js\/modules\/logger/);
   assert.doesNotMatch(activities,/experience\/1|public\/js/);
