@@ -89,7 +89,7 @@ test('Experience 2 PWA precaches the complete Logger dependency chain across lat
 });
 
 test('release-blocking browser acceptance exercises Experience 2 Logger on desktop and 375px Chromium/WebKit',()=>{
-  assert.match(browserRunner,/GC_E2E_BASE_URL=http:\/\/127\.0\.0\.1:8787\/experience\/2\/ node --test tests\/browser\/experience2-logger\.browser\.js/);
+  assert.match(browserRunner,/GC_E2E_BASE_URL=http:\/\/127\.0\.0\.1:8787\/experience\/2\/ node --test --test-concurrency=1 tests\/browser\/experience2-logger\.browser\.js/);
   assert.match(browserTest,/BROWSERS=\[\['Chromium',chromium\],\['WebKit',webkit\]\]/);
   assert.match(browserTest,/desktop accepts Experience 2 Logger/);
   assert.match(browserTest,/375px accepts Experience 2 Logger/);
