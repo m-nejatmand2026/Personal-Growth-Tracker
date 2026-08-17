@@ -48,4 +48,19 @@
   .living-wellness-hero{grid-template-columns:1fr!important;grid-template-rows:auto!important;min-height:auto!important;padding:18px!important}.living-breathing-orb{display:none!important}.gc-choice-list{grid-template-columns:1fr!important}.wellness-boost-featured{grid-column:auto!important;min-height:130px!important}
 }
 
+/* Desktop UX refinement: use the available canvas and establish a clear dashboard rhythm. */
+@media(min-width:900px){
+  .gc-product-page-header h2,.gc-plan-header h2,.wellness-current-header h2{font-size:40px!important}
+  .gc-product-page-header p,.gc-plan-header p,.wellness-current-header p{max-width:680px;font-size:13px!important}
+  .gc-plan-rebuild,.gc-plan-sections,.plan-module-stack,.compass-section{max-width:1080px}
+  .gc-week-fit{padding:20px}.gc-plan-stat{min-height:94px;padding:14px}.gc-plan-sections{gap:10px}.gc-plan-sections button{min-height:78px;padding:14px}
+  .gc-progress-rebuild{max-width:1080px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.6fr);column-gap:24px;align-items:start}
+  .gc-progress-rebuild>.gc-product-page-header{grid-column:1/-1;margin-bottom:4px}
+  .gc-progress-history{grid-column:1;grid-row:2;margin-top:20px}.gc-progress-week{grid-column:2;grid-row:2;margin-top:20px}
+  .gc-progress-stats{grid-template-columns:1fr}.gc-progress-stats article{min-height:78px;padding:14px}.gc-progress-stats strong{font-size:24px}
+  .gc-progress-by-goal{grid-column:1/-1;margin-top:28px}
+  .gc-insights-rebuild{max-width:1000px}.gc-insight-readiness{padding:22px}.gc-insight-facts{gap:12px}.gc-insight-facts article{padding:16px}
+  .gc-journal-rebuild{max-width:960px}.gc-settings-rebuild{max-width:900px}.wellness-boost-library-view{max-width:1040px!important}
+}
+
 @media(prefers-reduced-motion:reduce){.plan-module-summary>span,.gc-progress-by-goal>summary b,.gc-insight-method>summary b{transition:none!important}}
