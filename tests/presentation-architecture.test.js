@@ -67,8 +67,8 @@ test('canonical design system owns theme tokens instead of composition sheets', 
 });
 
 test('remaining functional recovery debt is capped and must only shrink', () => {
-  assert.ok(recoveryCss.length <= 10500, `functional recovery grew to ${recoveryCss.length} bytes`);
-  assert.ok(importantCount(recoveryCss) <= 75, `functional recovery grew to ${importantCount(recoveryCss)} !important declarations`);
+  assert.ok(recoveryCss.length <= 8700, `functional recovery grew to ${recoveryCss.length} bytes`);
+  assert.ok(importantCount(recoveryCss) <= 33, `functional recovery grew to ${importantCount(recoveryCss)} !important declarations`);
   assert.doesNotMatch(recoveryCss, /screenshot-recovery|figma-current|living-canvas/);
   assert.doesNotMatch(recoveryCss, /wellness-boost-library-view|living-wellness-hero|wellness-session-grid|wellness-session-tile/);
 });
