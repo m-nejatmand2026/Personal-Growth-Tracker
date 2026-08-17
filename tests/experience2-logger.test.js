@@ -69,6 +69,8 @@ test('Experience 2 Logger modal is accessible and phone-first',()=>{
   assert.match(logger,/event\.key==='Escape'/);
   assert.match(logger,/event\.key!=='Tab'/);
   assert.match(logger,/opener\?\.focus/);
+  assert.match(logger,/host\.removeEventListener\('keydown',trapKeys\)/);
+  assert.match(logger,/host\.addEventListener\('keydown',trapKeys\)/);
   assert.match(css,/@media\(max-width:720px\)\{\.logger-panel\{inset:0/);
   assert.match(css,/env\(safe-area-inset-bottom\)/);
   assert.match(css,/\.logger-close\{width:48px;height:48px/);
