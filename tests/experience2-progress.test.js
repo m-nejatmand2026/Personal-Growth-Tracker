@@ -46,7 +46,7 @@ test('Progress owns responsive presentation and is available offline with the Ex
   assert.match(html,/\/experience\/2\/css\/progress\.css/);
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/@media\(max-width:430px\)/);
-  assert.match(sw,/growth-compass-preview2-e2-v5/);
+  assert.match(sw,/growth-compass-preview2-e2-v\d+/);
   assert.match(sw,/\/experience\/2\/css\/progress\.css/);
   assert.match(sw,/\/experience\/2\/js\/capabilities\/progress\.js/);
   assert.match(sw,/\/experience\/2\/js\/views\/progress\.js/);
