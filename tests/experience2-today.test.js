@@ -7,6 +7,8 @@ const today=await readFile(new URL('../public/experience/2/js/views/today.js',im
 const api=await readFile(new URL('../public/experience/2/js/core/api.js',import.meta.url),'utf8');
 const index=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
 const css=await readFile(new URL('../public/experience/2/css/today.css',import.meta.url),'utf8');
+const browserRunner=await readFile(new URL('../scripts/run-browser-e2e.sh',import.meta.url),'utf8');
+const browserTest=await readFile(new URL('./browser/experience2-today.browser.js',import.meta.url),'utf8');
 
 const experience2=`${app}\n${today}\n${api}\n${index}\n${css}`;
 
@@ -43,6 +45,18 @@ test('Experience 2 Today supports direct Start Done and Plans changed recovery w
   assert.match(today,/status:'in_progress'/);
   assert.match(today,/status:'dismissed'/);
   assert.doesNotMatch(today,/rollover|carry.?over/i);
+});
+
+test('Experience 2 Today never hides legal additional in-progress intentions',()=>{
+  assert.match(today,/const activeItems=model\.today\.filter\(item=>item\.status==='in_progress'\)/);
+  assert.match(today,/const \[active,\.\.\.additional\]=activeItems/);
+  assert.match(today,/Also in progress/);
+  assert.match(today,/additional\.map\(item=>itemHtml\(item\)\)/);
+  assert.match(css,/\.today-now-also\{/);
+  assert.match(browserRunner,/tests\/browser\/experience2-today\.browser\.js/);
+  assert.match(browserTest,/additional running intentions must stay visible/);
+  assert.match(browserTest,/width:375,height:812/);
+  assert.match(browserTest,/\['Chromium',chromium\],\['WebKit',webkit\]/);
 });
 
 test('Experience 2 frontend stays physically independent from Experience 1/current frontend',()=>{
