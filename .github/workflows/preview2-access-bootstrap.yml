@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   bootstrap-access:
-    name: Clone protected Preview 1 Access boundary to Preview 2
+    name: Protect isolated Preview 2 with existing Access credentials
     if: github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' && github.ref == 'refs/heads/feature/experience-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -28,28 +28,36 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          OWNER_EMAIL: ${{ github.event.head_commit.author.email }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CF_ACCESS_CLIENT_ID"
           test -n "$CF_ACCESS_CLIENT_SECRET"
+          test -n "$OWNER_EMAIL"
+          case "$OWNER_EMAIL" in *@*) ;; *) echo 'Push author email is unavailable; refusing to create an owner Access rule.'; exit 1;; esac
 
-      - name: Clone Preview 1 Access application and policies safely
+      - name: Create isolated Preview 2 Access boundary only
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          OWNER_EMAIL: ${{ github.event.head_commit.author.email }}
         run: |
           set -euo pipefail
           node <<'NODE'
           const token = process.env.CLOUDFLARE_API_TOKEN;
           const account = process.env.CLOUDFLARE_ACCOUNT_ID;
-          const sourceDomain = 'personal-growth-tracker-preview.m-nejatmand.workers.dev';
+          const accessClientId = process.env.CF_ACCESS_CLIENT_ID;
+          const ownerEmail = process.env.OWNER_EMAIL;
           const targetDomain = 'personal-growth-tracker-preview2.m-nejatmand.workers.dev';
+          const protectedPreview1Domain = 'personal-growth-tracker-preview.m-nejatmand.workers.dev';
+          const productionDomain = 'personal-growth-tracker.m-nejatmand.workers.dev';
           const base = `https://api.cloudflare.com/client/v4/accounts/${account}`;
 
-          async function cf(path, options = {}) {
+          async function request(path, options = {}, { allowFailure = false } = {}) {
             const response = await fetch(base + path, {
               ...options,
               headers: {
@@ -60,67 +68,86 @@ jobs:
             });
             const body = await response.json().catch(() => ({}));
             if (!response.ok || body.success === false) {
+              if (allowFailure) return { ok: false, status: response.status, body };
               const message = (body.errors || []).map((e) => `${e.code ?? 'error'}: ${e.message ?? 'Cloudflare API error'}`).join('; ');
               throw new Error(`Cloudflare Access API ${response.status}: ${message || 'request failed'}`);
             }
-            return body.result;
+            return { ok: true, status: response.status, result: body.result };
           }
 
-          const apps = await cf('/access/apps');
-          const sourceMatches = apps.filter((app) => app.domain === sourceDomain);
+          const appsResult = await request('/access/apps');
+          const apps = appsResult.result || [];
           const targetMatches = apps.filter((app) => app.domain === targetDomain);
-          if (sourceMatches.length !== 1) throw new Error(`Expected exactly one Preview 1 Access app for ${sourceDomain}; found ${sourceMatches.length}.`);
           if (targetMatches.length > 1) throw new Error(`Multiple Preview 2 Access apps found for ${targetDomain}; refusing ambiguity.`);
+          if (targetDomain === protectedPreview1Domain || targetDomain === productionDomain) throw new Error('Preview 2 Access target overlaps a protected environment; refusing mutation.');
 
-          const source = sourceMatches[0];
           let target = targetMatches[0];
           if (!target) {
             const createBody = {
               name: 'Growth Compass Preview 2',
               domain: targetDomain,
-              type: source.type || 'self_hosted',
-              session_duration: source.session_duration || '24h',
-              auto_redirect_to_identity: Boolean(source.auto_redirect_to_identity),
-              http_only_cookie_attribute: Boolean(source.http_only_cookie_attribute),
-              options_preflight_bypass: Boolean(source.options_preflight_bypass),
-              skip_interstitial: Boolean(source.skip_interstitial),
-              app_launcher_visible: source.app_launcher_visible !== false
+              type: 'self_hosted',
+              session_duration: '24h',
+              auto_redirect_to_identity: false,
+              app_launcher_visible: false
             };
-            target = await cf('/access/apps', { method: 'POST', body: JSON.stringify(createBody) });
-            console.log('Created isolated Preview 2 Access application for the exact Preview 2 hostname.');
+            target = (await request('/access/apps', { method: 'POST', body: JSON.stringify(createBody) })).result;
+            console.log('Created Access application for the exact isolated Preview 2 hostname.');
           } else {
-            console.log('Preview 2 Access application already exists for the exact Preview 2 hostname.');
+            console.log('Preview 2 Access application already exists for the exact isolated hostname.');
           }
-
           if (!target?.id || target.domain !== targetDomain) throw new Error('Resolved Preview 2 Access application identity is invalid.');
-          if (target.id === source.id) throw new Error('Preview 2 Access app unexpectedly equals Preview 1 app; refusing mutation.');
 
-          const sourcePolicies = await cf(`/access/apps/${source.id}/policies`);
-          if (!Array.isArray(sourcePolicies) || sourcePolicies.length === 0) throw new Error('Preview 1 Access app has no policies to clone.');
-          const targetPolicies = await cf(`/access/apps/${target.id}/policies`);
-          const targetNames = new Set(targetPolicies.map((p) => p.name));
-
-          let created = 0;
-          for (const policy of sourcePolicies) {
-            if (targetNames.has(policy.name)) continue;
-            const body = {
-              name: policy.name,
-              decision: policy.decision,
-              precedence: policy.precedence,
-              include: policy.include || [],
-              exclude: policy.exclude || [],
-              require: policy.require || []
-            };
-            if (policy.session_duration) body.session_duration = policy.session_duration;
-            await cf(`/access/apps/${target.id}/policies`, { method: 'POST', body: JSON.stringify(body) });
-            created += 1;
+          let serviceRule = { any_valid_service_token: {} };
+          const serviceTokens = await request('/access/service_tokens?per_page=1000', {}, { allowFailure: true });
+          if (serviceTokens.ok) {
+            const matches = (serviceTokens.result || []).filter((item) => item.client_id === accessClientId);
+            if (matches.length !== 1) throw new Error(`Expected exactly one existing CI Access service token matching the stored client ID; found ${matches.length}.`);
+            serviceRule = { service_token: { token_id: matches[0].id } };
+            console.log('Resolved the existing CI Access service token exactly.');
+          } else {
+            console.log('Service-token metadata is not readable by this API token; restricting CI to valid account Access service tokens without creating a new credential.');
           }
 
-          const finalPolicies = await cf(`/access/apps/${target.id}/policies`);
-          if (finalPolicies.length < sourcePolicies.length) {
-            throw new Error(`Preview 2 Access policy clone incomplete: source=${sourcePolicies.length}, target=${finalPolicies.length}.`);
+          const existingPolicies = (await request(`/access/apps/${target.id}/policies`)).result || [];
+          const byName = new Map(existingPolicies.map((policy) => [policy.name, policy]));
+
+          if (!byName.has('Preview 2 CI service token')) {
+            await request(`/access/apps/${target.id}/policies`, {
+              method: 'POST',
+              body: JSON.stringify({
+                name: 'Preview 2 CI service token',
+                decision: 'non_identity',
+                precedence: 1,
+                include: [serviceRule],
+                exclude: [],
+                require: []
+              })
+            });
+            console.log('Created Preview 2 CI service-auth policy using the existing Access credential.');
           }
-          console.log(`Preview 2 Access boundary ready; source policy count=${sourcePolicies.length}, target policy count=${finalPolicies.length}, newly created=${created}.`);
+
+          if (!byName.has('Preview 2 owner')) {
+            await request(`/access/apps/${target.id}/policies`, {
+              method: 'POST',
+              body: JSON.stringify({
+                name: 'Preview 2 owner',
+                decision: 'allow',
+                precedence: 2,
+                include: [{ email: { email: ownerEmail } }],
+                exclude: [],
+                require: []
+              })
+            });
+            console.log('Created the owner-only interactive Preview 2 Access policy.');
+          }
+
+          const finalPolicies = (await request(`/access/apps/${target.id}/policies`)).result || [];
+          const finalNames = new Set(finalPolicies.map((policy) => policy.name));
+          if (!finalNames.has('Preview 2 CI service token') || !finalNames.has('Preview 2 owner')) {
+            throw new Error('Preview 2 Access policy bootstrap is incomplete.');
+          }
+          console.log('Preview 2 Access application and required policies are configured without changing Preview 1 or Production.');
           NODE
 
       - name: Verify protected selector, both experiences and D1 health
