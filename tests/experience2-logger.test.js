@@ -43,12 +43,13 @@ test('Experience 2 Logger reaches Activities and Goals only through its Activiti
 });
 
 test('Experience 2 Logger provides the complete everyday input path',()=>{
-  const activity=logger.indexOf('id="loggerActivityQuery"');
-  const recent=logger.indexOf('id="loggerRecent"');
-  const duration=logger.indexOf('id="loggerDuration"');
-  const when=logger.indexOf('data-plan-only');
-  const details=logger.indexOf('class="logger-more"');
-  const save=logger.indexOf('id="loggerSave"');
+  const render=logger.slice(logger.indexOf('host.innerHTML=`<div class="logger-backdrop"'));
+  const activity=render.indexOf('id="loggerActivityQuery"');
+  const recent=render.indexOf('id="loggerRecent"');
+  const duration=render.indexOf('id="loggerDuration"');
+  const when=render.indexOf('data-plan-only');
+  const details=render.indexOf('class="logger-more"');
+  const save=render.indexOf('id="loggerSave"');
   assert.ok(activity>=0&&activity<recent&&recent<duration&&duration<when&&when<details&&details<save);
   assert.match(logger,/const PRESETS=\[15,30,45,60\]/);
   assert.match(logger,/Search or type an activity/);
