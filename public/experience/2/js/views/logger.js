@@ -24,7 +24,7 @@ export async function loadLogger(date=todayKey()){
 export function createLogger({onSaved}={}){
   const host=document.querySelector('#overlayHost');
   let model=null,opener=null,closing=false;
-  const close=()=>{if(!host||closing)return;closing=true;host.innerHTML='';document.body.classList.remove('logger-open');opener?.focus?.({preventScroll:true});closing=false;};
+  const close=()=>{if(!host||closing)return;closing=true;host.removeEventListener('keydown',trapKeys);host.innerHTML='';document.body.classList.remove('logger-open');opener?.focus?.({preventScroll:true});closing=false;};
   const goalName=id=>model?.goals.find(goal=>Number(goal.id)===Number(id))?.name||'';
   const exactActivity=query=>model?.activities.find(activity=>normalize(activity.name||activity.key)===normalize(query))||null;
   const selectedActivity=()=>model?.activities.find(activity=>activity.key===host?.querySelector('#loggerActivityKey')?.value)||null;
