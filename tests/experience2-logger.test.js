@@ -6,14 +6,20 @@ const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.
 const logger=await readFile(new URL('../public/experience/2/js/views/logger.js',import.meta.url),'utf8');
 const activities=await readFile(new URL('../public/experience/2/js/capabilities/activities.js',import.meta.url),'utf8');
 const css=await readFile(new URL('../public/experience/2/css/logger.css',import.meta.url),'utf8');
+const shellCss=await readFile(new URL('../public/experience/2/css/shell.css',import.meta.url),'utf8');
 const index=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
 const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
+const browserRunner=await readFile(new URL('../scripts/run-browser-e2e.sh',import.meta.url),'utf8');
+const browserTest=await readFile(new URL('./browser/experience2-logger.browser.js',import.meta.url),'utf8');
 
 test('Experience 2 global Add opens a real Logger and defaults to factual Done',()=>{
   assert.match(app,/import\{createLogger\}from'\.\/views\/logger\.js'/);
   assert.match(app,/logger\.open\(\{entryMode:'done'\}\)/);
   assert.doesNotMatch(app,/Logger follows the real Today \+ Capacity foundation/);
-  assert.match(index,/data-open-add aria-label="Add activity"/);
+  assert.equal((index.match(/data-open-add/g)||[]).length,2);
+  assert.match(index,/class="rail-add" data-open-add aria-label="Add activity"/);
+  assert.match(index,/class="dock-add" data-open-add aria-label="Add activity"/);
+  assert.match(shellCss,/\.rail-add\{[^}]*min-height:48px/s);
 });
 
 test('Experience 2 Logger keeps Plan and Start now out of factual Progress',()=>{
@@ -78,4 +84,13 @@ test('Experience 2 Logger remains physically independent from frozen Experience 
 test('Experience 2 PWA precaches the complete Logger dependency chain',()=>{
   assert.match(sw,/growth-compass-preview2-e2-v3/);
   for(const asset of ['/experience/2/css/logger.css','/experience/2/js/views/logger.js','/experience/2/js/capabilities/activities.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);
+});
+
+test('release-blocking browser acceptance exercises Experience 2 Logger on desktop and 375px Chromium/WebKit',()=>{
+  assert.match(browserRunner,/GC_E2E_BASE_URL=http:\/\/127\.0\.0\.1:8787\/experience\/2\/ node --test tests\/browser\/experience2-logger\.browser\.js/);
+  assert.match(browserTest,/BROWSERS=\[\['Chromium',chromium\],\['WebKit',webkit\]\]/);
+  assert.match(browserTest,/desktop accepts Experience 2 Logger/);
+  assert.match(browserTest,/375px accepts Experience 2 Logger/);
+  assert.match(browserTest,/global Add must default to factual Done/);
+  assert.match(browserTest,/closing Logger must restore focus to Add/);
 });
