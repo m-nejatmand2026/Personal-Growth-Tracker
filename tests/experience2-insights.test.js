@@ -19,7 +19,7 @@ test('Experience 2 Insights replaces the placeholder and depends only on Progres
 });
 
 test('Insights exposes evidence stages and sample sizes without causal claims',()=>{
-  for(const text of ['Still learning','Basic summaries','Early patterns','Stronger evidence','0–6 days','7–20 days','21–41 days','42+ days'])assert.match(view,new RegExp(text));
+  for(const text of ['Still learning','Basic summaries','Early patterns','Stronger evidence','0–6 days','7–20 days','21–41 days','42+ days'])assert.ok(view.includes(text),`Insights source must include ${text}`);
   assert.match(view,/Association is never presented as cause/);
   assert.match(view,/still cannot establish cause/);
   assert.match(view,/trackedDays/);
