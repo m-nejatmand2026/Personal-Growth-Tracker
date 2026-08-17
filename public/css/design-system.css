@@ -1,0 +1,240 @@
+:root {
+  color-scheme: dark;
+
+  /* Canonical Growth Compass design tokens. These are the single runtime theme authority. */
+  --gc-bg: #051424;
+  --gc-surface: #0d1c2d;
+  --gc-surface-raised: #122131;
+  --gc-surface-subtle: #273647;
+  --gc-text: #ffffff;
+  --gc-text-muted: #c5c6cd;
+  --gc-text-quiet: #99a4b2;
+  --gc-text-on-brand: #051424;
+  --gc-border: #273647;
+  --gc-brand: #4edea3;
+  --gc-brand-strong: #29c98a;
+  --gc-brand-soft: #273647;
+  --gc-brand-soft-strong: #305244;
+  --gc-info-soft: #18334b;
+  --gc-reflection-soft: #302b48;
+  --gc-warm-soft: #493e23;
+  --gc-danger: #ff8f8f;
+  --gc-danger-soft: #4a2329;
+  --gc-focus: #4edea3;
+  --gc-focus-halo: rgba(78, 222, 163, 0.22);
+
+  --gc-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --gc-text-xs: 0.6875rem;
+  --gc-text-sm: 0.8125rem;
+  --gc-text-md: 0.9375rem;
+  --gc-text-lg: 1.125rem;
+  --gc-text-xl: 1.5rem;
+  --gc-text-2xl: 1.75rem;
+
+  --gc-space-1: 0.25rem;
+  --gc-space-2: 0.5rem;
+  --gc-space-3: 0.75rem;
+  --gc-space-4: 1rem;
+  --gc-space-5: 1.25rem;
+  --gc-space-6: 1.5rem;
+  --gc-space-8: 2rem;
+
+  --gc-radius-sm: 0.625rem;
+  --gc-radius-md: 0.875rem;
+  --gc-radius-lg: 1.125rem;
+  --gc-radius-xl: 1.5rem;
+  --gc-radius-pill: 999px;
+
+  --gc-shadow-sm: none;
+  --gc-shadow-md: none;
+  --gc-shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.35);
+  --gc-target-min: 44px;
+  --gc-content-max: 1180px;
+  --gc-motion-fast: 160ms;
+  --gc-motion-normal: 240ms;
+
+  /* Compatibility aliases while older module styles are migrated incrementally. */
+  --bg: var(--gc-bg);
+  --panel: var(--gc-surface);
+  --text: var(--gc-text);
+  --muted: var(--gc-text-muted);
+  --line: var(--gc-border);
+  --accent: var(--gc-brand);
+  --accent-soft: var(--gc-brand-soft);
+  --shadow: var(--gc-shadow-md);
+
+  --os-bg: var(--gc-bg);
+  --os-surface: var(--gc-surface);
+  --os-navy: var(--gc-text);
+  --os-teal: var(--gc-brand);
+  --os-teal-dark: var(--gc-brand-strong);
+  --os-mint: var(--gc-brand-soft);
+  --os-mint-strong: var(--gc-brand-soft-strong);
+  --os-sky: var(--gc-info-soft);
+  --os-lavender: var(--gc-reflection-soft);
+  --os-gold: var(--gc-warm-soft);
+  --os-line: var(--gc-border);
+  --os-muted: var(--gc-text-muted);
+  --os-shadow: var(--gc-shadow-md);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--gc-bg);
+  color: var(--gc-text);
+}
+
+body {
+  background: var(--gc-bg);
+  background-image: none;
+  color: var(--gc-text);
+  font-family: var(--gc-font-sans);
+}
+
+:where(button, input, select, textarea, summary) {
+  font: inherit;
+}
+
+:where(button, [role="button"], summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--gc-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--gc-focus-halo);
+}
+
+.gc-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.gc-hit-target {
+  min-width: var(--gc-target-min);
+  min-height: var(--gc-target-min);
+}
+
+.gc-button {
+  min-height: var(--gc-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gc-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--gc-radius-md);
+  padding: 0.6875rem 0.875rem;
+  background: transparent;
+  color: var(--gc-text);
+  font-weight: 800;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: background-color var(--gc-motion-fast) ease, border-color var(--gc-motion-fast) ease, transform var(--gc-motion-fast) ease;
+}
+
+.gc-button:active {
+  transform: translateY(1px);
+}
+
+.gc-button--primary {
+  background: var(--gc-brand);
+  color: var(--gc-text-on-brand);
+}
+
+.gc-button--secondary {
+  border-color: var(--gc-border);
+  background: var(--gc-surface);
+}
+
+.gc-button--quiet {
+  color: var(--gc-brand);
+}
+
+.gc-surface {
+  background: var(--gc-surface);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-lg);
+  box-shadow: var(--gc-shadow-sm);
+}
+
+.gc-stack {
+  display: grid;
+  gap: var(--gc-space-4);
+}
+
+.gc-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gc-space-2);
+}
+
+/* Data visualization primitives: visible values remain semantic text; graphics are secondary. */
+.gc-threshold {
+  min-width: 0;
+}
+
+.gc-threshold__track {
+  position: relative;
+  height: 10px;
+  margin: 6px 1px 0;
+  border-radius: var(--gc-radius-pill);
+  background: var(--gc-surface-subtle);
+}
+
+.gc-threshold__actual {
+  display: block;
+  width: var(--gc-actual-pct, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gc-brand);
+}
+
+.gc-threshold__marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 16px;
+  border-radius: var(--gc-radius-pill);
+  transform: translateX(-1px);
+  background: var(--gc-text);
+}
+
+.gc-threshold__marker--minimum {
+  left: var(--gc-minimum-pct, 0%);
+}
+
+.gc-threshold__marker--target {
+  left: var(--gc-target-pct, 100%);
+  background: var(--gc-brand-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid Highlight;
+    box-shadow: none;
+  }
+
+  .gc-threshold__actual,
+  .gc-threshold__marker {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}

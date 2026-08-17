@@ -3,13 +3,15 @@ import {
   deleteJournalRoute,
   listJournalRoute,
   updateJournalRoute
-} from '../../routes/journal.js';
+} from './routes.js';
 
 export const journalModule = Object.freeze({
   id: 'journal',
   contractVersion: 1,
   dependsOn: [],
   defaultEnabled: true,
+  ownsTables: Object.freeze(['journal_entries']),
+  compatibilityTables: Object.freeze([]),
   routes: Object.freeze([
     { method: 'GET', pattern: '/api/v1/journal', handler: listJournalRoute },
     { method: 'POST', pattern: '/api/v1/journal', handler: createJournalRoute },

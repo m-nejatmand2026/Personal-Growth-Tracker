@@ -1,0 +1,41 @@
+/* Legacy Today sanctuary component styles.
+ * Scope is intentionally limited to Today-owned content. The shared app shell,
+ * navigation and top-level theme are owned by the current Growth Compass UI.
+ */
+@font-face{font-family:Inter;src:url('/fonts/inter-400.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:Inter;src:url('/fonts/inter-500.woff2') format('woff2');font-style:normal;font-weight:500;font-display:swap}
+@font-face{font-family:Inter;src:url('/fonts/inter-600.woff2') format('woff2');font-style:normal;font-weight:600;font-display:swap}
+@font-face{font-family:"Playfair Display";src:url('/fonts/playfair-display-600.woff2') format('woff2');font-style:normal;font-weight:600;font-display:swap}
+@font-face{font-family:"Playfair Display";src:url('/fonts/playfair-display-700.woff2') format('woff2');font-style:normal;font-weight:700;font-display:swap}
+@font-face{font-family:"Playfair Display";src:url('/fonts/playfair-display-600-italic.woff2') format('woff2');font-style:italic;font-weight:600;font-display:swap}
+
+#todayView{min-width:0;--today-ink:#000;--today-copy:#45464d;--today-outline:#76777d;--today-line:#c6c6cd;--today-canvas:#f8f9ff;--today-violet:#9466ff;--today-chip:#e5eeff;font-family:Inter,Arial,sans-serif}
+.today-layout{display:grid;gap:0;min-width:0;padding:64px 0 32px}
+.today-layout>*{margin-bottom:0!important}
+.today-primary-flow{display:block;min-width:0}
+.today-sanctuary-heading{margin:0 0 32px;text-align:center}
+.today-sanctuary-heading h2{margin:0;color:var(--today-ink);font-family:"Playfair Display",Georgia,serif;font-size:40px;font-weight:700;line-height:48px;letter-spacing:-.01em}
+.today-sanctuary-heading p{margin:8px 0 0;color:var(--today-copy);font:italic 400 18px/28px Inter,Arial,sans-serif}
+
+#todayView .today-context-disclosure{margin:96px 0 0;overflow:hidden;border-top:1px solid var(--today-line);border-bottom:1px solid var(--today-line);background:transparent}
+#todayView .today-context-disclosure>summary{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0;color:var(--today-ink);cursor:pointer;list-style:none}
+#todayView .today-context-disclosure>summary::-webkit-details-marker{display:none}
+#todayView .today-context-disclosure>summary>span:first-child{display:grid;gap:2px}
+#todayView .today-context-disclosure>summary strong{font-size:13px;font-weight:600}
+#todayView .today-context-disclosure>summary small{color:var(--today-copy);font-size:11px;font-weight:400}
+#todayView .today-context-chevron{color:var(--today-copy);transition:transform .18s ease}
+#todayView .today-context-disclosure[open] .today-context-chevron{transform:rotate(180deg)}
+#todayView .today-context-body{display:grid;gap:12px;padding:4px 0 18px}
+
+@media (min-width:768px){
+  .today-layout{padding:64px 0 48px}
+  .today-sanctuary-heading{text-align:left}
+  .today-sanctuary-heading h2{font-size:64px;line-height:72px;letter-spacing:-.02em}
+}
+
+@media (min-width:900px){
+  .today-layout{max-width:860px;margin-inline:auto}
+  .gc-today-rebuild .gc-today-header{display:block}
+  .gc-today-rebuild .gc-today-header p{margin:16px 0 0;text-align:left}
+  .gc-today-rebuild .gc-today-header p strong{font-size:16px}
+}

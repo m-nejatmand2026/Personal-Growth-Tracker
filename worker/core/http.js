@@ -1,7 +1,18 @@
+export class HttpError extends Error {
+  constructor(message, status = 400) {
+    super(message);
+    this.name = 'HttpError';
+    this.status = status;
+  }
+}
+
 export function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8' }
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store'
+    }
   });
 }
 
@@ -11,7 +22,9 @@ export function bad(message, status = 400) {
 
 export async function readJsonBody(request, maxBytes = 64 * 1024) {
   const declaredLength = Number(request.headers.get('content-length') || 0);
-  if (declaredLength > maxBytes) throw new Error('Request body is too large');
+  if (declaredLength > maxBytes) {
+    throw new HttpError('Request body is too large', 413);
+  }
   if (!request.body) return {};
 
   const reader = request.body.getReader();
@@ -25,7 +38,7 @@ export async function readJsonBody(request, maxBytes = 64 * 1024) {
       total += value.byteLength;
       if (total > maxBytes) {
         await reader.cancel('Request body too large');
-        throw new Error('Request body is too large');
+        throw new HttpError('Request body is too large', 413);
       }
       chunks.push(value);
     }
@@ -45,6 +58,6 @@ export async function readJsonBody(request, maxBytes = 64 * 1024) {
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error('Invalid JSON request body');
+    throw new HttpError('Invalid JSON request body', 400);
   }
 }

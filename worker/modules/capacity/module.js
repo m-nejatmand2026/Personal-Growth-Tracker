@@ -3,13 +3,15 @@ import {
   createCapacityCommitmentRoute,
   listCapacityCommitmentsRoute,
   updateCapacityCommitmentRoute
-} from '../../routes/capacity.js';
+} from './routes.js';
 
 export const capacityModule = Object.freeze({
   id: 'capacity',
   contractVersion: 1,
   dependsOn: ['plans'],
   defaultEnabled: true,
+  ownsTables: Object.freeze(['capacity_commitments']),
+  compatibilityTables: Object.freeze([]),
   routes: Object.freeze([
     { method: 'GET', pattern: '/api/v1/capacity', handler: capacitySummaryRoute },
     { method: 'GET', pattern: '/api/v1/capacity/commitments', handler: listCapacityCommitmentsRoute },

@@ -1,25 +1,24 @@
-import { api } from '../core/api.js';
-import { $, escapeHtml } from '../core/dom.js';
-import { state } from '../core/state.js';
-import { toast } from '../core/toast.js';
+import { $ } from '../core/dom.js';
 
-export function renderSettings({ reload }) {
-  const targets = state.data.targets?.length ? state.data.targets : state.data.week;
-  $('#settingsView').innerHTML = `<div class="card"><div class="section-head"><div><h2>Weekly targets</h2><p>Edit the plan without altering historical records.</p></div></div><div id="targetRows">${targets.map((item)=>`<div class="form-row"><strong>${escapeHtml(item.name)}</strong><input type="number" min="0" step="5" value="${item.target_minutes}" data-target="${item.key}" aria-label="${escapeHtml(item.name)} target minutes"><input type="number" min="0" step="5" value="${item.minimum_minutes}" data-minimum="${item.key}" aria-label="${escapeHtml(item.name)} minimum minutes"></div>`).join('')}</div><div class="small muted">Columns: target minutes / good-enough minimum minutes.</div><div class="actions"><button id="saveTargets" class="btn primary">Save targets</button></div></div>
-  <div class="card"><div class="section-head"><div><h2>Data ownership</h2><p>Export all records as JSON at any time.</p></div></div><div class="actions"><a class="btn soft" href="/api/export" target="_blank" rel="noopener">Export everything</a></div></div>`;
+export function renderSettings() {
+  const root = $('#settingsView');
+  if (!root) return;
 
-  $('#saveTargets')?.addEventListener('click', async () => {
-    const items = targets.map((item) => ({
-      key: item.key,
-      target_minutes: Number($(`[data-target="${item.key}"]`).value),
-      minimum_minutes: Number($(`[data-minimum="${item.key}"]`).value)
-    }));
-    try {
-      await api('/api/targets', { method: 'PUT', body: JSON.stringify({ items }) });
-      toast('Targets updated');
-      await reload();
-    } catch {
-      toast('Preview mode: database not connected');
-    }
-  });
+  root.innerHTML = `<section class="gc-settings-rebuild" aria-labelledby="settingsCurrentTitle">
+    <header class="gc-product-page-header">
+      <div><h2 id="settingsCurrentTitle">Settings</h2><p>Real controls only: access, data ownership, and settings that actually exist today.</p></div>
+    </header>
+    <section class="gc-settings-section">
+      <div class="gc-section-title"><div><span>Access</span><h3>Private Beta</h3></div></div>
+      <div class="gc-settings-card"><div class="gc-settings-row"><span class="gc-settings-mark" aria-hidden="true">P</span><div><strong>Protected access</strong><small>Growth Compass is currently behind the private Beta access boundary.</small></div><b>Active</b></div></div>
+    </section>
+    <section class="gc-settings-section">
+      <div class="gc-section-title"><div><span>Your data</span><h3>Ownership</h3></div></div>
+      <div class="gc-settings-card"><a class="gc-settings-row gc-live-tile" href="/api/export" target="_blank" rel="noopener"><span class="gc-settings-mark" aria-hidden="true">↓</span><div><strong>Export everything</strong><small>Download your current Growth Compass records as JSON.</small></div><b aria-hidden="true">↗</b></a></div>
+    </section>
+    <section class="gc-settings-section">
+      <div class="gc-section-title"><div><span>Planning</span><h3>Managed in context</h3></div></div>
+      <div class="gc-settings-note"><strong>Planning belongs in Plan.</strong><p>Goals, time budgets and capacity live in Plan beside the information they change instead of being duplicated here.</p></div>
+    </section>
+  </section>`;
 }

@@ -6,15 +6,17 @@
   "scripts": {
     "dev": "wrangler dev",
     "dev:preview": "wrangler dev --env preview",
-    "deploy": "wrangler deploy",
     "deploy:preview": "wrangler deploy --env preview",
+    "deploy:production": "wrangler deploy",
     "test": "node --test",
-    "db:create": "wrangler d1 create personal-growth-tracker",
+    "test:integration": "node --test tests/integration/worker-d1.integration.js",
+    "test:browser": "node --test tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js tests/browser/breathing-visual.browser.js",
     "db:migrate:local": "wrangler d1 migrations apply personal-growth-tracker --local",
-    "db:migrate:remote": "wrangler d1 migrations apply personal-growth-tracker --remote",
-    "db:migrate:preview": "wrangler d1 migrations apply DB --remote --env preview"
+    "db:migrate:preview": "wrangler d1 migrations apply DB --remote --env preview",
+    "db:migrate:production": "wrangler d1 migrations apply DB --remote"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "playwright": "1.62.0",
+    "wrangler": "4.123.0"
   }
 }
