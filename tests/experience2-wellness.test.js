@@ -31,14 +31,17 @@ test('Wellness offers the starter practice library and explicit 4–2–8–2 br
   assert.match(content,/id:'hold-in',label:'Hold',seconds:2/);
   assert.match(content,/id:'exhale',label:'Exhale',seconds:8/);
   assert.match(content,/id:'hold-out',label:'Hold',seconds:2/);
-  assert.match(view,/return to normal breathing if the rhythm feels uncomfortable/i);
+  assert.match(content,/return to normal breathing if the rhythm feels uncomfortable/i);
 });
 
-test('Wellness session lifecycle supports start pause resume end and navigation cleanup',()=>{
+test('Wellness session lifecycle supports start pause resume end restart and navigation cleanup',()=>{
   assert.match(view,/startMeditation/);
   assert.match(view,/startBreathing/);
   assert.match(view,/function toggle/);
   assert.match(view,/function end/);
+  assert.match(view,/ring\.disabled=false/);
+  assert.match(view,/classList\.toggle\('wellness-paused',session\.paused\)/);
+  assert.match(css,/\.wellness-paused \.wellness-breath-ring i\{animation-play-state:paused\}/);
   assert.match(view,/export function deactivateWellness/);
   assert.match(app,/deactivateWellness\(\)/);
 });
