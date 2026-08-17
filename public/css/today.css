@@ -1,4 +1,7 @@
-/* Literal implementation of the supplied Stitch Today Sanctuary screen. */
+/* Legacy Today sanctuary component styles.
+ * Scope is intentionally limited to Today-owned content. The shared app shell,
+ * navigation and top-level theme are owned by the current Growth Compass UI.
+ */
 @font-face{font-family:Inter;src:url('/fonts/inter-400.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
 @font-face{font-family:Inter;src:url('/fonts/inter-500.woff2') format('woff2');font-style:normal;font-weight:500;font-display:swap}
 @font-face{font-family:Inter;src:url('/fonts/inter-600.woff2') format('woff2');font-style:normal;font-weight:600;font-display:swap}
@@ -24,38 +27,10 @@
 #todayView .today-context-disclosure[open] .today-context-chevron{transform:rotate(180deg)}
 #todayView .today-context-body{display:grid;gap:12px;padding:4px 0 18px}
 
-body:has(#todayView.active){background:var(--today-canvas)}
-body:has(#todayView.active) .workspace{background:var(--today-canvas)}
-body:has(#todayView.active) .topbar{position:sticky;top:0;z-index:40;width:100%;height:64px;margin:0;padding:0 24px;border-bottom:1px solid var(--today-line);background:var(--today-canvas);box-shadow:none}
-body:has(#todayView.active) .topbar-title{display:flex;align-items:center}
-body:has(#todayView.active) .topbar-title .eyebrow{position:absolute;left:50%;top:50%;display:block;width:max-content;margin:0;color:#000;font:600 32px/40px "Playfair Display",Georgia,serif;letter-spacing:0;text-transform:none;transform:translate(-50%,-50%)}
-body:has(#todayView.active) .topbar-title #pageTitle{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-body:has(#todayView.active) .topbar-avatar{display:grid;place-items:center;width:32px;height:32px;flex:0 0 auto;overflow:hidden;border-radius:50%;background:#111;color:#fff;font:600 9px/1 Inter,Arial,sans-serif}
-body:has(#todayView.active) .top-more>summary{width:44px;height:44px;border:0;border-radius:50%;background:transparent;box-shadow:none}
-body:has(#todayView.active) .top-more>summary span{font-size:0;transform:none}
-body:has(#todayView.active) .top-more>summary span::before{content:"⚙";font-size:24px;line-height:1;color:var(--today-copy)}
-
-body:has(#todayView.active) .bottom-nav{min-height:80px;align-items:end;padding:8px 16px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--today-line);background:var(--today-canvas);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-body:has(#todayView.active) .nav-btn{min-height:52px;border-radius:12px;padding:4px 8px;color:var(--today-copy);font:600 10px/16px Inter,Arial,sans-serif;letter-spacing:.1em}
-body:has(#todayView.active) .nav-btn>span{font-size:22px}
-body:has(#todayView.active) .nav-btn.active:not(.nav-add){border-radius:12px;background:#e0e3e5;color:#626567}
-body:has(#todayView.active) .nav-add{width:56px;height:56px;min-height:56px;margin-top:-24px;padding:0;border:0;border-radius:12px;background:#000;color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.18)}
-body:has(#todayView.active) .nav-add>b{top:61px;color:var(--today-copy);font-weight:600;letter-spacing:.1em}
-
-@media (max-width:600px){
-  body:has(#todayView.active) .os-shell{padding:0 24px calc(104px + env(safe-area-inset-bottom))}
-  body:has(#todayView.active) .topbar{margin-inline:-24px;width:calc(100% + 48px)}
-  body:has(#todayView.active) .top-actions{display:flex}
-  body:has(#todayView.active) .topbar-title .eyebrow{font-size:clamp(26px,8vw,32px);line-height:1;white-space:nowrap}
-}
-
 @media (min-width:768px){
   .today-layout{padding:64px 0 48px}
   .today-sanctuary-heading{text-align:left}
   .today-sanctuary-heading h2{font-size:64px;line-height:72px;letter-spacing:-.02em}
 }
 
-@media (min-width:900px){
-  .today-layout{max-width:860px;margin-inline:auto}
-  body:has(#todayView.active) .app-rail{border-color:var(--today-line);background:#fff}
-}
+@media (min-width:900px){.today-layout{max-width:860px;margin-inline:auto}}
