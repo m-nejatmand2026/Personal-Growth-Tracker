@@ -37,16 +37,22 @@ test('Journal provides search create edit and delete through its own capability'
   assert.match(view,/data-journal-search/);
   assert.match(view,/journalCapability\.create\(payload\)/);
   assert.match(view,/journalCapability\.update\(id,payload\)/);
-  assert.match(view,/journalCapability\.delete\(id\)/);
+  assert.match(view,/journalCapability\.delete\(item\.id\)/);
   assert.match(view,/model\.items\.find/);
 });
 
-test('Journal editor is modal keyboard-safe and restores focus',()=>{
+test('Journal editor and delete confirmation are modal keyboard-safe and restore focus',()=>{
   assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="journalEditorTitle"/);
+  assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="journalDeleteTitle"/);
+  assert.match(view,/data-journal-delete-cancel/);
+  assert.match(view,/data-journal-delete-confirm/);
+  assert.doesNotMatch(view,/window\.confirm|confirm\(/);
   assert.match(view,/event\.key==='Escape'/);
   assert.match(view,/event\.key!=='Tab'/);
   assert.match(view,/host\.onkeydown=null/);
   assert.match(view,/opener instanceof HTMLElement/);
+  assert.match(view,/opener\.focus\(\{preventScroll:true\}\)/);
+  assert.match(css,/\.journal-delete-dialog\{/);
   assert.match(css,/env\(safe-area-inset-bottom\)/);
   assert.match(css,/@media\(max-width:760px\)/);
 });
