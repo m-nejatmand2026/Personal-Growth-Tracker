@@ -10,7 +10,7 @@ test('Experience 2 Plan replaces the placeholder with real Capacity data',()=>{a
 
 test('Plan exposes day week month horizons and defaults to week',()=>{assert.match(plan,/new Set\(\['day','week','month'\]\)/);assert.match(plan,/period='week'/);assert.match(plan,/data-plan-period/);assert.match(plan,/Planning horizon/)});
 
-test('Plan keeps capacity arithmetic factual and non-moralized',()=>{assert.match(plan,/Capacity is arithmetic, not a productivity score\./);assert.match(plan,/Plan describes intended time/);assert.match(plan,/Nothing on this screen becomes factual Progress automatically/);assert.match(plan,/unfinished intentions do not become debt/);assert.doesNotMatch(plan,/productivity score|streak|points|level up/i)});
+test('Plan keeps capacity arithmetic factual and non-moralized',()=>{assert.match(plan,/Capacity is arithmetic, not a productivity score\./);assert.match(plan,/Plan describes intended time/);assert.match(plan,/Nothing on this screen becomes factual Progress automatically/);assert.match(plan,/unfinished intentions do not become debt/);assert.doesNotMatch(plan,/streak|points|level up|good job|bad day|failure score/i)});
 
 test('Plan shows relationships instead of disconnected metric cards',()=>{assert.match(plan,/planned_goal_minutes/);assert.match(plan,/flexible_minutes/);assert.match(plan,/committed_minutes/);assert.match(plan,/overcommitted_minutes/);assert.match(plan,/plan-capacity-bar/);assert.match(plan,/planned from/);assert.match(plan,/after recurring commitments/)});
 
