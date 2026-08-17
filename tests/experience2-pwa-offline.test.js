@@ -11,3 +11,5 @@ test('Experience 2 PWA precaches implemented Today Plan and Goals presentation l
 test('Experience 2 cache namespace remains isolated and is versioned for shell changes',()=>{assert.match(sw,/growth-compass-preview2-e2-v\d+/);assert.match(sw,/startsWith\('growth-compass-preview2-e2-'\)/);assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/)});
 
 test('Experience 2 API GET requests bypass service-worker cache fallback',()=>{assert.match(sw,/url\.pathname\.startsWith\('\/api\/'\)/);const guard=sw.indexOf("url.pathname.startsWith('/api/')"),respondWith=sw.indexOf('event.respondWith');assert.ok(guard>=0&&respondWith>guard)});
+
+test('Experience 2 runtime cache owns only successful Experience 2 resources',()=>{assert.match(sw,/!url\.pathname\.startsWith\('\/experience\/2\/'\)/);assert.match(sw,/if\(response\.ok\)\{/);const scopeGuard=sw.indexOf("!url.pathname.startsWith('/experience/2/')"),respondWith=sw.indexOf('event.respondWith'),okGuard=sw.indexOf('if(response.ok)');assert.ok(scopeGuard>=0&&respondWith>scopeGuard);assert.ok(okGuard>respondWith);});
