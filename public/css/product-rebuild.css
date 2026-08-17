@@ -126,4 +126,15 @@ button,input,select,textarea{font:inherit}
   .gc-today-primary{grid-template-columns:minmax(0,1.4fr) minmax(240px,.6fr);align-items:start}.gc-today-plan{grid-column:1}.gc-capacity-compact{grid-column:2;grid-row:1;position:sticky;top:24px}.gc-today-more{grid-column:1/-1}
 }
 
+/* Desktop UX refinement: Today should feel like a dashboard, not a narrow mobile column. */
+@media(min-width:900px){
+  .gc-today-rebuild{width:min(100%,1080px);margin:0;padding-top:14px}
+  .gc-today-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:32px;margin-bottom:26px}
+  .gc-today-header h2{font-size:40px}.gc-today-header p{margin:0 0 2px;text-align:right}.gc-today-header p strong{font-size:16px}
+  .gc-today-primary{grid-template-columns:minmax(0,1fr) 320px;gap:20px}.gc-capacity-compact{top:28px;padding:16px}
+  .gc-today-visible-context{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px;align-items:start}
+  .gc-today-visible-context>.journal-preview{grid-column:1/-1}
+  .gc-today-more{margin-top:24px}
+}
+
 @media(prefers-reduced-motion:reduce){.gc-today-more>summary>span:last-child{transition:none!important}}
