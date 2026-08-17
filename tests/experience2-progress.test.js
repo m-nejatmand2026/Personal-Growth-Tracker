@@ -39,7 +39,7 @@ test('Progress summarizes only loaded factual history and uses Monday week bound
   assert.match(view,/getUTCDay\(\)\|\|7/);
   assert.match(view,/week=model\.items\.filter/);
   assert.match(view,/Last 30 days/);
-  assert.match(view,/limit:100/);
+  assert.match(view,/limit:500/);
 });
 
 test('Progress owns responsive presentation and is available offline with the Experience 2 shell',()=>{

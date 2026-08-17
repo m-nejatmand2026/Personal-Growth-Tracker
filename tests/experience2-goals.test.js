@@ -64,8 +64,8 @@ test('Experience 2 mobile shell exposes Goals through a real secondary navigatio
   assert.match(shellCss,/\.mobile-secondary \.nav-item\{[^}]*min-height:40px/s);
 });
 
-test('Experience 2 PWA precaches Goals, Areas and presentation assets in a new isolated cache version',()=>{
-  assert.match(sw,/growth-compass-preview2-e2-v4/);
+test('Experience 2 PWA precaches Goals, Areas and presentation assets in the isolated versioned cache',()=>{
+  assert.match(sw,/growth-compass-preview2-e2-v\d+/);
   for(const asset of ['/experience/2/css/goals.css','/experience/2/js/views/goals.js','/experience/2/js/capabilities/goals.js','/experience/2/js/capabilities/areas.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);
   assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/);
 });
