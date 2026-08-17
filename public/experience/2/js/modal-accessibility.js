@@ -1,0 +1,1 @@
+document.addEventListener('keydown',event=>{if(event.key!=='Escape'||event.defaultPrevented)return;const host=document.querySelector('#overlayHost');const dialog=host?.querySelector('[role="dialog"][aria-modal="true"]');if(!dialog)return;const close=dialog.querySelector('button[aria-label^="Close"]');if(!close)return;event.preventDefault();close.click();});
