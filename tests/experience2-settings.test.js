@@ -26,8 +26,9 @@ test('Settings preferences are local to the isolated Experience 2 namespace', ()
 
 test('Settings cache cleanup cannot target Preview 1 or unrelated caches', () => {
   assert.match(settings, /CACHE_PREFIX='growth-compass-preview2-e2-'/);
-  assert.match(settings, /name\.startsWith\(CACHE_PREFIX\)/);
-  assert.doesNotMatch(settings, /caches\.keys\(\).*map\(name=>caches\.delete\(name\)\)/s);
+  assert.match(settings, /const owned=names\.filter\(name=>name\.startsWith\(CACHE_PREFIX\)\)/);
+  assert.match(settings, /Promise\.all\(owned\.map\(name=>caches\.delete\(name\)\)\)/);
+  assert.doesNotMatch(settings, /Promise\.all\(names\.map\(name=>caches\.delete\(name\)\)\)/);
   assert.doesNotMatch(settings, /caches\.delete\(['"]growth-compass-preview/);
 });
 
