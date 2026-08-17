@@ -63,6 +63,13 @@ test('Experience 2 Goal editor and archive confirmation are responsive and keybo
   assert.match(css,/\.goal-archive-dialog\{/);
 });
 
+test('Goal editor surfaces follow Experience 2 semantic tokens in both themes',()=>{
+  assert.match(css,/\.goal-editor\{[^}]*border:1px solid var\(--gc-border-strong\)[^}]*background:var\(--gc-surface\)/s);
+  assert.match(css,/\.goal-editor input,\.goal-editor select,\.goal-editor textarea\{[^}]*border:1px solid var\(--gc-border-strong\)[^}]*background:var\(--gc-raised\)[^}]*color:var\(--text\)/s);
+  assert.match(css,/\.goal-measure\.selected\{[^}]*var\(--gc-primary-subtle\)/s);
+  assert.doesNotMatch(css,/\.goal-editor\{[^}]*linear-gradient\([^}]*rgba\(18,22,33/s);
+});
+
 test('Experience 2 mobile shell exposes Goals through a real secondary navigation path',()=>{
   assert.match(index,/class="mobile-secondary" aria-label="More destinations"/);
   assert.match(index,/mobile-secondary[\s\S]*data-view="goals"/);
