@@ -36,6 +36,14 @@ test('explicit migration requires a deliberate confirmation and secret-backed Cl
   assert.doesNotMatch(script, /(?:API_TOKEN|ACCOUNT_ID)='[^']+'/);
 });
 
+test('explicit Preview 2 migration keeps generated Wrangler config repository-relative and surfaces command failures', () => {
+  assert.match(script, /mktemp '\.\/\.preview2-migrate\.XXXXXX\.json'/);
+  assert.match(script, /unable to list Preview 2 migrations before apply/);
+  assert.match(script, /unable to list Preview 2 migrations after apply/);
+  assert.match(script, /unable to run Preview 2 PRAGMA quick_check/);
+  assert.doesNotMatch(script, /mktemp --suffix=\.json/);
+});
+
 test('explicit Preview 2 migration verifies pending state and database integrity', () => {
   assert.match(script, /d1 migrations list DB --remote --env "\$TARGET_ENV"/);
   assert.match(script, /d1 migrations apply DB --remote --env "\$TARGET_ENV"/);

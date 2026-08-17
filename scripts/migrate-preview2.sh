@@ -21,7 +21,9 @@ fail() {
 [[ -d migrations ]] || fail 'migrations directory was not found'
 
 list_file="$(mktemp)"
-config_file="$(mktemp --suffix=.json)"
+# Keep the generated Wrangler config in the repository root so relative main/assets/migrations
+# paths continue to resolve against the repository rather than /tmp.
+config_file="$(mktemp './.preview2-migrate.XXXXXX.json')"
 trap 'rm -f "$list_file" "$config_file"' EXIT
 
 npx --yes "wrangler@${WRANGLER_VERSION}" d1 list --json > "$list_file"
@@ -72,7 +74,11 @@ NODE
 
 printf 'Target verified: %s (%s)\n' "$TARGET_NAME" "$db_id"
 
-before="$(npx --yes "wrangler@${WRANGLER_VERSION}" d1 migrations list DB --remote --env "$TARGET_ENV" --config "$config_file" 2>&1)"
+before=''
+if ! before="$(npx --yes "wrangler@${WRANGLER_VERSION}" d1 migrations list DB --remote --env "$TARGET_ENV" --config "$config_file" 2>&1)"; then
+  printf '%s\n' "$before" >&2
+  fail 'unable to list Preview 2 migrations before apply'
+fi
 printf '%s\n' "$before"
 
 if printf '%s\n' "$before" | grep -F 'No migrations to apply' >/dev/null; then
@@ -81,11 +87,19 @@ else
   npx --yes "wrangler@${WRANGLER_VERSION}" d1 migrations apply DB --remote --env "$TARGET_ENV" --config "$config_file"
 fi
 
-after="$(npx --yes "wrangler@${WRANGLER_VERSION}" d1 migrations list DB --remote --env "$TARGET_ENV" --config "$config_file" 2>&1)"
+after=''
+if ! after="$(npx --yes "wrangler@${WRANGLER_VERSION}" d1 migrations list DB --remote --env "$TARGET_ENV" --config "$config_file" 2>&1)"; then
+  printf '%s\n' "$after" >&2
+  fail 'unable to list Preview 2 migrations after apply'
+fi
 printf '%s\n' "$after"
 printf '%s\n' "$after" | grep -F 'No migrations to apply' >/dev/null || fail 'pending migrations remain after apply'
 
-integrity="$(npx --yes "wrangler@${WRANGLER_VERSION}" d1 execute DB --remote --env "$TARGET_ENV" --config "$config_file" --command 'PRAGMA quick_check;' 2>&1)"
+integrity=''
+if ! integrity="$(npx --yes "wrangler@${WRANGLER_VERSION}" d1 execute DB --remote --env "$TARGET_ENV" --config "$config_file" --command 'PRAGMA quick_check;' 2>&1)"; then
+  printf '%s\n' "$integrity" >&2
+  fail 'unable to run Preview 2 PRAGMA quick_check'
+fi
 printf '%s\n' "$integrity"
 printf '%s\n' "$integrity" | grep -E '(^|[^A-Za-z])ok([^A-Za-z]|$)' >/dev/null || fail 'PRAGMA quick_check did not report ok'
 
