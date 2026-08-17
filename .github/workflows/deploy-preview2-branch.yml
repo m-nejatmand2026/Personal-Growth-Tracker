@@ -138,6 +138,6 @@ jobs:
           printf '%s' "$experience2" | grep -F 'Experience 2' >/dev/null
           printf '%s' "$experience2" | grep -F 'Ambient Luxury' >/dev/null
           health="$(curl "${curl_args[@]}" "$base/api/health")"
-          printf '%s' "$health" | grep -F '\"status\":\"ok\"' >/dev/null
-          printf '%s' "$health" | grep -F '\"database\":\"ok\"' >/dev/null
+          printf '%s' "$health" | grep -F '"status":"ok"' >/dev/null
+          printf '%s' "$health" | grep -F '"database":"ok"' >/dev/null
           echo "Preview 2 deployment and protected smoke tests passed: $base"
