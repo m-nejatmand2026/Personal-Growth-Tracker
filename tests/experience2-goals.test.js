@@ -46,15 +46,21 @@ test('Experience 2 Goal editor never writes Progress and keeps contextual Life A
   assert.match(view,/goalsCapability\.archive\(goal\.id\)/);
 });
 
-test('Experience 2 Goal editor is responsive and keyboard-modal safe',()=>{
+test('Experience 2 Goal editor and archive confirmation are responsive and keyboard-modal safe',()=>{
   assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="goalEditorTitle"/);
+  assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="goalArchiveTitle"/);
+  assert.match(view,/data-goal-archive-cancel/);
+  assert.match(view,/data-goal-archive-confirm/);
+  assert.doesNotMatch(view,/window\.confirm|confirm\(/);
   assert.match(view,/event\.key==='Escape'/);
   assert.match(view,/event\.key!=='Tab'/);
   assert.match(view,/host\.onkeydown=trap/);
   assert.match(view,/host\.onkeydown=null/);
+  assert.match(view,/opener\?\.focus/);
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/env\(safe-area-inset-bottom\)/);
   assert.match(css,/\.goal-editor-close\{width:48px;height:48px/);
+  assert.match(css,/\.goal-archive-dialog\{/);
 });
 
 test('Experience 2 mobile shell exposes Goals through a real secondary navigation path',()=>{
