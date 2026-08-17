@@ -14,3 +14,4 @@
 #capacityPanel,#commitmentEditor,#compassSection{scroll-margin-top:150px}.compass-section{padding:var(--gc-space-4);background:var(--gc-surface)}
 @media(max-width:680px){.plan-overview{padding:var(--gc-space-4)}.plan-overview-grid{grid-template-columns:1fr}.plan-section-nav{top:70px;margin-inline:-2px}.plan-section-nav button{grid-template-columns:1fr;justify-items:center;text-align:center;gap:.15rem;padding:.45rem .3rem}.plan-section-nav button span{grid-row:auto}.plan-section-nav button small{display:none}.plan-module-block,.compass-section,#capacityPanel,#commitmentEditor{scroll-margin-top:138px}}
 @media(min-width:760px){.plan-overview{grid-template-columns:minmax(0,1.2fr) minmax(420px,.8fr);align-items:center;padding:var(--gc-space-6)}.plan-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.plan-section-nav{top:20px}.plan-module-stack{gap:var(--gc-space-5)}}
+@media(min-width:900px){#planView .gc-plan-header{padding-right:112px}}
