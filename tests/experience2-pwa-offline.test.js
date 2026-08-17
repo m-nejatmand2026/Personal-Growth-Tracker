@@ -9,3 +9,5 @@ test('Experience 2 PWA precaches every static module imported by the app shell',
 test('Experience 2 PWA precaches implemented Today Plan and Goals presentation layers',()=>{for(const path of['/experience/2/css/today.css','/experience/2/css/plan.css','/experience/2/css/goals.css','/experience/2/js/views/today.js','/experience/2/js/views/plan.js','/experience/2/js/views/goals.js'])assert.match(sw,new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')))});
 
 test('Experience 2 cache namespace remains isolated and is versioned for shell changes',()=>{assert.match(sw,/growth-compass-preview2-e2-v\d+/);assert.match(sw,/startsWith\('growth-compass-preview2-e2-'\)/);assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/)});
+
+test('Experience 2 API GET requests bypass service-worker cache fallback',()=>{assert.match(sw,/url\.pathname\.startsWith\('\/api\/'\)/);const guard=sw.indexOf("url.pathname.startsWith('/api/')"),respondWith=sw.indexOf('event.respondWith');assert.ok(guard>=0&&respondWith>guard)});
