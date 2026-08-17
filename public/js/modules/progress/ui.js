@@ -48,7 +48,7 @@ function factType(item) {
 }
 
 function recentRows(items) {
-  if (!items.length) return '<div class="gc-simple-empty">Nothing recorded yet. Use Add → Done when something actually happens.</div>';
+  if (!items.length) return '<div class="gc-progress-empty"><span class="gc-progress-empty-mark" aria-hidden="true">✓</span><div><strong>No completed activity yet</strong><p>Use Add → Done when something actually happens. Your first factual record will appear here.</p></div></div>';
   return items.slice(0, 20).map((item) => {
     const canonical = item.record_kind === 'progress';
     const name = item.activity_name || item.activity_key || 'Activity';
