@@ -1,4 +1,4 @@
-const CACHE='growth-compass-preview2-e2-v4';
+const CACHE='growth-compass-preview2-e2-v5';
 const CORE=[
   '/experience/2/',
   '/experience/2/css/foundation.css',
@@ -8,17 +8,20 @@ const CORE=[
   '/experience/2/css/plan.css',
   '/experience/2/css/logger.css',
   '/experience/2/css/goals.css',
+  '/experience/2/css/progress.css',
   '/experience/2/js/app.js',
   '/experience/2/js/core/api.js',
   '/experience/2/js/core/preferences.js',
   '/experience/2/js/capabilities/activities.js',
   '/experience/2/js/capabilities/areas.js',
   '/experience/2/js/capabilities/goals.js',
+  '/experience/2/js/capabilities/progress.js',
   '/experience/2/js/views/foundation.js',
   '/experience/2/js/views/today.js',
   '/experience/2/js/views/plan.js',
   '/experience/2/js/views/logger.js',
   '/experience/2/js/views/goals.js',
+  '/experience/2/js/views/progress.js',
   '/experience/2/manifest.webmanifest'
 ];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
