@@ -79,4 +79,4 @@ assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/js/app.js'
 echo 'Preview 2 Experience 2 route smoke passed.'
 
 GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser
-GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test tests/browser/experience2-logger.browser.js
+GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test tests/browser/experience2-logger.browser.js tests/browser/experience2-goals.browser.js

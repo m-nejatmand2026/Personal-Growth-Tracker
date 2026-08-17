@@ -81,8 +81,8 @@ test('Experience 2 Logger remains physically independent from frozen Experience 
   assert.match(index,/\/experience\/2\/css\/logger\.css/);
 });
 
-test('Experience 2 PWA precaches the complete Logger dependency chain',()=>{
-  assert.match(sw,/growth-compass-preview2-e2-v3/);
+test('Experience 2 PWA precaches the complete Logger dependency chain across later shell cache versions',()=>{
+  assert.match(sw,/growth-compass-preview2-e2-v\d+/);
   for(const asset of ['/experience/2/css/logger.css','/experience/2/js/views/logger.js','/experience/2/js/capabilities/activities.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);
 });
 
