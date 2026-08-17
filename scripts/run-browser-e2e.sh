@@ -79,4 +79,6 @@ assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/js/app.js'
 echo 'Preview 2 Experience 2 route smoke passed.'
 
 GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser
-GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test tests/browser/experience2-logger.browser.js tests/browser/experience2-goals.browser.js tests/browser/experience2-activities.browser.js tests/browser/experience2-schedule.browser.js tests/browser/experience2-progress.browser.js tests/browser/experience2-insights.browser.js tests/browser/experience2-journal.browser.js tests/browser/experience2-wellness.browser.js tests/browser/experience2-settings.browser.js
+# Experience 2 suites all share one local Worker/D1. Serialize test files so Playwright
+# engines cannot overwhelm or terminate the single acceptance server under CI load.
+GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test --test-concurrency=1 tests/browser/experience2-logger.browser.js tests/browser/experience2-goals.browser.js tests/browser/experience2-activities.browser.js tests/browser/experience2-schedule.browser.js tests/browser/experience2-progress.browser.js tests/browser/experience2-insights.browser.js tests/browser/experience2-journal.browser.js tests/browser/experience2-wellness.browser.js tests/browser/experience2-settings.browser.js
