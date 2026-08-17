@@ -105,3 +105,7 @@
 .logger-selected-activity{border-color:color-mix(in srgb,var(--gc-brand) 48%,var(--gc-border));background:color-mix(in srgb,var(--gc-brand) 8%,var(--gc-surface))}
 .logger-field>span,.logger-field label>span,.duration-field>span{color:var(--gc-text-muted)}
 .logger-save{background:linear-gradient(135deg,var(--gc-brand),color-mix(in srgb,var(--gc-brand) 82%,white));color:var(--gc-text-on-brand,#051424);box-shadow:0 12px 32px color-mix(in srgb,var(--gc-brand) 18%,transparent)}
+
+/* Keep the custom duration suffix on one line in the compact preset row. */
+.logger-custom-duration{min-width:92px}
+.logger-custom-duration span{white-space:nowrap}
