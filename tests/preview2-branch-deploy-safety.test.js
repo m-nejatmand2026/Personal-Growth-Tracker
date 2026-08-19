@@ -23,22 +23,25 @@ test('Preview 2 branch deploy pins third-party actions and does not persist Git 
   assert.doesNotMatch(workflow, /actions\/(?:checkout|setup-node)@v\d/);
 });
 
-test('Preview 2 remote smoke gate checks actual JSON rather than backslash-escaped text', () => {
-  assert.match(workflow, /grep -F '\"status\":\"ok\"'/);
-  assert.match(workflow, /grep -F '\"database\":\"ok\"'/);
-  assert.doesNotMatch(workflow, /grep -F '\\\"status\\\":\\\"ok\\\"'/);
-  assert.doesNotMatch(workflow, /grep -F '\\\"database\\\":\\\"ok\\\"'/);
+test('Preview 2 remote resource gate validates actual D1 JSON', () => {
+  assert.match(workflow, /serialized\.includes\('\"quick_check\":\"ok\"'\)/);
+  assert.match(workflow, /serialized\.includes\('\"status\":\"ok\"'\)/);
+  assert.doesNotMatch(workflow, /\\\\\"quick_check\\\\\"/);
+  assert.doesNotMatch(workflow, /\\\\\"status\\\\\"/);
 });
 
-test('Preview 2 branch smoke gate proves Access, selector, both experiences and D1 health', () => {
-  assert.match(workflow, /Unauthenticated Preview 2 health returned HTTP/);
-  assert.match(workflow, /CF-Access-Client-Id:/);
-  assert.match(workflow, /CF-Access-Client-Secret:/);
-  assert.match(workflow, /'Experience 1'/);
-  assert.match(workflow, /'Current \/ Recovered'/);
-  assert.match(workflow, /'\/experience\/1\/'/);
-  assert.match(workflow, /'Experience 2'/);
-  assert.match(workflow, /'New \/ Ambient Luxury'/);
-  assert.match(workflow, /'\/experience\/2\/'/);
-  assert.match(workflow, /\/api\/health/);
+test('Preview 2 branch smoke gate proves private Access boundary, Worker route and isolated D1 health', () => {
+  assert.match(workflow, /Preview 2 is publicly reachable/);
+  assert.match(workflow, /Anonymous Preview 2 is blocked as expected/);
+  assert.match(workflow, /\/workers\/scripts\/\$\{worker\}\/subdomain/);
+  assert.match(workflow, /\/d1\/database\?per_page=1000/);
+  assert.match(workflow, /personal-growth-tracker-preview2/);
+  assert.match(workflow, /personal-growth-tracker-preview'/);
+  assert.match(workflow, /personal-growth-tracker'/);
+  assert.match(workflow, /Preview 2 D1 overlaps Preview 1 or Production/);
+  assert.match(workflow, /PRAGMA quick_check; SELECT 'ok' AS status;/);
+  assert.doesNotMatch(workflow, /CF_ACCESS_CLIENT_ID/);
+  assert.doesNotMatch(workflow, /CF_ACCESS_CLIENT_SECRET/);
+  assert.doesNotMatch(workflow, /CF-Access-Client-Id:/);
+  assert.doesNotMatch(workflow, /CF-Access-Client-Secret:/);
 });
