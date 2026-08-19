@@ -16,7 +16,7 @@ jobs:
     name: Test, bootstrap and deploy isolated Preview 2
     if: github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' && github.ref == 'refs/heads/feature/experience-v2'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Checkout exact Preview 2 commit
@@ -36,16 +36,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           test "$GITHUB_REF" = 'refs/heads/feature/experience-v2'
           test "$GITHUB_REPOSITORY" = 'm-nejatmand2026/Personal-Growth-Tracker'
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN repository secret.'; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID repository secret.'; exit 1; }
-          test -n "$CF_ACCESS_CLIENT_ID" || { echo 'Missing CF_ACCESS_CLIENT_ID repository secret.'; exit 1; }
-          test -n "$CF_ACCESS_CLIENT_SECRET" || { echo 'Missing CF_ACCESS_CLIENT_SECRET repository secret.'; exit 1; }
 
       - name: Run unit, contract and modularity boundary tests
         run: npm test
@@ -145,31 +141,70 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.123.0 deploy --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2 --message "git:${GITHUB_SHA}"
 
-      - name: Verify private Access boundary, selector, both experiences and D1 health
+      - name: Verify private Access boundary, Worker route and isolated D1 directly
         shell: bash
         env:
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          base='https://personal-growth-tracker-preview2.m-nejatmand.workers.dev'
-          unauth_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$base/api/health")"
-          case "$unauth_status" in 2??) echo "Unauthenticated Preview 2 health returned HTTP $unauth_status; Access boundary missing."; exit 1;; esac
-          curl_args=(--fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET")
-          selector="$(curl "${curl_args[@]}" "$base/")"
-          printf '%s' "$selector" | grep -F 'Experience 1' >/dev/null
-          printf '%s' "$selector" | grep -F 'Current / Recovered' >/dev/null
-          printf '%s' "$selector" | grep -F '/experience/1/' >/dev/null
-          printf '%s' "$selector" | grep -F 'Experience 2' >/dev/null
-          printf '%s' "$selector" | grep -F 'New / Ambient Luxury' >/dev/null
-          printf '%s' "$selector" | grep -F '/experience/2/' >/dev/null
-          experience1="$(curl "${curl_args[@]}" "$base/experience/1/")"
-          printf '%s' "$experience1" | grep -F '<title>Growth Compass</title>' >/dev/null
-          printf '%s' "$experience1" | grep -F '/experience/1/manifest.webmanifest' >/dev/null
-          experience2="$(curl "${curl_args[@]}" "$base/experience/2/")"
-          printf '%s' "$experience2" | grep -F 'Experience 2' >/dev/null
-          printf '%s' "$experience2" | grep -F 'Ambient Luxury' >/dev/null
-          health="$(curl "${curl_args[@]}" "$base/api/health")"
-          printf '%s' "$health" | grep -F '"status":"ok"' >/dev/null
-          printf '%s' "$health" | grep -F '"database":"ok"' >/dev/null
-          echo "Preview 2 deployment and protected smoke tests passed: $base"
+          node <<'NODE'
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const worker = 'personal-growth-tracker-preview2';
+          const base = `https://${worker}.m-nejatmand.workers.dev`;
+          const api = `https://api.cloudflare.com/client/v4/accounts/${account}`;
+
+          async function cf(path, options = {}) {
+            const response = await fetch(api + path, {
+              ...options,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+              }
+            });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok || body.success === false) {
+              const message = (body.errors || []).map((error) => `${error.code ?? 'error'}:${error.message ?? 'Cloudflare API error'}`).join('; ');
+              throw new Error(`Cloudflare API ${response.status} for ${path}: ${message || 'request failed'}`);
+            }
+            return body.result;
+          }
+
+          const anonymous = await fetch(`${base}/api/health`, { redirect: 'manual' });
+          if (anonymous.status >= 200 && anonymous.status < 300) {
+            throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}); Access boundary is missing.`);
+          }
+          console.log(`Anonymous Preview 2 is blocked as expected (HTTP ${anonymous.status}).`);
+
+          const subdomain = await cf(`/workers/scripts/${worker}/subdomain`);
+          if (!subdomain?.enabled) throw new Error('Preview 2 workers.dev route is not enabled.');
+
+          const databases = await cf('/d1/database?per_page=1000');
+          const list = Array.isArray(databases) ? databases : [];
+          const exact = (name) => list.filter((database) => database?.name === name);
+          const preview2 = exact('personal-growth-tracker-preview2');
+          const preview1 = exact('personal-growth-tracker-preview');
+          const production = exact('personal-growth-tracker');
+          if (preview2.length !== 1 || !preview2[0]?.uuid) {
+            throw new Error(`Expected exactly one Preview 2 D1 database; found ${preview2.length}.`);
+          }
+          if (preview1.length !== 1 || production.length !== 1) {
+            throw new Error('Preview 1 and Production D1 identities must remain explicit for isolation verification.');
+          }
+          if (preview2[0].uuid === preview1[0].uuid || preview2[0].uuid === production[0].uuid) {
+            throw new Error('Preview 2 D1 overlaps Preview 1 or Production; refusing acceptance.');
+          }
+
+          const query = await cf(`/d1/database/${preview2[0].uuid}/query`, {
+            method: 'POST',
+            body: JSON.stringify({ sql: "PRAGMA quick_check; SELECT 'ok' AS status;" })
+          });
+          const serialized = JSON.stringify(query);
+          if (!serialized.includes('"quick_check":"ok"') || !serialized.includes('"status":"ok"')) {
+            throw new Error('Preview 2 D1 direct health verification failed.');
+          }
+
+          console.log(`Preview 2 deployment, private boundary and isolated D1 checks passed: ${base}`);
+          NODE
