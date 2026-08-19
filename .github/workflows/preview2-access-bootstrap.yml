@@ -1,5 +1,6 @@
 name: Preview 2 Access Bootstrap
 
+# Preview 2 only: relink and verify the existing reusable CI Access authorization.
 on:
   push:
     branches: [feature/experience-v2]
@@ -195,20 +196,42 @@ jobs:
               echo "Unauthenticated Preview 2 health returned HTTP $unauth_status; Access boundary missing."
               exit 1
               ;;
+            *)
+              echo "Anonymous Preview 2 health is blocked as expected (HTTP $unauth_status)."
+              ;;
           esac
 
-          curl_args=(
-            --fail
-            --silent
-            --show-error
-            --retry 5
-            --retry-delay 2
-            --retry-all-errors
-            --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID"
-            --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
-          )
+          auth_get() {
+            local path="$1"
+            local label="$2"
+            local body_file
+            local status
+            body_file="$(mktemp)"
+            status="$(curl \
+              --silent \
+              --show-error \
+              --retry 5 \
+              --retry-delay 2 \
+              --retry-all-errors \
+              --output "$body_file" \
+              --write-out '%{http_code}' \
+              --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+              --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+              "$base$path")"
+            case "$status" in
+              2??)
+                cat "$body_file"
+                rm -f "$body_file"
+                ;;
+              *)
+                rm -f "$body_file"
+                echo "Authenticated Preview 2 $label returned HTTP $status." >&2
+                return 1
+                ;;
+            esac
+          }
 
-          selector="$(curl "${curl_args[@]}" "$base/")"
+          selector="$(auth_get '/' 'selector')"
           printf '%s' "$selector" | grep -F 'Experience 1' >/dev/null
           printf '%s' "$selector" | grep -F 'Current / Recovered' >/dev/null
           printf '%s' "$selector" | grep -F '/experience/1/' >/dev/null
@@ -216,15 +239,15 @@ jobs:
           printf '%s' "$selector" | grep -F 'New / Ambient Luxury' >/dev/null
           printf '%s' "$selector" | grep -F '/experience/2/' >/dev/null
 
-          experience1="$(curl "${curl_args[@]}" "$base/experience/1/")"
+          experience1="$(auth_get '/experience/1/' 'Experience 1')"
           printf '%s' "$experience1" | grep -F '<title>Growth Compass</title>' >/dev/null
           printf '%s' "$experience1" | grep -F '/experience/1/manifest.webmanifest' >/dev/null
 
-          experience2="$(curl "${curl_args[@]}" "$base/experience/2/")"
+          experience2="$(auth_get '/experience/2/' 'Experience 2')"
           printf '%s' "$experience2" | grep -F 'Experience 2' >/dev/null
           printf '%s' "$experience2" | grep -F 'Ambient Luxury' >/dev/null
 
-          health="$(curl "${curl_args[@]}" "$base/api/health")"
+          health="$(auth_get '/api/health' 'D1 health')"
           printf '%s' "$health" | grep -F '"status":"ok"' >/dev/null
           printf '%s' "$health" | grep -F '"database":"ok"' >/dev/null
 
