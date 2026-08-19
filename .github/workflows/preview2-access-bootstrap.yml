@@ -77,6 +77,17 @@ jobs:
             return body.result;
           }
 
+          function stringMatchesWorker(value, worker) {
+            if (typeof value !== 'string') return false;
+            const host = `${worker}.m-nejatmand.workers.dev`;
+            if (value === worker || value === host) return true;
+            try {
+              return new URL(value).hostname === host;
+            } catch {
+              return false;
+            }
+          }
+
           function appMatchesWorker(app, worker) {
             if (!app || typeof app !== 'object') return false;
             if (app.worker_id === worker) return true;
@@ -85,7 +96,7 @@ jobs:
             const destinations = Array.isArray(app.destinations) ? app.destinations : [];
             return destinations.some((destination) => {
               if (!destination || typeof destination !== 'object') return false;
-              return Object.values(destination).some((value) => typeof value === 'string' && value.includes(worker));
+              return Object.values(destination).some((value) => stringMatchesWorker(value, worker));
             });
           }
 
