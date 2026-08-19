@@ -9,7 +9,7 @@ const recoveryBrowserTest = await readFile(new URL('./browser/functional-recover
 const breathingVisualTest = await readFile(new URL('./browser/breathing-visual.browser.js', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../scripts/run-browser-e2e.sh', import.meta.url), 'utf8');
 
-const browserCommand = 'node --test tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js tests/browser/breathing-visual.browser.js';
+const browserCommand = 'node --test --test-concurrency=1 tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js tests/browser/breathing-visual.browser.js';
 
 test('Quality keeps pinned Chromium and WebKit browser acceptance release-blocking', () => {
   assert.equal(packageJson.devDependencies.playwright, '1.62.0');
