@@ -86,13 +86,13 @@ jobs:
             }
           });
 
-          const description = [
-            `app:${apps.length}`,
-            `pol:${policyStatus}/${servicePolicies.length}/${named.length}/${ruleKind}`,
-            `tokens:${tokenResponse.status}/${tokenMatches}`,
-            `auth:${authResponse.status}`
-          ].join(' ');
-          console.log(description);
+          const compact = [
+            `a${apps.length}`,
+            `p${policyStatus}-${servicePolicies.length}-${named.length}-${ruleKind}`,
+            `t${tokenResponse.status}-${tokenMatches}`,
+            `h${authResponse.status}`
+          ].join('_');
+          console.log(compact);
 
           const state = authResponse.status >= 200 && authResponse.status < 300 ? 'success' : 'failure';
           const statusResponse = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/statuses/${process.env.GITHUB_SHA}`, {
@@ -105,8 +105,8 @@ jobs:
             },
             body: JSON.stringify({
               state,
-              context: 'preview2/access-diagnostic',
-              description: description.slice(0, 140)
+              context: `preview2/access-diagnostic/${compact}`.slice(0, 100),
+              description: 'Sanitized Preview 2 Access diagnostic'
             })
           });
           if (!statusResponse.ok) throw new Error(`GitHub status publish failed: ${statusResponse.status}`);
