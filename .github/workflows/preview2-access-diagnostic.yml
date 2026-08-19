@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Read sanitized Preview 2 Access state
+      - name: Resolve sanitized Preview 2 Access audience state
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -33,13 +33,7 @@ jobs:
           const clientId = String(process.env.CF_ACCESS_CLIENT_ID || '').trim();
           const clientSecret = String(process.env.CF_ACCESS_CLIENT_SECRET || '').trim();
           const ghToken = process.env.GH_STATUS_TOKEN;
-          const worker = 'personal-growth-tracker-preview2';
-          const host = `${worker}.m-nejatmand.workers.dev`;
-          const expectedPolicyNames = new Set([
-            `${worker} - Production`,
-            'Growth Compass Preview 2',
-            'Growth Compass Preview 2 - Production'
-          ]);
+          const host = 'personal-growth-tracker-preview2.m-nejatmand.workers.dev';
           const cfBase = `https://api.cloudflare.com/client/v4/accounts/${account}`;
 
           async function cf(path) {
@@ -50,21 +44,43 @@ jobs:
             return { status: response.status, ok: response.ok && body.success !== false, result: body.result };
           }
 
-          const reusableResponse = await cf('/access/policies?per_page=1000');
-          const reusable = reusableResponse.ok && Array.isArray(reusableResponse.result) ? reusableResponse.result : [];
-          const targets = reusable.filter((policy) => expectedPolicyNames.has(policy?.name));
-          const target = targets.length === 1 ? targets[0] : null;
-          const include = Array.isArray(target?.include) ? target.include : [];
-          const hasEmail = include.some((rule) => rule && typeof rule === 'object' && 'email' in rule);
-          const hasService = include.some((rule) => rule && typeof rule === 'object' && 'service_token' in rule);
-          const hasAnyService = include.some((rule) => rule && typeof rule === 'object' && 'any_valid_service_token' in rule);
-          const decision = target?.decision === 'non_identity' ? 'svc' : target?.decision === 'allow' ? 'allow' : target?.decision === 'deny' ? 'deny' : target?.decision ? 'other' : 'none';
+          const anonymous = await fetch(`https://${host}/`, { redirect: 'manual' });
+          const location = anonymous.headers.get('location') || '';
+          let aud = '';
+          let teamHost = '';
+          try {
+            const login = new URL(location);
+            teamHost = login.hostname;
+            aud = login.searchParams.get('aud') || login.searchParams.get('kid') || '';
+            if (!aud) {
+              const redirectUrl = login.searchParams.get('redirect_url');
+              if (redirectUrl) {
+                const nested = new URL(redirectUrl);
+                aud = nested.searchParams.get('aud') || '';
+              }
+            }
+          } catch {}
+
+          const audResponse = aud
+            ? await cf(`/access/apps?per_page=1000&aud=${encodeURIComponent(aud)}`)
+            : { status: 0, ok: false, result: [] };
+          const audApps = audResponse.ok && Array.isArray(audResponse.result) ? audResponse.result : [];
+          let policyStatus = 0;
+          let policies = [];
+          if (audApps.length === 1 && audApps[0]?.id) {
+            const p = await cf(`/access/apps/${audApps[0].id}/policies?per_page=1000`);
+            policyStatus = p.status;
+            policies = p.ok && Array.isArray(p.result) ? p.result : [];
+          }
+          const serviceAuth = policies.filter((policy) => policy?.decision === 'non_identity');
+          const hasService = serviceAuth.some((policy) => (policy.include || []).some((rule) => rule && typeof rule === 'object' && 'service_token' in rule));
+          const hasAnyService = serviceAuth.some((policy) => (policy.include || []).some((rule) => rule && typeof rule === 'object' && 'any_valid_service_token' in rule));
 
           const tokenResponse = await cf('/access/service_tokens?per_page=1000');
           const tokens = tokenResponse.ok && Array.isArray(tokenResponse.result) ? tokenResponse.result : [];
           const tokenMatches = tokenResponse.ok ? tokens.filter((item) => item?.client_id === clientId).length : -1;
 
-          const authResponse = await fetch(`https://${host}/`, {
+          const authenticated = await fetch(`https://${host}/`, {
             redirect: 'manual',
             headers: {
               'CF-Access-Client-Id': clientId,
@@ -73,10 +89,11 @@ jobs:
           });
 
           const compact = [
-            `P${reusableResponse.status}-${reusable.length}-x${targets.length}-${decision}`,
-            `e${hasEmail ? 1 : 0}s${hasService ? 1 : 0}a${hasAnyService ? 1 : 0}`,
+            `R${anonymous.status}-a${aud ? 1 : 0}-t${teamHost ? 1 : 0}`,
+            `Q${audResponse.status}-${audApps.length}`,
+            `P${policyStatus}-${policies.length}-s${serviceAuth.length}-${hasService ? 1 : 0}${hasAnyService ? 1 : 0}`,
             `T${tokenResponse.status}-m${tokenMatches}`,
-            `H${authResponse.status}`
+            `H${authenticated.status}`
           ].join('_');
           console.log(compact);
 
@@ -89,9 +106,9 @@ jobs:
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              state: authResponse.status >= 200 && authResponse.status < 300 ? 'success' : 'failure',
+              state: authenticated.status >= 200 && authenticated.status < 300 ? 'success' : 'failure',
               context: `preview2/access-diagnostic/${compact}`.slice(0, 100),
-              description: 'Sanitized Preview 2 reusable-policy diagnostic'
+              description: 'Sanitized Preview 2 audience diagnostic'
             })
           });
           if (!statusResponse.ok) throw new Error(`GitHub status publish failed: ${statusResponse.status}`);
