@@ -1,0 +1,101 @@
+name: Preview 2 Remote Smoke
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-preview2:
+    name: Verify protected Preview 2 remotely
+    if: >-
+      github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'feature/experience-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Verify Access credentials exist
+        shell: bash
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "$CF_ACCESS_CLIENT_ID"
+          test -n "$CF_ACCESS_CLIENT_SECRET"
+
+      - name: Verify Access, selector, both experiences and D1 health
+        shell: bash
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          base='https://personal-growth-tracker-preview2.m-nejatmand.workers.dev'
+
+          unauth_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$base/api/health")"
+          echo "Anonymous Preview 2 health HTTP $unauth_status"
+          case "$unauth_status" in
+            2??)
+              echo 'Cloudflare Access is not enforcing the private Preview 2 boundary.'
+              exit 1
+              ;;
+          esac
+
+          auth_get() {
+            local path="$1"
+            local label="$2"
+            local body_file
+            local headers_file
+            local status
+            body_file="$(mktemp)"
+            headers_file="$(mktemp)"
+            status="$(curl \
+              --silent \
+              --show-error \
+              --output "$body_file" \
+              --dump-header "$headers_file" \
+              --write-out '%{http_code}' \
+              --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+              --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+              "$base$path")"
+            echo "Authenticated Preview 2 $label HTTP $status" >&2
+            case "$status" in
+              2??)
+                cat "$body_file"
+                rm -f "$body_file" "$headers_file"
+                ;;
+              *)
+                content_type="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/{gsub(/\r/,""); print $0; exit}' "$headers_file")"
+                test -z "$content_type" || echo "$content_type" >&2
+                rm -f "$body_file" "$headers_file"
+                return 1
+                ;;
+            esac
+          }
+
+          selector="$(auth_get '/' 'selector')"
+          printf '%s' "$selector" | grep -F 'Experience 1' >/dev/null
+          printf '%s' "$selector" | grep -F 'Current / Recovered' >/dev/null
+          printf '%s' "$selector" | grep -F '/experience/1/' >/dev/null
+          printf '%s' "$selector" | grep -F 'Experience 2' >/dev/null
+          printf '%s' "$selector" | grep -F 'New / Ambient Luxury' >/dev/null
+          printf '%s' "$selector" | grep -F '/experience/2/' >/dev/null
+
+          experience1="$(auth_get '/experience/1/' 'Experience 1')"
+          printf '%s' "$experience1" | grep -F '<title>Growth Compass</title>' >/dev/null
+          printf '%s' "$experience1" | grep -F '/experience/1/manifest.webmanifest' >/dev/null
+
+          experience2="$(auth_get '/experience/2/' 'Experience 2')"
+          printf '%s' "$experience2" | grep -F 'Experience 2' >/dev/null
+          printf '%s' "$experience2" | grep -F 'Ambient Luxury' >/dev/null
+
+          health="$(auth_get '/api/health' 'D1 health')"
+          printf '%s' "$health" | grep -F '"status":"ok"' >/dev/null
+          printf '%s' "$health" | grep -F '"database":"ok"' >/dev/null
+
+          echo "Preview 2 protected remote smoke passed: $base"
