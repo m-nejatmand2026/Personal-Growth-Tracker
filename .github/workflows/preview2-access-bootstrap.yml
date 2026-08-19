@@ -1,8 +1,7 @@
 name: Preview 2 Access Bootstrap
 
-# Preview 2 only: clone the proven Preview 1 CI service-token selector into a
-# Preview 2 application-scoped Service Auth policy. Preview 1 and Production
-# are read-only throughout this workflow.
+# Preview 2 only: authorize the repository's existing Access service token on
+# the isolated Preview 2 application. Preview 1 and Production are never mutated.
 on:
   push:
     branches: [feature/experience-v2]
@@ -43,28 +42,34 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
         run: |
           set -euo pipefail
           node <<'NODE'
-          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const apiToken = process.env.CLOUDFLARE_API_TOKEN;
           const account = process.env.CLOUDFLARE_ACCOUNT_ID;
-          const preview1Worker = 'personal-growth-tracker-preview';
+          const ciClientId = process.env.CF_ACCESS_CLIENT_ID;
           const preview2Worker = 'personal-growth-tracker-preview2';
           const productionWorker = 'personal-growth-tracker';
           const preview2Host = `${preview2Worker}.m-nejatmand.workers.dev`;
           const targetPolicyName = 'Growth Compass Preview 2 CI service token';
           const base = `https://api.cloudflare.com/client/v4/accounts/${account}`;
 
-          async function request(path, options = {}) {
+          async function raw(path, options = {}) {
             const response = await fetch(base + path, {
               ...options,
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${apiToken}`,
                 'Content-Type': 'application/json',
                 ...(options.headers || {})
               }
             });
             const body = await response.json().catch(() => ({}));
+            return { response, body };
+          }
+
+          async function request(path, options = {}) {
+            const { response, body } = await raw(path, options);
             if (!response.ok || body.success === false) {
               const message = (body.errors || []).map((e) => `${e.code ?? 'error'}: ${e.message ?? 'Cloudflare API error'}`).join('; ');
               throw new Error(`Cloudflare Access API ${response.status}: ${message || 'request failed'}`);
@@ -91,82 +96,80 @@ jobs:
           };
 
           const apps = await request('/access/apps');
-          const preview1Matches = apps.filter((app) => appMatchesWorker(app, preview1Worker));
           const preview2Matches = apps.filter((app) => appMatchesWorker(app, preview2Worker));
           const productionMatches = apps.filter((app) => appMatchesWorker(app, productionWorker));
-
-          if (preview1Matches.length !== 1) throw new Error(`Expected exactly one Preview 1 Worker Access app; found ${preview1Matches.length}.`);
           if (preview2Matches.length !== 1) throw new Error(`Expected exactly one Preview 2 Worker Access app; found ${preview2Matches.length}.`);
           if (productionMatches.length > 1) throw new Error(`Ambiguous Production Access app set; found ${productionMatches.length}.`);
 
-          const preview1 = preview1Matches[0];
           const preview2 = preview2Matches[0];
           const production = productionMatches[0];
-          if (!preview1.id || !preview2.id) throw new Error('Preview Access application IDs are missing.');
-          if (preview1.id === preview2.id) throw new Error('Preview 1 and Preview 2 Access applications unexpectedly share an ID.');
-          if (production && (preview2.id === production.id || preview1.id === production.id)) {
-            throw new Error('Preview Access application overlaps Production; refusing mutation.');
+          if (!preview2.id) throw new Error('Preview 2 Access application ID is missing.');
+          if (production?.id && production.id === preview2.id) {
+            throw new Error('Preview 2 Access application overlaps Production; refusing mutation.');
           }
 
-          const sourcePolicies = await request(`/access/apps/${preview1.id}/policies`);
-          const sourceServicePolicies = sourcePolicies.filter(isServiceAuth);
-          if (sourceServicePolicies.length !== 1) {
-            throw new Error(`Expected exactly one Preview 1 service-auth policy; found ${sourceServicePolicies.length}.`);
-          }
-          const source = sourceServicePolicies[0];
-          const sourceInclude = Array.isArray(source.include) ? source.include : [];
-          if (!sourceInclude.some((rule) => rule && typeof rule === 'object' && ('service_token' in rule || 'any_valid_service_token' in rule))) {
-            throw new Error('Preview 1 service-auth policy has no service-token selector.');
+          let include;
+          const tokenList = await raw('/access/service_tokens');
+          if (tokenList.response.ok && tokenList.body.success !== false) {
+            const tokens = Array.isArray(tokenList.body.result) ? tokenList.body.result : [];
+            const matches = tokens.filter((item) => item?.client_id === ciClientId);
+            if (matches.length !== 1 || !matches[0]?.id) {
+              throw new Error(`Existing CI Access client ID did not resolve to exactly one active account service token; found ${matches.length}.`);
+            }
+            include = [{ service_token: { token_id: matches[0].id } }];
+            console.log('Resolved the existing repository CI Access credential to its exact Cloudflare service-token ID.');
+          } else if (tokenList.response.status === 403) {
+            include = [{ any_valid_service_token: {} }];
+            console.log('Service-token metadata is not readable with the existing API token; using Cloudflare any-valid-service-token only on isolated Preview 2.');
+          } else {
+            const message = (tokenList.body.errors || []).map((e) => `${e.code ?? 'error'}: ${e.message ?? 'Cloudflare API error'}`).join('; ');
+            throw new Error(`Cloudflare service-token lookup failed with HTTP ${tokenList.response.status}: ${message || 'request failed'}`);
           }
 
-          let targetPolicies = await request(`/access/apps/${preview2.id}/policies`);
-          const named = targetPolicies.filter((policy) => policy.name === targetPolicyName);
+          let policies = await request(`/access/apps/${preview2.id}/policies`);
+          const named = policies.filter((policy) => policy.name === targetPolicyName);
           if (named.length > 1) throw new Error(`Multiple Preview 2 policies named ${targetPolicyName}; refusing ambiguity.`);
 
           let target = named[0];
-          if (target && !isServiceAuth(target)) {
-            throw new Error(`Existing Preview 2 policy ${targetPolicyName} is not Service Auth; refusing replacement.`);
-          }
-
           const desired = {
             name: targetPolicyName,
             decision: 'non_identity',
-            include: sourceInclude,
-            exclude: Array.isArray(source.exclude) ? source.exclude : [],
-            require: Array.isArray(source.require) ? source.require : []
+            include,
+            exclude: [],
+            require: []
           };
-          if (source.session_duration) desired.session_duration = source.session_duration;
 
-          if (!target) {
-            const usedPrecedence = targetPolicies
-              .map((policy) => Number(policy.precedence))
-              .filter(Number.isFinite);
-            desired.precedence = usedPrecedence.length ? Math.max(...usedPrecedence) + 1 : 1;
-            target = await request(`/access/apps/${preview2.id}/policies`, {
-              method: 'POST',
-              body: JSON.stringify(desired)
-            });
-            console.log('Created an application-scoped Preview 2 Service Auth policy from the proven Preview 1 service-token selector.');
-          } else {
+          if (target) {
+            if (target.decision !== 'non_identity') {
+              throw new Error(`Existing Preview 2 policy ${targetPolicyName} is not Service Auth; refusing replacement.`);
+            }
             desired.precedence = Number.isFinite(Number(target.precedence)) ? Number(target.precedence) : 1;
             target = await request(`/access/apps/${preview2.id}/policies/${target.id}`, {
               method: 'PUT',
               body: JSON.stringify(desired)
             });
-            console.log('Refreshed the application-scoped Preview 2 Service Auth policy from the proven Preview 1 service-token selector.');
+            console.log('Updated the isolated Preview 2 application-scoped Service Auth policy.');
+          } else {
+            const usedPrecedence = policies.map((policy) => Number(policy.precedence)).filter(Number.isFinite);
+            desired.precedence = usedPrecedence.length ? Math.max(...usedPrecedence) + 1 : 1;
+            target = await request(`/access/apps/${preview2.id}/policies`, {
+              method: 'POST',
+              body: JSON.stringify(desired)
+            });
+            console.log('Created the isolated Preview 2 application-scoped Service Auth policy.');
           }
 
           if (!target?.id || !isServiceAuth(target)) {
             throw new Error('Preview 2 Service Auth policy creation/update returned an invalid policy.');
           }
 
-          targetPolicies = await request(`/access/apps/${preview2.id}/policies`);
-          const verified = targetPolicies.find((policy) => policy.id === target.id);
+          policies = await request(`/access/apps/${preview2.id}/policies`);
+          const verified = policies.find((policy) => policy.id === target.id);
           if (!verified || !isServiceAuth(verified)) {
             throw new Error('Preview 2 Service Auth policy verification failed.');
           }
 
-          console.log(`Preview 2 Access service auth ready for ${preview2Host}; existing owner policies were preserved and Preview 1/Production were read only.`);
+          console.log(`Preview 2 CI service authentication is configured for ${preview2Host}; Production was read only and Preview 1 was not queried or mutated.`);
           NODE
 
       - name: Verify protected selector, both experiences and D1 health
@@ -184,9 +187,7 @@ jobs:
               echo "Unauthenticated Preview 2 health returned HTTP $unauth_status; Access boundary missing."
               exit 1
               ;;
-            *)
-              echo "Anonymous Preview 2 health is blocked as expected (HTTP $unauth_status)."
-              ;;
+            *) echo "Anonymous Preview 2 health is blocked as expected (HTTP $unauth_status)." ;;
           esac
 
           auth_get() {
@@ -195,27 +196,11 @@ jobs:
             local body_file
             local status
             body_file="$(mktemp)"
-            status="$(curl \
-              --silent \
-              --show-error \
-              --retry 5 \
-              --retry-delay 2 \
-              --retry-all-errors \
-              --output "$body_file" \
-              --write-out '%{http_code}' \
-              --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-              --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
-              "$base$path")"
+            status="$(curl --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors --output "$body_file" --write-out '%{http_code}' --header "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" --header "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$base$path")"
+            echo "Authenticated Preview 2 $label HTTP $status" >&2
             case "$status" in
-              2??)
-                cat "$body_file"
-                rm -f "$body_file"
-                ;;
-              *)
-                rm -f "$body_file"
-                echo "Authenticated Preview 2 $label returned HTTP $status." >&2
-                return 1
-                ;;
+              2??) cat "$body_file"; rm -f "$body_file" ;;
+              *) rm -f "$body_file"; return 1 ;;
             esac
           }
 
