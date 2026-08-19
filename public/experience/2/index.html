@@ -47,8 +47,14 @@
       <div class="rail-footer"><button type="button" class="nav-item" data-view="settings"><span class="nav-icon" aria-hidden="true">⚙</span><span>Settings</span></button><a class="compare-link" href="/">Compare experiences</a></div>
     </aside>
     <main class="main-canvas" id="experience2Main" tabindex="-1">
-      <header class="mobile-header"><div><p class="eyebrow">Growth Compass</p><h1 id="viewTitle">Today</h1></div><a class="compare-chip" href="/" aria-label="Compare Preview 2 with Experience 1">P2</a></header>
-      <nav class="mobile-secondary" aria-label="More destinations"><button type="button" class="nav-item" data-view="goals"><span class="nav-icon" aria-hidden="true">◎</span><span>Goals</span></button><button type="button" class="nav-item" data-view="activities"><span class="nav-icon" aria-hidden="true">◇</span><span>Activities</span></button><button type="button" class="nav-item" data-view="insights"><span class="nav-icon" aria-hidden="true">✦</span><span>Insights</span></button><button type="button" class="nav-item" data-view="journal"><span class="nav-icon" aria-hidden="true">≡</span><span>Journal</span></button><button type="button" class="nav-item" data-view="settings"><span class="nav-icon" aria-hidden="true">⚙</span><span>Settings</span></button></nav>
+      <header class="mobile-header">
+        <div><p class="eyebrow">Growth Compass</p><h1 id="viewTitle">Today</h1></div>
+        <div class="mobile-header-actions">
+          <button type="button" class="mobile-explore-toggle" id="mobileExploreToggle" aria-expanded="false" aria-controls="mobileSecondary"><span aria-hidden="true">⊞</span><span>Explore</span></button>
+          <a class="compare-chip" href="/" aria-label="Compare Preview 2 with Experience 1">P2</a>
+        </div>
+      </header>
+      <nav class="mobile-secondary" id="mobileSecondary" aria-label="More destinations" aria-hidden="true"><button type="button" class="nav-item" data-view="goals"><span class="nav-icon" aria-hidden="true">◎</span><span>Goals</span></button><button type="button" class="nav-item" data-view="activities"><span class="nav-icon" aria-hidden="true">◇</span><span>Activities</span></button><button type="button" class="nav-item" data-view="insights"><span class="nav-icon" aria-hidden="true">✦</span><span>Insights</span></button><button type="button" class="nav-item" data-view="journal"><span class="nav-icon" aria-hidden="true">≡</span><span>Journal</span></button><button type="button" class="nav-item" data-view="settings"><span class="nav-icon" aria-hidden="true">⚙</span><span>Settings</span></button></nav>
       <section id="viewHost" class="view-host" aria-live="polite"></section>
       <div id="installAppHost" aria-live="polite"></div>
     </main>
