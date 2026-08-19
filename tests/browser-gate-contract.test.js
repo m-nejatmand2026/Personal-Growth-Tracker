@@ -9,7 +9,7 @@ const recoveryBrowserTest = await readFile(new URL('./browser/functional-recover
 const breathingVisualTest = await readFile(new URL('./browser/breathing-visual.browser.js', import.meta.url), 'utf8');
 const runner = await readFile(new URL('../scripts/run-browser-e2e.sh', import.meta.url), 'utf8');
 
-const browserCommand = 'node --test tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js tests/browser/breathing-visual.browser.js';
+const browserCommand = 'node --test --test-concurrency=1 tests/browser/browser-e2e.browser.js tests/browser/functional-recovery.browser.js tests/browser/breathing-visual.browser.js';
 
 test('Quality keeps pinned Chromium and WebKit browser acceptance release-blocking', () => { assert.equal(packageJson.devDependencies.playwright,'1.62.0');assert.equal(packageJson.scripts['test:browser'],browserCommand);assert.match(quality,/playwright@1\.62\.0/);assert.match(quality,/playwright install --with-deps chromium webkit/);assert.match(quality,/bash scripts\/run-browser-e2e\.sh/);assert.ok(quality.indexOf('npm run test:integration')<quality.indexOf('run-browser-e2e.sh')); });
 test('browser acceptance runs only against an isolated local Worker and local D1', () => { assert.match(runner,/d1 migrations apply DB/);assert.match(runner,/--local/);assert.match(runner,/--persist-to/);assert.match(runner,/wrangler dev/);assert.match(runner,/127\.0\.0\.1:8787\/api\/health/);assert.match(runner,/GC_E2E_BASE_URL=http:\/\/127\.0\.0\.1:8787/);assert.match(runner,/node --test --test-concurrency=1 tests\/browser\/experience2-logger\.browser\.js/);assert.doesNotMatch(runner,/--remote|workers\.dev|1937971c|a182d8c8/); });
