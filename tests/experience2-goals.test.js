@@ -70,11 +70,15 @@ test('Goal editor surfaces follow Experience 2 semantic tokens in both themes',(
   assert.doesNotMatch(css,/\.goal-editor\{[^}]*linear-gradient\([^}]*rgba\(18,22,33/s);
 });
 
-test('Experience 2 mobile shell exposes Goals through a real secondary navigation path',()=>{
-  assert.match(index,/class="mobile-secondary" aria-label="More destinations"/);
-  assert.match(index,/mobile-secondary[\s\S]*data-view="goals"/);
-  assert.match(shellCss,/@media\(max-width:900px\)[\s\S]*\.mobile-secondary\{display:flex/);
+test('Experience 2 mobile shell keeps secondary destinations behind one accessible Explore control',()=>{
+  assert.match(index,/id="mobileExploreToggle"[^>]*aria-expanded="false"[^>]*aria-controls="mobileSecondary"/);
+  assert.match(index,/class="mobile-secondary" id="mobileSecondary" aria-label="More destinations" aria-hidden="true"/);
+  assert.match(index,/mobileSecondary[\s\S]*data-view="goals"/);
+  assert.match(shellCss,/@media\(max-width:900px\)[\s\S]*\.mobile-explore-toggle\{display:flex/);
+  assert.match(shellCss,/\.mobile-secondary\.open\{display:grid/);
   assert.match(shellCss,/\.mobile-secondary \.nav-item\{[^}]*min-height:40px/s);
+  assert.match(app,/function setMobileExplore\(open\)/);
+  assert.match(app,/mobileSecondary\.inert=!expanded/);
 });
 
 test('Experience 2 PWA precaches Goals, Areas and presentation assets in the isolated versioned cache',()=>{
