@@ -1,6 +1,8 @@
 name: Preview 2 Access Bootstrap
 
-# Preview 2 only: relink and verify the existing reusable CI Access authorization.
+# Preview 2 only: clone the proven Preview 1 CI service-token selector into a
+# Preview 2 application-scoped Service Auth policy. Preview 1 and Production
+# are read-only throughout this workflow.
 on:
   push:
     branches: [feature/experience-v2]
@@ -16,7 +18,7 @@ concurrency:
 
 jobs:
   bootstrap-access:
-    name: Link reusable service auth to isolated Preview 2
+    name: Authorize existing CI service token on isolated Preview 2
     if: github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' && github.ref == 'refs/heads/feature/experience-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -36,7 +38,7 @@ jobs:
           test -n "$CF_ACCESS_CLIENT_ID"
           test -n "$CF_ACCESS_CLIENT_SECRET"
 
-      - name: Link Preview 2 service auth without mutating Preview 1 or Production
+      - name: Authorize Preview 2 service auth without mutating Preview 1 or Production
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -50,7 +52,7 @@ jobs:
           const preview2Worker = 'personal-growth-tracker-preview2';
           const productionWorker = 'personal-growth-tracker';
           const preview2Host = `${preview2Worker}.m-nejatmand.workers.dev`;
-          const reusablePolicyName = 'Growth Compass Preview 2 CI service token';
+          const targetPolicyName = 'Growth Compass Preview 2 CI service token';
           const base = `https://api.cloudflare.com/client/v4/accounts/${account}`;
 
           async function request(path, options = {}) {
@@ -112,73 +114,59 @@ jobs:
             throw new Error(`Expected exactly one Preview 1 service-auth policy; found ${sourceServicePolicies.length}.`);
           }
           const source = sourceServicePolicies[0];
-
-          let reusablePolicies = await request('/access/policies?per_page=1000');
-          if (!Array.isArray(reusablePolicies)) throw new Error('Reusable Access policy list was not an array.');
-
-          let servicePolicy = reusablePolicies.find((policy) => policy.id === source.id && isServiceAuth(policy));
-          if (servicePolicy) {
-            console.log('Preview 1 service-auth policy is already reusable; reusing its existing policy ID.');
-          } else {
-            const namedMatches = reusablePolicies.filter((policy) => policy.name === reusablePolicyName);
-            if (namedMatches.length > 1) throw new Error(`Multiple reusable policies named ${reusablePolicyName}; refusing ambiguity.`);
-            servicePolicy = namedMatches[0];
-            if (servicePolicy && !isServiceAuth(servicePolicy)) {
-              throw new Error(`Existing reusable policy ${reusablePolicyName} is not a service-auth policy.`);
-            }
-
-            if (!servicePolicy) {
-              const createBody = {
-                name: reusablePolicyName,
-                decision: 'non_identity',
-                include: source.include || [],
-                exclude: source.exclude || [],
-                require: source.require || []
-              };
-              if (source.session_duration) createBody.session_duration = source.session_duration;
-              servicePolicy = await request('/access/policies', {
-                method: 'POST',
-                body: JSON.stringify(createBody)
-              });
-              console.log('Created a Preview 2 reusable service-auth policy using only Preview 1 service-token selectors.');
-              reusablePolicies = await request('/access/policies?per_page=1000');
-            }
+          const sourceInclude = Array.isArray(source.include) ? source.include : [];
+          if (!sourceInclude.some((rule) => rule && typeof rule === 'object' && ('service_token' in rule || 'any_valid_service_token' in rule))) {
+            throw new Error('Preview 1 service-auth policy has no service-token selector.');
           }
 
-          if (!servicePolicy?.id || !isServiceAuth(servicePolicy)) {
-            throw new Error('Resolved reusable service-auth policy is invalid.');
+          let targetPolicies = await request(`/access/apps/${preview2.id}/policies`);
+          const named = targetPolicies.filter((policy) => policy.name === targetPolicyName);
+          if (named.length > 1) throw new Error(`Multiple Preview 2 policies named ${targetPolicyName}; refusing ambiguity.`);
+
+          let target = named[0];
+          if (target && !isServiceAuth(target)) {
+            throw new Error(`Existing Preview 2 policy ${targetPolicyName} is not Service Auth; refusing replacement.`);
           }
 
-          const targetPolicies = await request(`/access/apps/${preview2.id}/policies`);
-          const reusableIds = new Set(reusablePolicies.map((policy) => policy.id));
-          const nonReusableTargetPolicies = targetPolicies.filter((policy) => !reusableIds.has(policy.id));
-          if (nonReusableTargetPolicies.length > 0) {
-            throw new Error(`Preview 2 has ${nonReusableTargetPolicies.length} non-reusable app policy/policies; refusing to replace them automatically.`);
-          }
+          const desired = {
+            name: targetPolicyName,
+            decision: 'non_identity',
+            include: sourceInclude,
+            exclude: Array.isArray(source.exclude) ? source.exclude : [],
+            require: Array.isArray(source.require) ? source.require : []
+          };
+          if (source.session_duration) desired.session_duration = source.session_duration;
 
-          const alreadyLinked = targetPolicies.some((policy) => policy.id === servicePolicy.id);
-          if (!alreadyLinked) {
-            const links = targetPolicies
-              .slice()
-              .sort((a, b) => (a.precedence ?? 9999) - (b.precedence ?? 9999))
-              .map((policy, index) => ({ id: policy.id, precedence: index + 1 }));
-            links.push({ id: servicePolicy.id, precedence: links.length + 1 });
-
-            await request(`/access/apps/${preview2.id}`, {
-              method: 'PUT',
-              body: JSON.stringify({ policies: links })
+          if (!target) {
+            const usedPrecedence = targetPolicies
+              .map((policy) => Number(policy.precedence))
+              .filter(Number.isFinite);
+            desired.precedence = usedPrecedence.length ? Math.max(...usedPrecedence) + 1 : 1;
+            target = await request(`/access/apps/${preview2.id}/policies`, {
+              method: 'POST',
+              body: JSON.stringify(desired)
             });
-            console.log('Linked reusable service-auth policy to Preview 2 while preserving all existing Preview 2 reusable policies.');
+            console.log('Created an application-scoped Preview 2 Service Auth policy from the proven Preview 1 service-token selector.');
           } else {
-            console.log('Preview 2 already links the reusable service-auth policy; no Access mutation needed.');
+            desired.precedence = Number.isFinite(Number(target.precedence)) ? Number(target.precedence) : 1;
+            target = await request(`/access/apps/${preview2.id}/policies/${target.id}`, {
+              method: 'PUT',
+              body: JSON.stringify(desired)
+            });
+            console.log('Refreshed the application-scoped Preview 2 Service Auth policy from the proven Preview 1 service-token selector.');
           }
 
-          const finalPolicies = await request(`/access/apps/${preview2.id}/policies`);
-          if (!finalPolicies.some((policy) => policy.id === servicePolicy.id && isServiceAuth(policy))) {
-            throw new Error('Preview 2 reusable service-auth policy link verification failed.');
+          if (!target?.id || !isServiceAuth(target)) {
+            throw new Error('Preview 2 Service Auth policy creation/update returned an invalid policy.');
           }
 
-          console.log(`Preview 2 Access service auth ready for ${preview2Host}; Preview 1 and Production were read only.`);
+          targetPolicies = await request(`/access/apps/${preview2.id}/policies`);
+          const verified = targetPolicies.find((policy) => policy.id === target.id);
+          if (!verified || !isServiceAuth(verified)) {
+            throw new Error('Preview 2 Service Auth policy verification failed.');
+          }
+
+          console.log(`Preview 2 Access service auth ready for ${preview2Host}; existing owner policies were preserved and Preview 1/Production were read only.`);
           NODE
 
       - name: Verify protected selector, both experiences and D1 health
