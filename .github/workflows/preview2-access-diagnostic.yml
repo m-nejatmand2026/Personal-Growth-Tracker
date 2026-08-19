@@ -1,5 +1,6 @@
 name: Preview 2 Access Diagnostic
 
+# Permission recheck after Access Apps/Policies and Service Tokens read/write were enabled.
 on:
   push:
     branches: [feature/experience-v2]
