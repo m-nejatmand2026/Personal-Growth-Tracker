@@ -30,12 +30,22 @@ jobs:
           node <<'NODE'
           const cfToken = process.env.CLOUDFLARE_API_TOKEN;
           const account = process.env.CLOUDFLARE_ACCOUNT_ID;
-          const clientId = process.env.CF_ACCESS_CLIENT_ID;
-          const clientSecret = process.env.CF_ACCESS_CLIENT_SECRET;
+          const rawClientId = process.env.CF_ACCESS_CLIENT_ID || '';
+          const rawClientSecret = process.env.CF_ACCESS_CLIENT_SECRET || '';
           const ghToken = process.env.GH_STATUS_TOKEN;
           const worker = 'personal-growth-tracker-preview2';
           const host = `${worker}.m-nejatmand.workers.dev`;
           const cfBase = `https://api.cloudflare.com/client/v4/accounts/${account}`;
+
+          const normalize = (value) => {
+            let normalized = String(value || '').trim();
+            if ((normalized.startsWith('"') && normalized.endsWith('"')) || (normalized.startsWith("'") && normalized.endsWith("'"))) {
+              normalized = normalized.slice(1, -1).trim();
+            }
+            return normalized;
+          };
+          const clientId = normalize(rawClientId);
+          const clientSecret = normalize(rawClientSecret);
 
           async function cf(path) {
             const response = await fetch(cfBase + path, { headers: { Authorization: `Bearer ${cfToken}`, 'Content-Type': 'application/json' } });
@@ -46,11 +56,13 @@ jobs:
           function stringMatchesWorker(value) {
             if (typeof value !== 'string') return false;
             if (value === worker || value === host) return true;
-            try { return new URL(value).hostname === host; } catch { return false; }
+            const cleaned = value.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+            return cleaned === host;
           }
 
           function appMatches(app) {
             if (!app || typeof app !== 'object') return false;
+            if (app.name === 'Growth Compass Preview 2') return true;
             if (app.worker_id === worker || app.name === `${worker} - Cloudflare Workers` || app.domain === host) return true;
             return (Array.isArray(app.destinations) ? app.destinations : []).some((destination) =>
               destination && typeof destination === 'object' && Object.values(destination).some(stringMatchesWorker));
@@ -74,9 +86,9 @@ jobs:
               : 'none';
 
           const tokenResponse = await cf('/access/service_tokens');
-          const tokenMatches = tokenResponse.ok && Array.isArray(tokenResponse.result)
-            ? tokenResponse.result.filter((item) => item?.client_id === clientId).length
-            : -1;
+          const tokenList = tokenResponse.ok && Array.isArray(tokenResponse.result) ? tokenResponse.result : [];
+          const rawMatches = tokenResponse.ok ? tokenList.filter((item) => item?.client_id === rawClientId).length : -1;
+          const normalizedMatches = tokenResponse.ok ? tokenList.filter((item) => item?.client_id === clientId).length : -1;
 
           const authResponse = await fetch(`https://${host}/`, {
             redirect: 'manual',
@@ -89,7 +101,7 @@ jobs:
           const compact = [
             `a${apps.length}`,
             `p${policyStatus}-${servicePolicies.length}-${named.length}-${ruleKind}`,
-            `t${tokenResponse.status}-${tokenMatches}`,
+            `t${tokenResponse.status}-r${rawMatches}-n${normalizedMatches}`,
             `h${authResponse.status}`
           ].join('_');
           console.log(compact);
