@@ -1,8 +1,11 @@
-PRAGMA foreign_keys = ON;
-
+-- Module-Owner: identity
+--
 -- Growth Compass Preview 2 account foundation.
--- Better Auth owns user/session/account/verification. Growth Compass owns the
--- explicit mapping from an authenticated user to exactly one private profile.
+-- Better Auth owns user/session/account/verification behavior. The Growth
+-- Compass identity capability owns the tables and maps each authenticated user
+-- to exactly one private profile.
+
+PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS "user" (
   id TEXT PRIMARY KEY NOT NULL,
