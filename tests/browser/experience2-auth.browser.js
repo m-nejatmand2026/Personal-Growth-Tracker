@@ -46,10 +46,18 @@ async function screenshot(page, label) {
   await page.screenshot({ path: `${SCREENSHOT_DIR}/experience2-auth-${label}.png`, fullPage: true });
 }
 
+async function waitForInteractiveGate(page) {
+  await page.locator('.auth-shell').waitFor({ state: 'visible', timeout: 10_000 });
+  await page.locator('[data-auth-mode="signup"]').waitFor({ state: 'visible', timeout: 10_000 });
+  await page.locator('#authEmail').waitFor({ state: 'visible', timeout: 10_000 });
+  await page.locator('#authPassword').waitFor({ state: 'visible', timeout: 10_000 });
+  await page.locator('#authEmailSubmit').waitFor({ state: 'visible', timeout: 10_000 });
+}
+
 async function openGate(page) {
   const response = await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 15_000 });
   assert.ok(response?.ok(), `auth page failed with ${response?.status()}`);
-  await page.locator('.auth-shell').waitFor({ state: 'visible', timeout: 10_000 });
+  await waitForInteractiveGate(page);
 }
 
 async function signIn(page, email) {
@@ -150,8 +158,11 @@ test('Chromium desktop accepts owner sign-in, invitation UI, tester onboarding a
     await page.locator('#accountInviteEmail').fill('chromium-browser@example.test');
     await page.locator('#accountInviteForm button[type="submit"]').click();
     await page.locator('#accountInviteList').getByText('chromium-browser@example.test').waitFor({ state: 'visible' });
+    const signedOutNavigation = page.waitForEvent('framenavigated', { timeout: 10_000 });
     await page.locator('#accountSignOut').click();
-    await page.locator('.auth-shell').waitFor({ state: 'visible', timeout: 10_000 });
+    await signedOutNavigation;
+    await page.waitForLoadState('domcontentloaded');
+    await waitForInteractiveGate(page);
 
     await page.locator('[data-auth-mode="signup"]').click();
     await page.locator('#authName').fill('Chromium Tester');
