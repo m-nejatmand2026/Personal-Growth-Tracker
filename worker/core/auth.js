@@ -172,10 +172,13 @@ export function createAuth(request, env, ctx) {
       session: {
         create: {
           after: async (session) => {
-            queueBackground(ctx, recordSecurityEvent(env.DB, {
+            // Security events share the same D1 boundary as the session. Await
+            // the write so a returned auth response never leaves a D1 write
+            // racing the user's first authenticated product request.
+            await recordSecurityEvent(env.DB, {
               authUserId: session.userId,
               eventType: 'session_created'
-            }));
+            });
           }
         }
       }
