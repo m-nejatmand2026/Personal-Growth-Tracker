@@ -25,15 +25,15 @@ jobs:
           node-version: '24'
           package-manager-cache: false
 
+      - name: Install pinned application, Worker and browser runtimes
+        run: npm install --no-package-lock --no-audit --no-fund
+
       - name: Run unit, contract and modularity boundary tests
         shell: bash
         run: |
           set -o pipefail
           mkdir -p .artifacts/test-logs
           npm test 2>&1 | tee .artifacts/test-logs/unit.log
-
-      - name: Install pinned Worker and browser test runtimes
-        run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4.123.0 playwright@1.62.0
 
       - name: Run real Worker and isolated D1 integration tests
         shell: bash
