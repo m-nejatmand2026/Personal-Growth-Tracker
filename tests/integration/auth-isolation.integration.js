@@ -25,7 +25,7 @@ function cookieFrom(response) {
 async function request(path, init = {}) {
   const headers = new Headers(init.headers || {});
   if (init.body != null && !headers.has('content-type')) headers.set('content-type', 'application/json');
-  const response = await server.fetch(path, { ...init, headers });
+  const response = await worker().fetch(new URL(path, 'http://localhost').toString(), { ...init, headers });
   const text = await response.text();
   let body = null;
   if (text) {
