@@ -118,7 +118,7 @@ before(async () => {
   });
   assert.equal(marker.response.status, 201, JSON.stringify(marker.data));
 
-  for (const email of ['webkit-browser@example.test', 'mobile-browser@example.test']) {
+  for (const email of ['webkit-browser@example.test', 'chromium-mobile@example.test', 'mobile-browser@example.test']) {
     const invite = await api('/api/account/invites', {
       method: 'POST',
       cookie: owner.cookie,
@@ -185,6 +185,26 @@ test('WebKit desktop accepts invited tester account creation and clean workspace
     assert.equal(await page.locator('#accountResetWorkspace').isVisible(), true);
     await screenshot(page, 'webkit-desktop-tester-account');
     await assertNoHorizontalOverflow(page, 'WebKit desktop auth/account');
+    await context.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Chromium 375px keeps sign-up and private account controls phone-safe', async () => {
+  const browser = await chromium.launch();
+  try {
+    const context = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    await createAccount(page, { name: 'Chromium Mobile Tester', email: 'chromium-mobile@example.test' });
+    const areas = await privateAreas(page);
+    assert.equal(areas.status, 200);
+    assert.deepEqual(areas.items, []);
+    await openMobileAccount(page);
+    assert.equal((await page.locator('.account-role').innerText()).trim(), 'tester');
+    assert.equal(await page.locator('#accountResetWorkspace').isVisible(), true);
+    await assertNoHorizontalOverflow(page, 'Chromium 375px account panel');
+    await screenshot(page, 'chromium-375-tester-account');
     await context.close();
   } finally {
     await browser.close();
