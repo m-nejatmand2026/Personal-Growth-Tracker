@@ -28,11 +28,12 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
 
-      - name: Verify Access boundary, Worker route and isolated D1 directly
+      - name: Verify staged auth boundary, Worker route and isolated D1 directly
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GC_PREVIEW2_INTERNAL_AUTH_ENABLED: ${{ vars.GC_PREVIEW2_INTERNAL_AUTH_ENABLED }}
         run: |
           set -euo pipefail
           node <<'NODE'
@@ -41,6 +42,7 @@ jobs:
           const worker = 'personal-growth-tracker-preview2';
           const base = `https://${worker}.m-nejatmand.workers.dev`;
           const api = `https://api.cloudflare.com/client/v4/accounts/${account}`;
+          const internalAuth = String(process.env.GC_PREVIEW2_INTERNAL_AUTH_ENABLED || '').toLowerCase() === 'true';
 
           async function cf(path, options = {}) {
             const response = await fetch(api + path, {
@@ -59,11 +61,23 @@ jobs:
             return body.result;
           }
 
-          const anonymous = await fetch(`${base}/api/health`, { redirect: 'manual' });
-          if (anonymous.status >= 200 && anonymous.status < 300) {
-            throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}); Access boundary is missing.`);
+          if (internalAuth) {
+            const status = await fetch(`${base}/api/account/status`, { redirect: 'manual' });
+            if (status.status !== 200) throw new Error(`Growth Compass account status must be public after Access removal (HTTP ${status.status}).`);
+            const statusBody = await status.json();
+            if (statusBody.mode !== 'enforced' || statusBody.configured !== true) {
+              throw new Error(`Internal auth is flagged active but account status is not enforced/configured: ${JSON.stringify(statusBody)}`);
+            }
+            const privateApi = await fetch(`${base}/api/v1/areas`, { redirect: 'manual' });
+            if (privateApi.status !== 401) throw new Error(`Anonymous private API must be 401 after internal auth activation (HTTP ${privateApi.status}).`);
+            console.log('Growth Compass internal authentication is enforcing the public/private boundary.');
+          } else {
+            const anonymous = await fetch(`${base}/api/health`, { redirect: 'manual' });
+            if (anonymous.status >= 200 && anonymous.status < 300) {
+              throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}) before internal auth activation; Access boundary is missing.`);
+            }
+            console.log(`Anonymous Preview 2 is blocked by Cloudflare Access as expected (HTTP ${anonymous.status}).`);
           }
-          console.log(`Anonymous Preview 2 is blocked as expected (HTTP ${anonymous.status}).`);
 
           const subdomain = await cf(`/workers/scripts/${worker}/subdomain`);
           if (!subdomain?.enabled) throw new Error('Preview 2 workers.dev route is not enabled.');
@@ -93,5 +107,5 @@ jobs:
             throw new Error('Preview 2 D1 direct health verification failed.');
           }
 
-          console.log(`Preview 2 private boundary, Worker route and isolated D1 passed: ${base}`);
+          console.log(`Preview 2 boundary, Worker route and isolated D1 passed: ${base}`);
           NODE
