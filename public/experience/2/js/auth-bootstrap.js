@@ -77,6 +77,7 @@ async function boot(){
     const session=await request('/api/auth/get-session');
     if(session?.user){const account=await request('/api/account/me');await launchApp(account);return}
     renderSignIn(status);
+    if(params.has('signed_out'))history.replaceState(null,'','/experience/2/');
   }catch(error){
     const host=mountGate(`<section class="auth-config-card static-surface" role="alert"><p class="eyebrow">Growth Compass</p><h1>Could not check your account</h1><p id="authBootError"></p><button type="button" class="primary-button" id="authRetry">Retry</button></section>`);host.querySelector('#authBootError').textContent=error.message;host.querySelector('#authRetry')?.addEventListener('click',()=>{html.classList.add('auth-checking');host.remove();void boot()});
   }
