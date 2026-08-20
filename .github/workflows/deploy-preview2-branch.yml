@@ -60,7 +60,9 @@ jobs:
       - name: Run local Worker browser acceptance gate
         env:
           GC_E2E_SCREENSHOT_DIR: .artifacts/ui-preview2-branch
-        run: bash scripts/run-browser-e2e.sh
+        run: |
+          bash scripts/run-browser-e2e.sh
+          bash scripts/run-auth-browser-e2e.sh
 
       - name: Find or create isolated Preview 2 D1
         shell: bash
