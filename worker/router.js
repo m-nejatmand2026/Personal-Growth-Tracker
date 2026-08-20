@@ -1,7 +1,23 @@
 import { bad } from './core/http.js';
+import {
+  authConfigured,
+  authMode,
+  createAuth,
+  getAuthenticatedContext,
+  legacyAuthContext,
+  requestWithAuthContext
+} from './core/auth.js';
 import { healthRoute } from './platform/health.js';
 import { createModuleRegistry } from './platform/module-registry.js';
 import { platformModules } from './modules/catalog.js';
+import {
+  accountMeRoute,
+  accountStatusRoute,
+  createInviteRoute,
+  listInvitesRoute,
+  resetWorkspaceRoute,
+  revokeInviteRoute
+} from './routes/account.js';
 import { bootstrapRoute } from './routes/bootstrap.js';
 import { energyRoute } from './routes/energy.js';
 import { exportRoute } from './routes/export.js';
@@ -18,9 +34,8 @@ const moduleRegistry = createModuleRegistry(platformModules);
 const LEGACY_BETA_SUNSET = 'before-public-launch';
 const LEGACY_CLASSIFICATIONS = new Set(['read-model', 'forwarder', 'retired']);
 
-// Explicit migration-only compatibility surface. No new Version 1 capability
-// may be added here: new capabilities register routes in their module manifest.
-// These routes disappear after Beta compatibility data/clients are retired.
+// Explicit migration-only compatibility surface. These tables predate profile
+// ownership and therefore remain owner-only once multi-user auth is enforced.
 export const legacyBetaRoutes = Object.freeze([
   Object.freeze({ method: 'GET', path: '/api/bootstrap', classification: 'read-model', sunset: LEGACY_BETA_SUNSET, handler: bootstrapRoute }),
   Object.freeze({ method: 'GET', path: '/api/week', classification: 'read-model', sunset: LEGACY_BETA_SUNSET, handler: weekRoute }),
@@ -40,15 +55,9 @@ function validateLegacyRoutes(routes) {
     if (!LEGACY_CLASSIFICATIONS.has(route.classification)) {
       throw new Error(`Invalid legacy route classification: ${route.classification}`);
     }
-    if (route.sunset !== LEGACY_BETA_SUNSET) {
-      throw new Error('Legacy route is missing the Beta sunset contract.');
-    }
-    if (Boolean(route.path) === Boolean(route.prefix)) {
-      throw new Error('Legacy route must declare exactly one path or prefix.');
-    }
-    if (typeof route.handler !== 'function') {
-      throw new Error('Legacy route must declare a handler.');
-    }
+    if (route.sunset !== LEGACY_BETA_SUNSET) throw new Error('Legacy route is missing the Beta sunset contract.');
+    if (Boolean(route.path) === Boolean(route.prefix)) throw new Error('Legacy route must declare exactly one path or prefix.');
+    if (typeof route.handler !== 'function') throw new Error('Legacy route must declare a handler.');
     const key = `${route.method}:${route.path || `${route.prefix}*`}`;
     if (seen.has(key)) throw new Error(`Duplicate legacy route: ${key}`);
     seen.add(key);
@@ -64,29 +73,74 @@ function matchesLegacyRoute(route, method, path) {
   return false;
 }
 
-export async function routeApi(request, env) {
+function isAuthApi(path) {
+  return path === '/api/auth' || path.startsWith('/api/auth/');
+}
+
+async function routeAccount(context) {
+  const { method, path } = context;
+  if (method === 'GET' && path === '/api/account/me') return accountMeRoute(context);
+  if (method === 'GET' && path === '/api/account/invites') return listInvitesRoute(context);
+  if (method === 'POST' && path === '/api/account/invites') return createInviteRoute(context);
+  if (method === 'POST' && path === '/api/account/invites/revoke') return revokeInviteRoute(context);
+  if (method === 'POST' && path === '/api/account/reset-workspace') return resetWorkspaceRoute(context);
+  return null;
+}
+
+export async function routeApi(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
-  const context = { request, url, env };
 
-  // Health is a platform-owned operational route. It contains no profile or
-  // business data and verifies the Worker's D1 binding without coupling CI to
-  // a user-owned module.
-  if (method === 'GET' && path === '/api/health') return healthRoute(context);
+  // Operational and auth-discovery routes never expose personal product data.
+  if (method === 'GET' && path === '/api/health') return healthRoute({ request, url, env });
+  if (method === 'GET' && path === '/api/account/status') return accountStatusRoute({ request, url, env });
 
-  // Version 1 routes are registered by module manifests. Adding/removing a
-  // Version 1 module does not require another central-router conditional.
+  // Better Auth owns its standard OAuth/email/session endpoints. It is mounted
+  // before the private API boundary so callbacks can create verified sessions.
+  if (isAuthApi(path)) {
+    if (!authConfigured(env)) return bad('Growth Compass authentication is not configured.', 503);
+    const auth = createAuth(request, env, ctx);
+    return auth.handler(request);
+  }
+
+  const mode = authMode(env);
+  const authContext = mode === 'enforced'
+    ? await getAuthenticatedContext(request, env, ctx)
+    : legacyAuthContext();
+
+  // Remove any client-supplied identity claims and inject only server-resolved
+  // ownership. Feature modules can continue using resolveProfileId(request).
+  const internalRequest = requestWithAuthContext(request, authContext, mode);
+  const internalUrl = new URL(internalRequest.url);
+  const context = {
+    request: internalRequest,
+    url: internalUrl,
+    env,
+    ctx,
+    method,
+    path,
+    authContext
+  };
+
+  const accountResponse = await routeAccount(context);
+  if (accountResponse) return accountResponse;
+
+  // Version 1 routes are profile-scoped by their existing module contracts.
   const registered = moduleRegistry.match(method, path);
   if (registered) return registered.route.handler({ ...context, module: registered.module });
 
   for (const route of legacyBetaRoutes) {
     if (matchesLegacyRoute(route, method, path)) {
+      if (mode === 'enforced' && authContext.role !== 'owner') {
+        return bad('API route not found', 404);
+      }
       return route.handler(context);
     }
   }
 
-  // Export is a cross-cutting platform service, not a business-module route.
+  // Export is profile-scoped; its legacy section already returns empty data for
+  // non-default profiles.
   if (method === 'GET' && path === '/api/export') return exportRoute(context);
 
   return bad('API route not found', 404);
