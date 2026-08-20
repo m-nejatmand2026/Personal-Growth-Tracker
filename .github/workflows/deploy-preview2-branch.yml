@@ -50,7 +50,9 @@ jobs:
         run: npm test
 
       - name: Run real Worker and isolated D1 integration tests
-        run: npm run test:integration
+        run: |
+          npm run test:integration
+          npm run test:auth-integration
 
       - name: Install pinned browser binaries
         run: ./node_modules/.bin/playwright install --with-deps chromium webkit
@@ -186,7 +188,7 @@ jobs:
             if (anonymous.status >= 200 && anonymous.status < 300) {
               throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}) before internal auth activation; Access boundary is missing.`);
             }
-            console.log(`Anonymous Preview 2 is blocked by Access as expected (HTTP ${anonymous.status}).`);
+            console.log(`Anonymous Preview 2 is blocked as expected (HTTP ${anonymous.status}).`);
           }
 
           const subdomain = await cf(`/workers/scripts/${worker}/subdomain`);
