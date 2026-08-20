@@ -1,4 +1,4 @@
-import { bad } from './core/http.js';
+import { bad, HttpError } from './core/http.js';
 import {
   authConfigured,
   authMode,
@@ -77,6 +77,18 @@ function isAuthApi(path) {
   return path === '/api/auth' || path.startsWith('/api/auth/');
 }
 
+function rethrowWithTestStage(env, stage, error) {
+  if (
+    String(env.GC_AUTH_TEST_MODE || '') === '1'
+    && !(error instanceof HttpError)
+  ) {
+    const staged = new Error(`${stage}: ${error?.message || String(error)}`);
+    staged.name = error?.name || 'Error';
+    throw staged;
+  }
+  throw error;
+}
+
 async function routeAccount(context) {
   const { method, path } = context;
   if (method === 'GET' && path === '/api/account/me') return accountMeRoute(context);
@@ -105,9 +117,14 @@ export async function routeApi(request, env, ctx) {
   }
 
   const mode = authMode(env);
-  const authContext = mode === 'enforced'
-    ? await getAuthenticatedContext(request, env, ctx)
-    : legacyAuthContext();
+  let authContext;
+  try {
+    authContext = mode === 'enforced'
+      ? await getAuthenticatedContext(request, env, ctx)
+      : legacyAuthContext();
+  } catch (error) {
+    rethrowWithTestStage(env, 'auth-context', error);
+  }
 
   // Remove any client-supplied identity claims and inject only server-resolved
   // ownership. Feature modules can continue using resolveProfileId(request).
@@ -128,7 +145,13 @@ export async function routeApi(request, env, ctx) {
 
   // Version 1 routes are profile-scoped by their existing module contracts.
   const registered = moduleRegistry.match(method, path);
-  if (registered) return registered.route.handler({ ...context, module: registered.module });
+  if (registered) {
+    try {
+      return await registered.route.handler({ ...context, module: registered.module });
+    } catch (error) {
+      rethrowWithTestStage(env, `module:${registered.module.id}`, error);
+    }
+  }
 
   for (const route of legacyBetaRoutes) {
     if (matchesLegacyRoute(route, method, path)) {
