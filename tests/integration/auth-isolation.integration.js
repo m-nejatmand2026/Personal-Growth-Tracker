@@ -217,7 +217,8 @@ test('Better Auth sign-out revokes the active session before another user can en
     headers: {
       cookie: owner.cookie,
       origin: 'http://localhost'
-    }
+    },
+    body: JSON.stringify({})
   });
   assert.ok([200, 204].includes(signedOut.response.status), JSON.stringify(signedOut.body));
 
