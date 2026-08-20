@@ -23,7 +23,7 @@ async function openPanel(account,opener=null){
   if(workspace.can_manage_invites)void loadInvites();
 
   backdrop.querySelector('#accountResetWorkspace')?.addEventListener('click',async event=>{if(!window.confirm('Reset your private tester workspace? This permanently deletes only your own Growth Compass data.'))return;try{event.currentTarget.disabled=true;await request('/api/account/reset-workspace',{method:'POST',body:{confirm:'RESET'}});location.assign('/experience/2/')}catch(error){feedback(error.message,true);event.currentTarget.disabled=false}});
-  backdrop.querySelector('#accountSignOut')?.addEventListener('click',async event=>{try{event.currentTarget.disabled=true;await request('/api/auth/sign-out',{method:'POST'});const session=await request('/api/auth/get-session');if(session?.user)throw new Error('The account session is still active. Try signing out again.');document.documentElement.classList.add('auth-checking');window.location.reload()}catch(error){feedback(error.message,true);event.currentTarget.disabled=false}});
+  backdrop.querySelector('#accountSignOut')?.addEventListener('click',async event=>{try{event.currentTarget.disabled=true;await request('/api/auth/sign-out',{method:'POST'});const session=await request('/api/auth/get-session');if(session?.user)throw new Error('The account session is still active. Try signing out again.');document.documentElement.classList.add('auth-checking');window.location.replace(`/experience/2/?signed_out=${Date.now()}`)}catch(error){feedback(error.message,true);event.currentTarget.disabled=false}});
 }
 
 export async function installAccountUi(account){
