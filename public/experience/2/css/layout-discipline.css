@@ -1,0 +1,56 @@
+/* Experience 2 layout discipline: shared canvas geometry, overlay hierarchy, and exact alignment. */
+:root{--gc-content-max:1112px;--gc-desktop-gutter:36px;--gc-section-rhythm:18px;--gc-overlay-z:140}
+.main-canvas{width:100%;max-width:none;margin:0;padding-inline:var(--gc-desktop-gutter)}
+.view-host{width:min(100%,var(--gc-content-max));margin-inline:auto;gap:var(--gc-section-rhythm)}
+.view-host>*{width:100%;min-width:0}
+.today-view,.plan-view,.goals-view,.activities-view,.schedule-view,.progress-view,.insights-view,.journal-view,.wellness-view,.settings-view{width:100%;min-width:0;gap:var(--gc-section-rhythm)}
+
+/* Theme picker: a contained floating glass popover, not an expanding sidebar panel. */
+.palette-switcher{z-index:var(--gc-overlay-z);isolation:isolate}
+.palette-menu{z-index:calc(var(--gc-overlay-z) + 1);box-sizing:border-box;overflow:auto!important;overscroll-behavior:contain;border:1px solid color-mix(in srgb,var(--gc-glow-soft) 34%,var(--gc-glass-edge));background-image:linear-gradient(135deg,color-mix(in srgb,var(--gc-glow-soft) 12%,transparent),transparent 26%,transparent 76%,color-mix(in srgb,var(--gc-primary) 6%,transparent)),radial-gradient(ellipse at 8% 0%,color-mix(in srgb,var(--gc-planning) 11%,transparent),transparent 42%);background-color:color-mix(in srgb,var(--gc-surface) 94%,transparent);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--gc-glow-soft) 76%,transparent),inset -1px -1px 0 color-mix(in srgb,var(--gc-primary) 7%,transparent),0 28px 72px rgba(0,5,10,.42),0 8px 28px color-mix(in srgb,var(--gc-glow-primary) 10%,transparent);backdrop-filter:blur(46px) saturate(1.36);-webkit-backdrop-filter:blur(46px) saturate(1.36)}
+.palette-menu::before{content:"Dark palettes";grid-column:1/-1;margin:0 6px 1px;color:var(--gc-text-subtle);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.palette-group-label{margin:5px 6px 1px!important;padding-top:9px!important}
+.palette-option{min-width:0;border-radius:13px}
+.palette-option-copy strong{overflow:hidden;text-overflow:ellipsis}
+
+/* Journal: every section shares the same horizontal frame. */
+.journal-view{grid-template-columns:minmax(0,1fr);align-items:start}
+.journal-hero,.journal-tools,.journal-list{width:100%;margin-inline:0}
+.journal-hero{min-height:132px;padding:22px 24px}
+.journal-tools{padding:0!important}
+.journal-tools label{width:100%;margin:0}
+.journal-tools label>span{padding-left:0!important;margin:0 0 1px}
+.journal-tools label>div{width:100%;grid-template-columns:minmax(0,1fr) 90px;gap:10px}
+.journal-tools input,.journal-tools .secondary-button{margin:0}
+.journal-list{padding:0!important}
+.journal-empty{margin:0;padding:26px 4px;border-top:1px solid var(--gc-border)}
+.journal-entry{margin:0}
+
+@media(min-width:901px){
+  .desktop-rail>.palette-switcher{position:relative}
+  .desktop-rail>.palette-switcher .palette-menu{top:0!important;left:calc(100% + 14px)!important;right:auto!important;width:380px!important;max-width:calc(100vw - 280px);max-height:calc(100dvh - 48px)!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:12px;border-radius:22px}
+  .desktop-rail>.palette-switcher .palette-option{min-height:52px;padding:8px 9px}
+  .desktop-rail>.palette-switcher .palette-option-copy strong{white-space:normal;line-height:1.2}
+}
+
+@media(max-width:900px){
+  :root{--gc-section-rhythm:16px}
+  .main-canvas{padding-inline:14px}
+  .view-host{width:100%}
+  .mobile-header-actions>.palette-switcher .palette-menu{position:fixed!important;top:68px!important;left:12px!important;right:12px!important;width:auto!important;max-height:calc(100dvh - 158px)!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px;border-radius:20px}
+  .journal-hero{min-height:0;padding:18px 17px}
+  .journal-tools label>div{grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .journal-empty{padding-inline:2px}
+}
+
+@media(max-width:430px){
+  .main-canvas{padding-inline:13px}
+  .mobile-header-actions>.palette-switcher .palette-menu{left:8px!important;right:8px!important;top:64px!important;padding:8px;gap:5px}
+  .palette-option{min-height:46px;padding:6px 7px}
+}
+
+@media(max-width:360px){
+  .main-canvas{padding-inline:10px}
+  .mobile-header-actions>.palette-switcher .palette-menu{left:6px!important;right:6px!important;grid-template-columns:1fr;max-height:calc(100dvh - 150px)!important}
+  .palette-menu::before,.palette-group-label{grid-column:1}
+}
