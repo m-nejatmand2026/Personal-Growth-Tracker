@@ -17,12 +17,12 @@ function initials(value='GC'){return String(value||'GC').trim().split(/\s+/).sli
 function removeGate(){document.querySelector('#e2AuthHost')?.remove();html.classList.remove('auth-checking','auth-gated');}
 
 async function launchApp(account=null){
-  removeGate();
   await import('/experience/2/js/app.js');
   if(account) {
     const { installAccountUi }=await import('/experience/2/js/account-ui.js');
     await installAccountUi(account);
   }
+  removeGate();
 }
 
 function mountGate(content){
