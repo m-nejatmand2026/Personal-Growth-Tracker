@@ -78,6 +78,10 @@ async function privateAreas(page) {
   });
 }
 
+async function accountRole(page) {
+  return String(await page.locator('.account-role').textContent()).trim().toLowerCase();
+}
+
 async function assertNoHorizontalOverflow(page, label) {
   const size = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
@@ -92,7 +96,9 @@ async function openDesktopAccount(page) {
 }
 
 async function openMobileAccount(page) {
-  await page.locator('.mobile-header-actions [data-account-open]').click();
+  const trigger = page.locator('.mobile-header-actions [data-account-open]');
+  await trigger.waitFor({ state: 'visible' });
+  await trigger.click();
   await page.locator('.account-panel').waitFor({ state: 'visible' });
 }
 
@@ -140,7 +146,7 @@ test('Chromium desktop accepts owner sign-in, invitation UI, tester onboarding a
     assert.ok(ownerAreas.items.some((item) => item.name === OWNER_MARKER));
 
     await openDesktopAccount(page);
-    assert.equal((await page.locator('.account-role').innerText()).trim(), 'owner');
+    assert.equal(await accountRole(page), 'owner');
     await page.locator('#accountInviteEmail').fill('chromium-browser@example.test');
     await page.locator('#accountInviteForm button[type="submit"]').click();
     await page.locator('#accountInviteList').getByText('chromium-browser@example.test').waitFor({ state: 'visible' });
@@ -160,7 +166,7 @@ test('Chromium desktop accepts owner sign-in, invitation UI, tester onboarding a
     assert.deepEqual(testerAreas.items, []);
 
     await openDesktopAccount(page);
-    assert.equal((await page.locator('.account-role').innerText()).trim(), 'tester');
+    assert.equal(await accountRole(page), 'tester');
     assert.equal(await page.locator('#accountInviteForm').count(), 0);
     assert.equal(await page.locator('#accountResetWorkspace').isVisible(), true);
     await screenshot(page, 'chromium-desktop-tester-account');
@@ -181,7 +187,7 @@ test('WebKit desktop accepts invited tester account creation and clean workspace
     assert.equal(areas.status, 200);
     assert.deepEqual(areas.items, []);
     await openDesktopAccount(page);
-    assert.equal((await page.locator('.account-role').innerText()).trim(), 'tester');
+    assert.equal(await accountRole(page), 'tester');
     assert.equal(await page.locator('#accountResetWorkspace').isVisible(), true);
     await screenshot(page, 'webkit-desktop-tester-account');
     await assertNoHorizontalOverflow(page, 'WebKit desktop auth/account');
@@ -201,7 +207,7 @@ test('Chromium 375px keeps sign-up and private account controls phone-safe', asy
     assert.equal(areas.status, 200);
     assert.deepEqual(areas.items, []);
     await openMobileAccount(page);
-    assert.equal((await page.locator('.account-role').innerText()).trim(), 'tester');
+    assert.equal(await accountRole(page), 'tester');
     assert.equal(await page.locator('#accountResetWorkspace').isVisible(), true);
     await assertNoHorizontalOverflow(page, 'Chromium 375px account panel');
     await screenshot(page, 'chromium-375-tester-account');
@@ -227,7 +233,7 @@ test('WebKit 375px keeps sign-up and private account controls phone-safe', async
     const areas = await privateAreas(page);
     assert.deepEqual(areas.items, []);
     await openMobileAccount(page);
-    assert.equal((await page.locator('.account-role').innerText()).trim(), 'tester');
+    assert.equal(await accountRole(page), 'tester');
     assert.equal(await page.locator('#accountResetWorkspace').isVisible(), true);
     await assertNoHorizontalOverflow(page, 'WebKit 375px account panel');
     await screenshot(page, 'webkit-375-tester-account');
