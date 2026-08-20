@@ -3,6 +3,7 @@
   "name": "personal-growth-tracker",
   "main": "worker/index.js",
   "compatibility_date": "2026-08-08",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
