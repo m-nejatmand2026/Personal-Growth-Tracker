@@ -46,7 +46,7 @@ test('tester cannot list, update, or delete owner records across private V1 reso
   const energy=await request('/api/v1/wellbeing/energy?from=2026-08-01&to=2026-08-31&limit=100',{headers});assert.equal(energy.response.status,200);assert.equal(energy.body.items.some(item=>item.label==='Owner energy'),false);
 
   const goalUpdate=await request(`/api/v1/goals/${ownerGoalId}`,{method:'PUT',headers,body:JSON.stringify({name:'stolen goal'})});assert.equal(goalUpdate.response.status,404);
-  const activityUpdate=await request(`/api/v1/activities/${ownerActivityId}`,{method:'PUT',headers,body:JSON.stringify({name:'stolen activity',goal_id:ownerGoalId})});assert.equal(activityUpdate.response.status,404);
+  const activityUpdate=await request(`/api/v1/activities/${ownerActivityId}`,{method:'PUT',headers,body:JSON.stringify({name:'stolen activity',goal_id:ownerGoalId})});assert.equal(activityUpdate.response.status,404,JSON.stringify(activityUpdate.body));
   const journalDelete=await request(`/api/v1/journal/${ownerJournalId}`,{method:'DELETE',headers});assert.equal(journalDelete.response.status,404);
   const progressDelete=await request(`/api/v1/progress/${ownerProgressId}`,{method:'DELETE',headers});assert.equal(progressDelete.response.status,404);
   const capacityUpdate=await request(`/api/v1/capacity/commitments/${ownerCapacityId}`,{method:'PUT',headers,body:JSON.stringify({name:'stolen commitment'})});assert.equal(capacityUpdate.response.status,404);
