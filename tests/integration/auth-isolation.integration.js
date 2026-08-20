@@ -141,7 +141,7 @@ test('enforced auth keeps owner data private and gives invited tester a clean wo
     headers: { cookie: tester.cookie },
     body: JSON.stringify({ name: 'Tester private area' })
   });
-  assert.equal(testerCreated.response.status, 201);
+  assert.equal(testerCreated.response.status, 201, JSON.stringify(testerCreated.body));
   assert.equal(testerCreated.body.item.profile_id, testerMe.body.workspace.profile_id);
 
   const ownerAfterTester = await request('/api/v1/areas?include_archived=1', { headers: { cookie: owner.cookie } });
