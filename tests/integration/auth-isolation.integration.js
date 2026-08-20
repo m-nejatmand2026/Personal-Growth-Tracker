@@ -200,3 +200,35 @@ test('owner can revoke a pending invitation and revoked email cannot register', 
   const signup = await signUp('revoked@example.test', 'Revoked');
   assert.equal(signup.response.status, 403);
 });
+
+test('Better Auth sign-out revokes the active session before another user can enter the workspace', async () => {
+  const owner = await signUp('owner@example.test', 'Owner');
+  assert.ok([200, 201].includes(owner.response.status), JSON.stringify(owner.body));
+  assert.ok(owner.cookie, 'owner sign-up should establish a session cookie');
+
+  const beforeSignOut = await request('/api/auth/get-session', {
+    headers: { cookie: owner.cookie }
+  });
+  assert.equal(beforeSignOut.response.status, 200, JSON.stringify(beforeSignOut.body));
+  assert.ok(beforeSignOut.body?.user, 'session should exist before sign-out');
+
+  const signedOut = await request('/api/auth/sign-out', {
+    method: 'POST',
+    headers: {
+      cookie: owner.cookie,
+      origin: 'http://localhost'
+    }
+  });
+  assert.ok([200, 204].includes(signedOut.response.status), JSON.stringify(signedOut.body));
+
+  const staleSession = await request('/api/auth/get-session', {
+    headers: { cookie: owner.cookie }
+  });
+  assert.equal(staleSession.response.status, 200, JSON.stringify(staleSession.body));
+  assert.equal(Boolean(staleSession.body?.user), false, 'old session cookie must not resolve after sign-out');
+
+  const stalePrivateRequest = await request('/api/v1/areas', {
+    headers: { cookie: owner.cookie }
+  });
+  assert.equal(stalePrivateRequest.response.status, 401);
+});
