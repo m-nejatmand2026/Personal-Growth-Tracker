@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "personal-growth-tracker-auth-test",
-      "database_id": "1937971c-f2f2-4dad-bc65-3d22952584bb",
+      "database_id": "00000000-0000-0000-0000-0000000000a2",
       "migrations_dir": "migrations"
     }
   ],
@@ -23,7 +23,6 @@
     "GC_AUTH_TEST_MODE": "1",
     "GC_OWNER_EMAIL": "owner@example.test",
     "GC_DEFAULT_TIMEZONE": "UTC",
-    "BETTER_AUTH_URL": "http://localhost",
     "BETTER_AUTH_SECRET": "test-only-better-auth-secret-6eb750ea2f554247a6e2"
   }
 }
