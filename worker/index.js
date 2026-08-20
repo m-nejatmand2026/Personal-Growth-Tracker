@@ -2,7 +2,7 @@ import { HttpError, json } from './core/http.js';
 import { routeApi } from './router.js';
 
 const SECURITY_HEADERS = Object.freeze({
-  'content-security-policy': "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; media-src 'self' blob:",
+  'content-security-policy': "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.resend.com; manifest-src 'self'; worker-src 'self'; media-src 'self' blob:; form-action 'self' https://accounts.google.com https://appleid.apple.com",
   'permissions-policy': 'camera=(), microphone=(), geolocation=()',
   'referrer-policy': 'no-referrer',
   'strict-transport-security': 'max-age=31536000; includeSubDomains',
@@ -48,7 +48,7 @@ function serveExperienceOne(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (!url.pathname.startsWith('/api/')) {
@@ -60,7 +60,7 @@ export default {
     }
 
     try {
-      return secureResponse(await routeApi(request, env));
+      return secureResponse(await routeApi(request, env, ctx));
     } catch (error) {
       logApiFailure(request, url, error);
       if (error instanceof HttpError) return secureResponse(json({ error: error.message }, error.status));
