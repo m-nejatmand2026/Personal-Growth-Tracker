@@ -2,8 +2,8 @@ import test, { after, before, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestHarness } from 'wrangler';
 
-const WORKER_NAME='personal-growth-tracker-auth-test-resources';
-const server=createTestHarness({workers:[{configPath:'./wrangler.auth-test.jsonc',name:WORKER_NAME}]});
+const WORKER_NAME='personal-growth-tracker-auth-test';
+const server=createTestHarness({workers:[{configPath:'./wrangler.auth-test.jsonc'}]});
 function worker(){return server.getWorker(WORKER_NAME)}
 function cookieFrom(response){const values=typeof response.headers.getSetCookie==='function'?response.headers.getSetCookie():[response.headers.get('set-cookie')].filter(Boolean);return values.map(value=>String(value).split(';')[0].trim()).filter(Boolean).join('; ')}
 async function request(path,init={}){const headers=new Headers(init.headers||{});if(init.body!=null&&!headers.has('content-type'))headers.set('content-type','application/json');const response=await server.fetch(path,{...init,headers});const text=await response.text();let body=null;if(text){try{body=JSON.parse(text)}catch{body=text}}return{response,body,cookie:cookieFrom(response)}}
