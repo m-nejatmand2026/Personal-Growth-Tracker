@@ -23,6 +23,7 @@
     "GC_AUTH_TEST_MODE": "1",
     "GC_OWNER_EMAIL": "owner@example.test",
     "GC_DEFAULT_TIMEZONE": "UTC",
+    "BETTER_AUTH_URL": "http://localhost",
     "BETTER_AUTH_SECRET": "test-only-better-auth-secret-6eb750ea2f554247a6e2"
   }
 }
