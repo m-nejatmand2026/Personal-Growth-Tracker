@@ -1,3 +1,4 @@
+@import url('/experience/2/css/content-density.css');
 .view-host{position:relative}
 .view-host>*{animation:none;transition:opacity .2s ease,transform .28s cubic-bezier(.2,.75,.2,1),filter .2s ease}
 .view-host.is-navigation-pending>*{opacity:.78;transform:translateY(-2px) scale(.997);filter:blur(.7px)}
