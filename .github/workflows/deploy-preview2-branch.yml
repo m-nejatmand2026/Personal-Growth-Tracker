@@ -43,11 +43,11 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN repository secret.'; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID repository secret.'; exit 1; }
 
+      - name: Install pinned application, Worker and browser runtimes
+        run: npm install --no-package-lock --no-audit --no-fund
+
       - name: Run unit, contract and modularity boundary tests
         run: npm test
-
-      - name: Install pinned Worker and browser test runtimes
-        run: npm install --no-save --no-package-lock --no-audit --no-fund wrangler@4.123.0 playwright@1.62.0
 
       - name: Run real Worker and isolated D1 integration tests
         run: npm run test:integration
@@ -94,7 +94,7 @@ jobs:
           GC_PREVIEW2_MIGRATION_CONFIRM: personal-growth-tracker-preview2
         run: |
           set -euo pipefail
-          authorized_count='7'
+          authorized_count='8'
           actual_count="$(find migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d '[:space:]')"
           test "$actual_count" = "$authorized_count" || {
             echo "Preview 2 migration set changed: expected $authorized_count SQL files, found $actual_count. Refusing migration."
@@ -116,6 +116,7 @@ jobs:
           verify_blob '0005_journal.sql' '0d1e2c0e4988bb313d154d6db06827db203c56a5'
           verify_blob '0006_activities_contract.sql' '5b6d5b038738fd055ff3b7456e8c2f69dd20c89b'
           verify_blob '0007_wellbeing_energy.sql' '3c3a3c25a28ff6c23b00c2d4828d55e9c0217201'
+          verify_blob '0008_auth_multi_user.sql' 'ea383d7edffb6a5cc36b0c0115a5462795d4d911'
           bash scripts/migrate-preview2.sh
 
       - name: Verify no pending Preview 2 migrations before deploy
@@ -141,11 +142,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.123.0 deploy --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2 --message "git:${GITHUB_SHA}"
 
-      - name: Verify private Access boundary, Worker route and isolated D1 directly
+      - name: Verify access boundary, Worker route and isolated D1 directly
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GC_PREVIEW2_INTERNAL_AUTH_ENABLED: ${{ vars.GC_PREVIEW2_INTERNAL_AUTH_ENABLED }}
         run: |
           set -euo pipefail
           node <<'NODE'
@@ -154,6 +156,7 @@ jobs:
           const worker = 'personal-growth-tracker-preview2';
           const base = `https://${worker}.m-nejatmand.workers.dev`;
           const api = `https://api.cloudflare.com/client/v4/accounts/${account}`;
+          const internalAuth = String(process.env.GC_PREVIEW2_INTERNAL_AUTH_ENABLED || '').toLowerCase() === 'true';
 
           async function cf(path, options = {}) {
             const response = await fetch(api + path, {
@@ -172,11 +175,19 @@ jobs:
             return body.result;
           }
 
-          const anonymous = await fetch(`${base}/api/health`, { redirect: 'manual' });
-          if (anonymous.status >= 200 && anonymous.status < 300) {
-            throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}); Access boundary is missing.`);
+          if (internalAuth) {
+            const status = await fetch(`${base}/api/account/status`, { redirect: 'manual' });
+            if (status.status !== 200) throw new Error(`Internal-auth Preview 2 account status failed (HTTP ${status.status}).`);
+            const privateApi = await fetch(`${base}/api/v1/areas`, { redirect: 'manual' });
+            if (privateApi.status !== 401) throw new Error(`Private API must reject anonymous users after Access removal (HTTP ${privateApi.status}).`);
+            console.log('Internal Growth Compass auth boundary is active: public sign-in route, private product API.');
+          } else {
+            const anonymous = await fetch(`${base}/api/health`, { redirect: 'manual' });
+            if (anonymous.status >= 200 && anonymous.status < 300) {
+              throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}) before internal auth activation; Access boundary is missing.`);
+            }
+            console.log(`Anonymous Preview 2 is blocked by Access as expected (HTTP ${anonymous.status}).`);
           }
-          console.log(`Anonymous Preview 2 is blocked as expected (HTTP ${anonymous.status}).`);
 
           const subdomain = await cf(`/workers/scripts/${worker}/subdomain`);
           if (!subdomain?.enabled) throw new Error('Preview 2 workers.dev route is not enabled.');
@@ -206,5 +217,5 @@ jobs:
             throw new Error('Preview 2 D1 direct health verification failed.');
           }
 
-          console.log(`Preview 2 deployment, private boundary and isolated D1 checks passed: ${base}`);
+          console.log(`Preview 2 deployment and isolated D1 checks passed: ${base}`);
           NODE
