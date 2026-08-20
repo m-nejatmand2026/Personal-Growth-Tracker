@@ -54,6 +54,7 @@ jobs:
           set -o pipefail
           mkdir -p .artifacts/test-logs
           bash scripts/run-browser-e2e.sh 2>&1 | tee .artifacts/test-logs/browser.log
+          bash scripts/run-auth-browser-e2e.sh 2>&1 | tee -a .artifacts/test-logs/browser.log
 
       - name: Upload Product Rebuild validation evidence
         if: always()
