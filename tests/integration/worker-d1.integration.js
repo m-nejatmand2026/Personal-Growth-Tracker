@@ -46,7 +46,7 @@ test('production Worker configuration boots locally with the complete D1 migrati
   const migrationCount = await env.DB.prepare(
     'SELECT COUNT(*) AS count FROM d1_migrations'
   ).first();
-  assert.equal(Number(migrationCount.count), 7);
+  assert.equal(Number(migrationCount.count), 8);
 
   for (const table of [
     'profiles',
@@ -56,7 +56,14 @@ test('production Worker configuration boots locally with the complete D1 migrati
     'progress_records',
     'daily_plan_items',
     'journal_entries',
-    'energy_logs_v1'
+    'energy_logs_v1',
+    'user',
+    'session',
+    'account',
+    'verification',
+    'auth_profile_memberships',
+    'auth_invites',
+    'auth_security_events'
   ]) {
     const row = await env.DB.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
@@ -104,7 +111,7 @@ test('Area CRUD executes through the real Worker router and isolated D1', async 
   assert.equal(all.body.items.some((item) => Number(item.id) === id && Number(item.active) === 0), true);
 });
 
-test('current owner-only runtime does not expose rows belonging to another profile', async () => {
+test('legacy mode does not expose rows belonging to another profile', async () => {
   const env = await worker().getEnv();
   await env.DB.prepare(
     "INSERT INTO profiles(id,display_name,timezone,locale) VALUES('integration-other','Other','UTC','en')"
@@ -142,6 +149,22 @@ test('current owner-only runtime does not expose rows belonging to another profi
     "SELECT profile_id FROM areas WHERE name='Owner Profile Integration Area'"
   ).first();
   assert.equal(persisted.profile_id, 'default');
+});
+
+test('client-supplied ownership headers cannot escape the central profile boundary in legacy mode', async () => {
+  const env = await worker().getEnv();
+  await env.DB.prepare(
+    "INSERT INTO profiles(id,display_name,timezone,locale) VALUES('spoof-target','Spoof target','UTC','en')"
+  ).run();
+  await env.DB.prepare(
+    "INSERT INTO areas(profile_id,name,sort_order) VALUES('spoof-target','Spoofed Private Area',1)"
+  ).run();
+
+  const result = await jsonRequest('/api/v1/areas?include_archived=1', {
+    headers: { 'x-growth-profile-id': 'spoof-target' }
+  });
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.items.some((item) => item.name === 'Spoofed Private Area'), false);
 });
 
 test('real Worker validation and security response behavior survive the D1 boundary', async () => {
