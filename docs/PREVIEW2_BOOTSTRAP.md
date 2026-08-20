@@ -1,10 +1,12 @@
 # Growth Compass — Preview 2 Bootstrap Runbook
 
-Status: isolated Preview 2 environment bootstrap and recovery procedure.
+Status: current isolated Preview 2 bootstrap, migration and deployment contract.
 
-Preview 2 is intentionally separated from Preview 1 and Production. The branch deployment may discover/create the isolated Preview 2 D1 database, but it must never apply schema migrations automatically.
+This runbook is the operational authority for Preview 2 infrastructure. Older Preview 2 handoff documents may describe the original bootstrap design; when they differ from this file or `docs/PREVIEW2_INTERNAL_AUTH_ROLLOUT.md`, these two current runbooks win.
 
-## Target identities
+Preview 2 is intentionally separated from Preview 1 and Production.
+
+## Canonical Preview 2 identities
 
 Branch:
 `feature/experience-v2`
@@ -12,20 +14,25 @@ Branch:
 Worker:
 `personal-growth-tracker-preview2`
 
-Workers.dev hostname:
-`personal-growth-tracker-preview2.m-nejatmand.workers.dev`
+Canonical Workers.dev origin:
+`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev`
 
-D1 database name:
+Experience 2 path:
+`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/experience/2/`
+
+D1 database:
 `personal-growth-tracker-preview2`
 
 Branch deployment workflow:
 `.github/workflows/deploy-preview2-branch.yml`
 
-Cloudflare credential probe:
-`.github/workflows/preview2-cloudflare-probe.yml`
+PR remote-smoke workflow:
+`.github/workflows/preview2-remote-smoke.yml`
 
-Explicit migration command:
+Guarded migration command:
 `scripts/migrate-preview2.sh`
+
+Cloudflare Git-generated commit/branch preview hostnames are deployment evidence only. They are not the canonical Preview 2 auth origin and must not be used for `BETTER_AUTH_URL`, OAuth callback URLs, tester invitations or the final Access policy.
 
 ## Safety invariants
 
@@ -34,74 +41,77 @@ Preview 2 must never use either existing database ID:
 - Production D1: `a182d8c8-c009-461e-ac7e-04694c1047ab`
 - Preview 1 D1: `1937971c-f2f2-4dad-bc65-3d22952584bb`
 
-Both the automatic branch deployment and the explicit migration command verify that the resolved Preview 2 database differs from those identities.
+The branch deployment and migration script resolve Preview 2 by the exact database name `personal-growth-tracker-preview2` and refuse either protected ID.
 
-The automatic deployment must fail closed while any migration is pending. Only the explicit migration command may apply Preview 2 migrations.
+Production and Preview 1 migration/deployment paths are outside this workflow.
 
-## Bootstrap sequence
+## Required Cloudflare CI credentials
 
-### 1. Verify Cloudflare credentials
-
-The repository secrets used for Preview 2 are:
+The current Preview 2 workflows require these GitHub repository secrets:
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
-- `CF_ACCESS_CLIENT_ID`
-- `CF_ACCESS_CLIENT_SECRET`
 
-The Preview 2 Cloudflare probe verifies account access and D1 permission without deploying Preview 1 or Production.
+The current branch deploy and PR remote-smoke workflows do not depend on `CF_ACCESS_CLIENT_ID` or `CF_ACCESS_CLIENT_SECRET`. Do not add Access service-token dependencies merely to satisfy stale bootstrap documentation.
 
-### 2. Resolve the isolated Preview 2 D1
+## Preview 2 D1 resolution
 
 The branch deployment resolves exactly one D1 database named:
 
 `personal-growth-tracker-preview2`
 
-If no such database exists, it creates one. If more than one matching database exists, bootstrap must fail rather than guess.
+If none exists, the branch workflow may create it. If more than one matching database exists, deployment fails rather than guessing.
 
-The resolved database ID is checked against the Production and Preview 1 IDs before any deploy-related action proceeds.
+The resolved ID is checked against the explicit Production and Preview 1 IDs before any migration or deployment action proceeds.
 
-### 3. Initialize or advance Preview 2 schema explicitly
+## Current migration model
 
-Automatic CI intentionally refuses to apply migrations. When the branch deployment reports pending Preview 2 migrations, run the guarded repository command from the repository root with Cloudflare credentials in the environment:
+The original Preview 2 bootstrap used a manual-only migration gate. That is no longer the current branch behavior.
+
+The current `.github/workflows/deploy-preview2-branch.yml` is allowed to advance **only the explicitly authorized Preview 2 migration set**. It currently requires exactly eight SQL migration files and pins the Git blob for every authorized migration, including `0008_auth_multi_user.sql`.
+
+The workflow then invokes:
 
 ```bash
 GC_PREVIEW2_MIGRATION_CONFIRM=personal-growth-tracker-preview2 \
   bash scripts/migrate-preview2.sh
 ```
 
-The script:
+The script is still fail-closed and Preview-2-only. It:
 
 1. requires the exact explicit confirmation value;
-2. requires secret-backed Cloudflare account credentials;
+2. requires Cloudflare account credentials;
 3. resolves exactly one D1 named `personal-growth-tracker-preview2`;
 4. refuses the Production D1 ID;
 5. refuses the Preview 1 D1 ID;
-6. regenerates a temporary Wrangler configuration pinned to Preview 2;
-7. lists pending migrations before applying anything;
-8. applies migrations only to remote `env.preview2`;
+6. generates a temporary Preview 2-only Wrangler configuration;
+7. lists pending migrations before changing anything;
+8. applies migrations only to remote `env.preview2` when migrations are actually pending;
 9. requires zero pending migrations afterward;
-10. runs `PRAGMA quick_check;` and requires an `ok` result;
-11. never deploys a Worker.
+10. runs `PRAGMA quick_check;` and requires `ok`;
+11. never deploys a Worker itself.
 
-The command is idempotent: if no migrations are pending, it skips the apply step and still performs the integrity check.
+The command is idempotent. If all eight migrations are already applied, it performs no schema change and still verifies integrity.
 
-### 4. Protect Preview 2 with Cloudflare Access
+### Adding a future migration
 
-Cloudflare Access must protect:
+A ninth migration must not silently start running just because a SQL file exists.
+
+A deliberate schema change requires updating the branch workflow's authorized migration count and exact blob pin in the same reviewed Preview 2 change. Until that happens, the workflow must fail closed.
+
+Never weaken the migration-count or blob checks to make CI green.
+
+## Cloudflare Access before internal-auth cutover
+
+Until real Growth Compass account acceptance succeeds, Cloudflare Access must protect the canonical Preview 2 origin:
 
 `personal-growth-tracker-preview2.m-nejatmand.workers.dev`
 
-Anonymous access must not receive a 2xx response for `/api/health`.
+Before internal auth becomes the public front door, anonymous access must not receive a 2xx response for `/api/health`.
 
-Authenticated CI smoke tests use:
+The current smoke workflows verify the boundary directly rather than authenticating through an Access service token.
 
-- `CF_ACCESS_CLIENT_ID`
-- `CF_ACCESS_CLIENT_SECRET`
-
-Do not reuse Preview 1 as the Preview 2 target.
-
-### 5. Deploy through the guarded branch workflow
+## Branch deployment behavior
 
 A push to exactly `feature/experience-v2` runs `.github/workflows/deploy-preview2-branch.yml`.
 
@@ -111,48 +121,62 @@ The workflow:
 2. checks out the exact pushed SHA without persisted Git credentials;
 3. runs unit, contract and modularity tests;
 4. runs real Worker + isolated D1 integration tests;
-5. runs Chromium/WebKit browser acceptance;
-6. resolves/creates exactly one isolated Preview 2 D1;
-7. regenerates a Preview 2-only Wrangler config;
-8. rejects Production and Preview 1 D1 identities;
-9. refuses deployment if any Preview 2 migration is pending;
-10. dry-runs only `personal-growth-tracker-preview2`;
-11. deploys only `personal-growth-tracker-preview2`;
-12. proves anonymous Access rejection;
-13. authenticates using the CI service token;
-14. smoke-tests the experience selector, Experience 1 compatibility route, Experience 2 route and D1 health.
+5. runs enforced-auth integration tests;
+6. runs Chromium/WebKit browser acceptance;
+7. resolves/creates exactly one isolated Preview 2 D1;
+8. regenerates a Preview 2-only Wrangler config;
+9. rejects Production and Preview 1 D1 identities;
+10. verifies the exact authorized migration count and blob pins;
+11. runs the guarded idempotent Preview 2 migration script;
+12. requires zero pending Preview 2 migrations;
+13. dry-runs and deploys only `personal-growth-tracker-preview2`;
+14. verifies the current auth boundary, Worker route and isolated D1 health.
 
-No automatic workflow applies D1 migrations.
+The PR workflow `.github/workflows/preview2-remote-smoke.yml` independently verifies the staged security boundary and isolated D1 for the PR head.
 
-## Expected recovery when deployment stops at the migration gate
+## Interpreting migration failures
 
-A failure at `Refuse pending Preview 2 migrations` is a deliberate safety stop, not a deployment defect.
+A migration-related branch failure is a safety stop, not a reason to bypass the gate.
 
-Recovery order:
+Use this order:
 
 ```text
-verify the resolved database is Preview 2
-→ run scripts/migrate-preview2.sh explicitly
-→ confirm PRAGMA quick_check = ok
-→ rerun the failed Preview 2 branch deployment
-→ require protected selector + both experiences + D1 health smoke tests to pass
+confirm the resolved database is personal-growth-tracker-preview2
+→ determine whether the migration set itself changed
+→ if no schema change was intended, restore the authorized eight-file set
+→ if a new migration is intentional, review it and explicitly update the authorized count/blob pin
+→ rerun the guarded migration path
+→ require zero pending migrations and PRAGMA quick_check = ok
+→ rerun deployment
 ```
 
-Do not remove or weaken the pending-migration gate to make deployment green.
+Do not run Preview 2 migration commands against Preview 1 or Production.
 
-## Day-to-day development after bootstrap
+## Internal-auth activation
 
-Normal Preview 2 development remains:
+Authentication rollout is governed by:
+
+`docs/PREVIEW2_INTERNAL_AUTH_ROLLOUT.md`
+
+Important boundary:
+
+- Cloudflare Access remains in front while real owner/tester acceptance is performed.
+- `GC_PREVIEW2_INTERNAL_AUTH_ENABLED=true` is set only after Access is intentionally removed from the canonical Preview 2 origin and Growth Compass internal auth is confirmed as the real public boundary.
+
+Do not use the obsolete `GC_PREVIEW2_ENABLED` bootstrap flag as an auth-activation signal.
+
+## Day-to-day Preview 2 development
+
+Normal Preview 2 development is:
 
 ```text
 feature/experience-v2 change
 → Quality + branch tests
+→ guarded authorized Preview 2 migration check/apply
 → guarded Preview 2 deploy
-→ protected smoke test
+→ protected/internal-auth-aware remote smoke
 → user review
 ```
-
-A new repository migration intentionally reintroduces the explicit migration step before the next Preview 2 deployment can succeed.
 
 ## Preview 1 and Production preservation
 
@@ -164,4 +188,4 @@ Preview 1 remains:
 
 Production remains separately protected.
 
-Never repoint Preview 1, Production, or their D1 bindings while bootstrapping Preview 2.
+Never repoint Preview 1, Production or their D1 bindings while bootstrapping or activating Preview 2.
