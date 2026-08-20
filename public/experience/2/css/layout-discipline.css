@@ -21,9 +21,10 @@
 .journal-hero{min-height:132px;padding:22px 24px}
 .journal-tools{padding:0!important}
 .journal-tools label{width:100%;margin:0}
-.journal-tools label>span{padding-left:0!important;margin:0 0 1px}
-.journal-tools label>div{width:100%;grid-template-columns:minmax(0,1fr) 90px;gap:10px}
+.journal-tools label>span{padding-left:0!important;margin:0 0 1px;text-transform:none;letter-spacing:.02em}
+.journal-tools label>div{width:100%;grid-template-columns:minmax(0,1fr) 104px;gap:10px}
 .journal-tools input,.journal-tools .secondary-button{margin:0}
+.journal-tools .secondary-button{width:104px;min-width:104px;white-space:nowrap;overflow:hidden;text-overflow:clip}
 .journal-list{padding:0!important}
 .journal-empty{margin:0;padding:26px 4px;border-top:1px solid var(--gc-border)}
 .journal-entry{margin:0}
@@ -43,6 +44,7 @@
   #overlayHost>.palette-menu{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px;border-radius:20px}
   .journal-hero{min-height:0;padding:18px 17px}
   .journal-tools label>div{grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .journal-tools .secondary-button{width:auto;min-width:88px;padding-inline:14px}
   .journal-empty{padding-inline:2px}
 }
 
