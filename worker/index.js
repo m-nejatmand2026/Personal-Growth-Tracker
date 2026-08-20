@@ -64,13 +64,6 @@ export default {
     } catch (error) {
       logApiFailure(request, url, error);
       if (error instanceof HttpError) return secureResponse(json({ error: error.message }, error.status));
-      if (String(env.GC_AUTH_TEST_MODE || '') === '1') {
-        return secureResponse(json({
-          error: 'Unexpected server error',
-          test_detail: error?.message || String(error),
-          test_error_name: error?.name || 'Error'
-        }, 500));
-      }
       return secureResponse(json({ error: 'Unexpected server error' }, 500));
     }
   }
