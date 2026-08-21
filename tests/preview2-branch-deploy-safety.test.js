@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const workflow = await readFile(new URL('../.github/workflows/deploy-preview2-branch.yml', import.meta.url), 'utf8');
+const quality = await readFile(new URL('../.github/workflows/quality.yml', import.meta.url), 'utf8');
 const bootstrap = await readFile(new URL('../docs/PREVIEW2_BOOTSTRAP.md', import.meta.url), 'utf8');
 const authRollout = await readFile(new URL('../docs/PREVIEW2_INTERNAL_AUTH_ROLLOUT.md', import.meta.url), 'utf8');
 const startHere = await readFile(new URL('../START_PREVIEW2_CHAT.md', import.meta.url), 'utf8');
 
 const CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803';
 const SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38';
+const AUTH_MIGRATION_BLOB = 'c902d52f0a5d33bda61df5cc59f50d11c0627792';
 const CANONICAL_PREVIEW2_ORIGIN = 'https://personal-growth-tracker-preview2.m-nejatmand.workers.dev';
 
 test('Preview 2 branch deploy remains isolated to the dedicated branch, Worker and D1', () => {
@@ -28,11 +30,24 @@ test('Preview 2 branch deploy pins third-party actions and does not persist Git 
 
 test('Preview 2 branch deploy authorizes only the exact guarded migration set', () => {
   assert.match(workflow, /authorized_count='8'/);
-  assert.match(workflow, /verify_blob '0008_auth_multi_user\.sql' 'ea383d7edffb6a5cc36b0c0115a5462795d4d911'/);
+  assert.match(workflow, new RegExp(`verify_blob '0008_auth_multi_user\\.sql' '${AUTH_MIGRATION_BLOB}'`));
   assert.match(workflow, /GC_PREVIEW2_MIGRATION_CONFIRM: personal-growth-tracker-preview2/);
   assert.match(workflow, /bash scripts\/migrate-preview2\.sh/);
   assert.match(workflow, /No migrations to apply/);
   assert.doesNotMatch(workflow, /d1 migrations apply/);
+});
+
+test('successful Quality owns an exact-head isolated Preview 2 deployment path', () => {
+  assert.match(quality, /deploy-preview2:/);
+  assert.match(quality, /needs: test/);
+  assert.match(quality, /github\.event_name == 'pull_request'/);
+  assert.match(quality, /github\.event\.pull_request\.head\.ref == 'feature\/experience-v2'/);
+  assert.match(quality, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(quality, /test "\$\(git rev-parse HEAD\)" = "\$TESTED_SHA"/);
+  assert.match(quality, new RegExp(`verify_blob '0008_auth_multi_user\\.sql' '${AUTH_MIGRATION_BLOB}'`));
+  assert.match(quality, /Preview 2 points at Production D1\. Refusing deployment\./);
+  assert.match(quality, /Preview 2 points at Preview 1 D1\. Refusing deployment\./);
+  assert.match(quality, /--env preview2 --config \.wrangler\.preview2\.json --name personal-growth-tracker-preview2 --message "git:\$TESTED_SHA"/);
 });
 
 test('Preview 2 remote resource gate validates actual D1 JSON', () => {
