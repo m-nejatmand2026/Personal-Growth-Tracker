@@ -1,6 +1,8 @@
 import { api } from '../core/api.js';
 import { goalsCapability } from '../capabilities/goals.js';
 
+let firstRunContinuation='';
+
 function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,(character)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));}
 function addDays(dateText,amount){const date=new Date(`${dateText}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+amount);return date.toISOString().slice(0,10);}
 function todayKey(){const now=new Date();const offset=now.getTimezoneOffset()*60000;return new Date(now.getTime()-offset).toISOString().slice(0,10);}
@@ -13,12 +15,12 @@ function hasOperationalSignal(model){return Boolean((model.today||[]).length||(m
 
 export function todayStage(model){
   if(model?.goalsKnown===true&&!hasOperationalSignal(model)&&Array.isArray(model.goals)&&model.goals.length===0)return 'welcome';
-  if(model?.goalsKnown===true&&!hasOperationalSignal(model)&&activeGoals(model).length)return 'plan';
+  if(firstRunContinuation==='plan'&&model?.goalsKnown===true&&activeGoals(model).length)return 'plan';
   return 'operational';
 }
 
 async function loadGoalSignal(){
-  try{const response=await api.get('/v1/goals');return {known:true,goals:Array.isArray(response?.items)?response.items:[]};}
+  try{const response=await api.get('/v1/goals?include_archived=1');return {known:true,goals:Array.isArray(response?.items)?response.items:[]};}
   catch{return {known:false,goals:[]};}
 }
 
@@ -125,7 +127,7 @@ function navigateTo(view){document.querySelector(`[data-view="${view}"]`)?.click
 
 function openFirstGoal(reload){
   const close=overlay(`<section class="today-sheet today-first-goal-sheet static-surface" role="dialog" aria-modal="true" aria-labelledby="todayFirstGoalTitle"><button type="button" class="today-sheet-close" data-today-close aria-label="Close">×</button><p class="eyebrow">Build your compass · step 1</p><h2 id="todayFirstGoalTitle">What matters enough to move toward?</h2><p>Start with one direction. You can refine its life area, targets, and details later.</p><form id="todayFirstGoalForm"><label>Direction or goal<input id="todayFirstGoalName" maxlength="120" required placeholder="e.g. Build stronger professional skills"></label><fieldset class="today-first-goal-measure"><legend>How will you recognize progress?</legend><label><input type="radio" name="todayFirstGoalMeasure" value="time" checked><span>Time spent</span></label><label><input type="radio" name="todayFirstGoalMeasure" value="count"><span>Quantity</span></label><label><input type="radio" name="todayFirstGoalMeasure" value="boolean"><span>Completed</span></label><label><input type="radio" name="todayFirstGoalMeasure" value="milestone"><span>Milestones</span></label></fieldset><label>Why does this matter? <small>optional</small><textarea id="todayFirstGoalWhy" maxlength="1000" placeholder="A short reason is enough"></textarea></label><p class="today-first-goal-note">No target is required. Growth Compass can become more detailed only when that detail becomes useful.</p><button class="primary-button" type="submit">Set my first direction</button></form></section>`,{initialFocus:'#todayFirstGoalName'});
-  document.querySelector('#todayFirstGoalForm')?.addEventListener('submit',async event=>{event.preventDefault();const name=document.querySelector('#todayFirstGoalName')?.value.trim()||'';if(!name)return toast('Add a direction or goal');const measurement_type=document.querySelector('input[name="todayFirstGoalMeasure"]:checked')?.value||'time';const numeric=measurement_type==='time'||measurement_type==='count';const payload={name,area_id:null,measurement_type,target_period:numeric?'weekly':'none',target_value:null,minimum_value:null,unit:null,priority:'medium',status:'active',why_text:document.querySelector('#todayFirstGoalWhy')?.value.trim()||null,description:null};try{await goalsCapability.create(payload);close();toast('Your first direction is set');await reload();}catch(error){toast(error.message||'Could not create your first direction');}});
+  document.querySelector('#todayFirstGoalForm')?.addEventListener('submit',async event=>{event.preventDefault();const name=document.querySelector('#todayFirstGoalName')?.value.trim()||'';if(!name)return toast('Add a direction or goal');const measurement_type=document.querySelector('input[name="todayFirstGoalMeasure"]:checked')?.value||'time';const numeric=measurement_type==='time'||measurement_type==='count';const payload={name,area_id:null,measurement_type,target_period:numeric?'weekly':'none',target_value:null,minimum_value:null,unit:null,priority:'medium',status:'active',why_text:document.querySelector('#todayFirstGoalWhy')?.value.trim()||null,description:null};try{await goalsCapability.create(payload);firstRunContinuation='plan';close();toast('Your first direction is set');await reload();}catch(error){toast(error.message||'Could not create your first direction');}});
 }
 
 async function completeItem(item,reload){
@@ -150,8 +152,8 @@ export function bindToday(model,{reload}={}){
   const refresh=reload||(()=>Promise.resolve());
   document.querySelector('[data-today-how]')?.addEventListener('click',event=>{const button=event.currentTarget;const panel=document.querySelector('#todayHowPanel');if(!panel)return;const open=panel.hidden;panel.hidden=!open;button.setAttribute('aria-expanded',String(open));if(open)panel.focus?.({preventScroll:true});});
   document.querySelector('[data-today-build-compass]')?.addEventListener('click',()=>openFirstGoal(refresh));
-  document.querySelectorAll('[data-today-go-plan]').forEach(button=>button.addEventListener('click',()=>navigateTo('plan')));
-  document.querySelectorAll('[data-today-go-goals]').forEach(button=>button.addEventListener('click',()=>navigateTo('goals')));
+  document.querySelectorAll('[data-today-go-plan]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('plan');}));
+  document.querySelectorAll('[data-today-go-goals]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('goals');}));
   document.querySelector('[data-today-jump-plan]')?.addEventListener('click',()=>document.querySelector('#todayPlanList')?.scrollIntoView({behavior:'smooth',block:'start'}));
   document.querySelectorAll('[data-today-start]').forEach(button=>button.addEventListener('click',async()=>{try{await api.put(`/v1/daily-plan/${button.dataset.todayStart}`,{status:'in_progress'});toast('Started');await refresh();}catch(error){toast(error.message||'Could not start item');}}));
   document.querySelectorAll('[data-today-done]').forEach(button=>button.addEventListener('click',()=>{const item=[...(model.today||[]),...(model.tomorrowItems||[])].find(candidate=>Number(candidate.id)===Number(button.dataset.todayDone));void completeItem(item,refresh);}));
