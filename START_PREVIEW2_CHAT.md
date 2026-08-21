@@ -42,13 +42,17 @@ Worker:
 
 `personal-growth-tracker-preview2`
 
-Canonical origin:
+Canonical origin and **normal user entry URL**:
 
-`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev`
+`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/`
 
-Experience 2:
+Opening the canonical root serves the Preview 2 Experience Selector. Owner/tester authentication acceptance must start from this root URL, pass Cloudflare Access when it is still enabled, then choose **Experience 2 — New**. Do not present `/experience/2/` as the normal base entry URL.
+
+Experience 2 direct deep link:
 
 `https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/experience/2/`
+
+The Experience 2 deep link is valid for direct testing, but it is not a replacement for the root entry URL when documenting the normal user flow.
 
 D1:
 
@@ -85,9 +89,9 @@ Opening `/` shows:
 Routes:
 
 ```text
-/                 → Experience Selector
+/                 → Experience Selector and normal user entry
 /experience/1/     → frozen current experience
-/experience/2/     → new Experience 2
+/experience/2/     → new Experience 2 direct route
 /api/*             → shared Preview 2 backend
 ```
 
@@ -159,7 +163,7 @@ Current intended sequence:
 configure Preview 2 auth Worker secrets while GC_AUTH_MODE is legacy
 → verify all 8 Preview 2 migrations are applied and none are pending
 → set GC_AUTH_MODE=enforced while Cloudflare Access remains ON
-→ real owner acceptance
+→ open the canonical root URL, choose Experience 2 and perform real owner acceptance
 → disposable tester acceptance and isolation/reset/handoff tests
 → only then remove Cloudflare Access
 → set GC_PREVIEW2_INTERNAL_AUTH_ENABLED=true
