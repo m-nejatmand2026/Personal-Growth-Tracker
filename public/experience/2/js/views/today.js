@@ -2,7 +2,23 @@ import { api } from '../core/api.js';
 import { goalsCapability } from '../capabilities/goals.js';
 
 let firstRunContinuation='';
+let firstRunAreaName='';
 
+const FIRST_RUN_STYLESHEET='/experience/2/css/today-first-run.css';
+const FIRST_RUN_AREAS=Object.freeze([
+  Object.freeze({key:'career',name:'Career',copy:'Work, skills and professional growth',sample:'Become confident leading cloud architecture projects'}),
+  Object.freeze({key:'health',name:'Health',copy:'Energy, fitness and wellbeing',sample:'Build the strength and energy to feel good every day'}),
+  Object.freeze({key:'learning',name:'Learning',copy:'Knowledge and new capabilities',sample:'Become fluent enough to use German confidently at work'}),
+  Object.freeze({key:'finance',name:'Finance',copy:'Security, freedom and money',sample:'Build a stronger financial safety net'}),
+  Object.freeze({key:'relationships',name:'Relationships',copy:'Family, friendship and connection',sample:'Invest consistently in the relationships that matter most'}),
+  Object.freeze({key:'personal',name:'Personal Growth',copy:'Character, habits and mindset',sample:'Become more consistent with the habits I care about'}),
+  Object.freeze({key:'custom',name:'Something else',copy:'Create a life area that fits you',sample:'Describe the change you want to move toward'})
+]);
+
+function ensureFirstRunStyles(){
+  if(typeof document==='undefined'||document.querySelector(`link[href="${FIRST_RUN_STYLESHEET}"]`))return;
+  const link=document.createElement('link');link.rel='stylesheet';link.href=FIRST_RUN_STYLESHEET;link.dataset.experience2FirstRun='true';document.head.append(link);
+}
 function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,(character)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));}
 function addDays(dateText,amount){const date=new Date(`${dateText}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+amount);return date.toISOString().slice(0,10);}
 function todayKey(){const now=new Date();const offset=now.getTimezoneOffset()*60000;return new Date(now.getTime()-offset).toISOString().slice(0,10);}
@@ -63,7 +79,12 @@ function progressHtml(progress=[]){
 }
 
 function onboardingSteps(current='direction'){
-  const steps=[['direction','1','Direction','Decide what matters.'],['plan','2','Plan','Choose what deserves attention now.'],['progress','3','Progress','Record what actually happened.']];
+  const steps=[
+    ['direction','1','Direction','Choose what matters.'],
+    ['plan','2','Plan','Choose the next useful step.'],
+    ['action','3','Action','Do what matters now.'],
+    ['progress','4','Progress','Record what actually happened.']
+  ];
   const currentIndex=Math.max(0,steps.findIndex(([key])=>key===current));
   return `<div class="today-onboarding-steps" aria-label="Growth Compass flow">${steps.map(([key,number,title,copy],index)=>`<article class="today-onboarding-step${index<currentIndex?' is-done':''}${index===currentIndex?' is-current':''}"><span>${index<currentIndex?'✓':number}</span><div><strong>${title}</strong><p>${copy}</p></div></article>`).join('')}</div>`;
 }
@@ -71,23 +92,25 @@ function onboardingSteps(current='direction'){
 function welcomeHtml(){
   return `<div class="today-view today-first-run">
     <section class="living-surface today-onboarding" aria-labelledby="todayWelcomeTitle">
-      <div class="today-onboarding-kicker"><span>Start here</span><b>1 of 3 · About 2 minutes</b></div>
-      <div class="today-onboarding-copy"><p class="eyebrow">Your compass starts with direction</p><h2 id="todayWelcomeTitle">Welcome to Growth Compass</h2><p>Turn what matters to you into direction, plans, and measurable progress — without turning your life into a list of overdue tasks.</p></div>
-      <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-build-compass>Build my compass</button><button type="button" class="ghost-button today-how-toggle" data-today-how aria-expanded="false" aria-controls="todayHowPanel">How Growth Compass works</button></div>
+      <div class="today-onboarding-kicker"><span>Empty compass</span><b>Start with one direction · about 90 seconds</b></div>
+      <div class="today-onboarding-copy"><p class="eyebrow">Welcome to Growth Compass</p><h2 id="todayWelcomeTitle">Build a compass for the life you want to grow.</h2><p>Connect where you want to go with what you do next, then record what actually happened so you can adjust without turning plans into debt.</p></div>
+      <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-build-compass>Create my compass</button><button type="button" class="ghost-button today-how-toggle" data-today-how aria-expanded="false" aria-controls="todayHowPanel">How Growth Compass works</button></div>
+      <p class="today-onboarding-micro">Start with one area. You can change everything later.</p>
       ${onboardingSteps('direction')}
-      <div class="today-how-panel" id="todayHowPanel" hidden><p><strong>Direction is intention.</strong> Start with one goal that matters. Planning decides what deserves time. Progress records only what actually happened.</p><p>You can change your direction later. Targets, life areas, schedules, and detailed setup are optional until they become useful.</p></div>
+      <div class="today-how-panel" id="todayHowPanel" hidden><p><strong>Direction gives the system a reason.</strong> Plan turns direction into a useful next step. Action is what you choose to do now. Progress records the facts so you can learn and adjust.</p><p>You do not need to plan your whole life today. Targets, schedules, habits, and deeper setup can wait until they become useful.</p></div>
     </section>
-    <p class="today-first-run-note">Start small. One meaningful direction is enough.</p>
   </div>`;
 }
 
 function planPromptHtml(model){
   const goal=activeGoals(model)[0];
+  const areaName=goal?.area_name||firstRunAreaName||'Your first direction';
   return `<div class="today-view today-first-run">
     <section class="living-surface today-onboarding today-onboarding-next" aria-labelledby="todayPlanStartTitle">
-      <div class="today-onboarding-kicker"><span>Direction set</span><b>2 of 3</b></div>
-      <div class="today-onboarding-copy"><p class="eyebrow">Next step</p><h2 id="todayPlanStartTitle">Turn direction into a workable plan</h2><p>${goal?`“${escapeHtml(goal.name)}” is now part of your compass. `:''}Choose what deserves your attention before Today becomes an execution dashboard.</p></div>
-      <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-go-plan>Plan what matters</button><button type="button" class="ghost-button" data-today-go-goals>Review goals</button></div>
+      <div class="today-onboarding-kicker"><span>Compass started</span><b>2 of 4</b></div>
+      <div class="today-onboarding-copy"><p class="eyebrow">Your first direction</p><h2 id="todayPlanStartTitle">Your compass has started.</h2><p>You do not need a full roadmap. Choose one useful next step that would move this direction forward.</p></div>
+      ${goal?`<div class="today-created-direction"><span>${escapeHtml(areaName)}</span><strong>${escapeHtml(goal.name)}</strong>${goal.why_text?`<p>${escapeHtml(goal.why_text)}</p>`:''}</div>`:''}
+      <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-go-plan>Plan my first step</button><button type="button" class="ghost-button" data-today-go-goals>Review my direction</button></div>
       ${onboardingSteps('plan')}
     </section>
   </div>`;
@@ -99,8 +122,8 @@ function openDayHtml(){
 
 export function renderToday(model){
   const stage=todayStage(model);
-  if(stage==='welcome')return welcomeHtml();
-  if(stage==='plan')return planPromptHtml(model);
+  if(stage==='welcome'){ensureFirstRunStyles();return welcomeHtml();}
+  if(stage==='plan'){ensureFirstRunStyles();return planPromptHtml(model);}
   const activeItems=(model.today||[]).filter(item=>item.status==='in_progress');
   const planned=(model.today||[]).filter(item=>item.status==='planned');
   const plannedMinutes=(model.today||[]).reduce((sum,item)=>sum+Math.max(0,Number(item.planned_minutes)||0),0);
@@ -125,9 +148,20 @@ function overlay(content,{initialFocus}={}){const host=document.querySelector('#
 function toast(message){const host=document.querySelector('#toastHost');if(!host)return;host.innerHTML=`<div class="today-toast static-surface">${escapeHtml(message)}</div>`;setTimeout(()=>{if(host.textContent===message)host.innerHTML='';},2600);}
 function navigateTo(view){document.querySelector(`[data-view="${view}"]`)?.click();}
 
-function openFirstGoal(reload){
-  const close=overlay(`<section class="today-sheet today-first-goal-sheet static-surface" role="dialog" aria-modal="true" aria-labelledby="todayFirstGoalTitle"><button type="button" class="today-sheet-close" data-today-close aria-label="Close">×</button><p class="eyebrow">Build your compass · step 1</p><h2 id="todayFirstGoalTitle">What matters enough to move toward?</h2><p>Start with one direction. You can refine its life area, targets, and details later.</p><form id="todayFirstGoalForm"><label>Direction or goal<input id="todayFirstGoalName" maxlength="120" required placeholder="e.g. Build stronger professional skills"></label><fieldset class="today-first-goal-measure"><legend>How will you recognize progress?</legend><label><input type="radio" name="todayFirstGoalMeasure" value="time" checked><span>Time spent</span></label><label><input type="radio" name="todayFirstGoalMeasure" value="count"><span>Quantity</span></label><label><input type="radio" name="todayFirstGoalMeasure" value="boolean"><span>Completed</span></label><label><input type="radio" name="todayFirstGoalMeasure" value="milestone"><span>Milestones</span></label></fieldset><label>Why does this matter? <small>optional</small><textarea id="todayFirstGoalWhy" maxlength="1000" placeholder="A short reason is enough"></textarea></label><p class="today-first-goal-note">No target is required. Growth Compass can become more detailed only when that detail becomes useful.</p><button class="primary-button" type="submit">Set my first direction</button></form></section>`,{initialFocus:'#todayFirstGoalName'});
-  document.querySelector('#todayFirstGoalForm')?.addEventListener('submit',async event=>{event.preventDefault();const name=document.querySelector('#todayFirstGoalName')?.value.trim()||'';if(!name)return toast('Add a direction or goal');const measurement_type=document.querySelector('input[name="todayFirstGoalMeasure"]:checked')?.value||'time';const numeric=measurement_type==='time'||measurement_type==='count';const payload={name,area_id:null,measurement_type,target_period:numeric?'weekly':'none',target_value:null,minimum_value:null,unit:null,priority:'medium',status:'active',why_text:document.querySelector('#todayFirstGoalWhy')?.value.trim()||null,description:null};try{await goalsCapability.create(payload);firstRunContinuation='plan';close();toast('Your first direction is set');await reload();}catch(error){toast(error.message||'Could not create your first direction');}});
+function firstAreaOptionsHtml(){
+  return FIRST_RUN_AREAS.map((area,index)=>`<label class="today-first-area-option"><input type="radio" name="todayFirstArea" value="${area.key}" ${index===0?'checked':''}><span class="today-first-area-card"><strong>${escapeHtml(area.name)}</strong><span>${escapeHtml(area.copy)}</span></span></label>`).join('');
+}
+
+async function openFirstGoal(reload){
+  ensureFirstRunStyles();
+  let areas=[];
+  try{const response=await api.get('/v1/areas');areas=Array.isArray(response?.items)?response.items:[];}catch{}
+  const close=overlay(`<section class="today-sheet today-first-goal-sheet static-surface" role="dialog" aria-modal="true" aria-labelledby="todayFirstGoalTitle"><button type="button" class="today-sheet-close" data-today-close aria-label="Close">×</button><p class="eyebrow">Create your compass · direction</p><h2 id="todayFirstGoalTitle">Where do you want to grow first?</h2><p>Choose one area and one meaningful direction. This is a starting point, not a permanent category or commitment.</p><form id="todayFirstGoalForm"><fieldset class="today-first-area"><legend>Choose one area</legend><div class="today-first-area-grid">${firstAreaOptionsHtml()}</div></fieldset><div class="today-first-area-custom" id="todayFirstAreaCustomWrap" hidden><label><span>Name this life area</span><input id="todayFirstAreaCustom" maxlength="80" placeholder="e.g. Creativity"></label></div><label class="today-first-goal-prompt"><span>What would meaningful progress look like?</span><input id="todayFirstGoalName" maxlength="120" required placeholder="${escapeHtml(FIRST_RUN_AREAS[0].sample)}"></label><label class="today-first-goal-why"><span>Why does this matter? <small>optional</small></span><textarea id="todayFirstGoalWhy" maxlength="1000" placeholder="A short reason can help keep this direction grounded"></textarea></label><p class="today-first-goal-note">Keep it simple. Targets and measurement details can be added later if they become useful.</p><button class="primary-button" type="submit">Set my direction</button></form></section>`,{initialFocus:'input[name="todayFirstArea"]'});
+  const areaInputs=[...document.querySelectorAll('input[name="todayFirstArea"]')];
+  const syncArea=({focusCustom=false}={})=>{const selected=document.querySelector('input[name="todayFirstArea"]:checked')?.value||'career';document.querySelectorAll('.today-first-area-option').forEach(label=>label.classList.toggle('is-selected',label.querySelector('input')?.checked));const customWrap=document.querySelector('#todayFirstAreaCustomWrap');if(customWrap)customWrap.hidden=selected!=='custom';const area=FIRST_RUN_AREAS.find(candidate=>candidate.key===selected)||FIRST_RUN_AREAS[0];const goalInput=document.querySelector('#todayFirstGoalName');if(goalInput&&!goalInput.value)goalInput.placeholder=area.sample;if(selected==='custom'&&focusCustom)requestAnimationFrame(()=>document.querySelector('#todayFirstAreaCustom')?.focus());};
+  areaInputs.forEach(input=>input.addEventListener('change',()=>syncArea({focusCustom:true})));
+  syncArea();
+  document.querySelector('#todayFirstGoalForm')?.addEventListener('submit',async event=>{event.preventDefault();const selectedKey=document.querySelector('input[name="todayFirstArea"]:checked')?.value||'';const selectedArea=FIRST_RUN_AREAS.find(area=>area.key===selectedKey);if(!selectedArea)return toast('Choose an area to begin');const customName=document.querySelector('#todayFirstAreaCustom')?.value.trim()||'';const areaName=selectedKey==='custom'?customName:selectedArea.name;if(!areaName)return toast('Name the life area you want to grow');const name=document.querySelector('#todayFirstGoalName')?.value.trim()||'';if(!name)return toast('Describe the direction you want to move toward');try{let area=areas.find(candidate=>candidate.status!=='archived'&&String(candidate.name||'').trim().toLowerCase()===areaName.toLowerCase());if(!area){area=await goalsCapability.createArea({name:areaName,template_key:null,sort_order:100});areas.push(area);}const payload={name,area_id:area?.id??null,measurement_type:'milestone',target_period:'none',target_value:null,minimum_value:null,unit:null,priority:'medium',status:'active',why_text:document.querySelector('#todayFirstGoalWhy')?.value.trim()||null,description:null};await goalsCapability.create(payload);firstRunContinuation='plan';firstRunAreaName=areaName;close();toast('Your compass has started');await reload();}catch(error){toast(error.message||'Could not create your first direction');}});
 }
 
 async function completeItem(item,reload){
@@ -151,7 +185,7 @@ function changeItem(item,reload){
 export function bindToday(model,{reload}={}){
   const refresh=reload||(()=>Promise.resolve());
   document.querySelector('[data-today-how]')?.addEventListener('click',event=>{const button=event.currentTarget;const panel=document.querySelector('#todayHowPanel');if(!panel)return;const open=panel.hidden;panel.hidden=!open;button.setAttribute('aria-expanded',String(open));if(open)panel.focus?.({preventScroll:true});});
-  document.querySelector('[data-today-build-compass]')?.addEventListener('click',()=>openFirstGoal(refresh));
+  document.querySelector('[data-today-build-compass]')?.addEventListener('click',()=>{void openFirstGoal(refresh);});
   document.querySelectorAll('[data-today-go-plan]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('plan');}));
   document.querySelectorAll('[data-today-go-goals]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('goals');}));
   document.querySelector('[data-today-jump-plan]')?.addEventListener('click',()=>document.querySelector('#todayPlanList')?.scrollIntoView({behavior:'smooth',block:'start'}));
