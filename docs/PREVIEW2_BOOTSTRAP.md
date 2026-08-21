@@ -14,11 +14,15 @@ Branch:
 Worker:
 `personal-growth-tracker-preview2`
 
-Canonical Workers.dev origin:
-`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev`
+Canonical Workers.dev origin and normal user entry URL:
+`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/`
 
-Experience 2 path:
+The canonical root serves the Preview 2 Experience Selector. Normal owner/tester entry and authentication acceptance begin at `/`; the user then selects Experience 2. Do not document the Experience 2 deep link as the base entry URL.
+
+Experience 2 direct path:
 `https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/experience/2/`
+
+The direct path is valid for focused Experience 2 testing, but the canonical root remains the normal user entry and OAuth authority.
 
 D1 database:
 `personal-growth-tracker-preview2`
@@ -161,6 +165,7 @@ Authentication rollout is governed by:
 Important boundary:
 
 - Cloudflare Access remains in front while real owner/tester acceptance is performed.
+- Real owner/tester acceptance starts at the canonical root `/`, then selects Experience 2; `/experience/2/` is only a direct route.
 - `GC_PREVIEW2_INTERNAL_AUTH_ENABLED=true` is set only after Access is intentionally removed from the canonical Preview 2 origin and Growth Compass internal auth is confirmed as the real public boundary.
 
 Do not use the obsolete `GC_PREVIEW2_ENABLED` bootstrap flag as an auth-activation signal.
