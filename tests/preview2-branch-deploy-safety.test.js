@@ -43,6 +43,8 @@ test('successful Quality owns an exact-head isolated Preview 2 deployment path',
   assert.match(quality, /github\.event_name == 'pull_request'/);
   assert.match(quality, /github\.event\.pull_request\.head\.ref == 'feature\/experience-v2'/);
   assert.match(quality, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/);
+  assert.match(quality, /Install pinned Preview 2 deployment runtime/);
+  assert.match(quality, /npm add --no-save --no-package-lock --no-audit --no-fund wrangler@4\.123\.0 better-auth@1\.6\.29/);
   assert.match(quality, /test "\$\(git rev-parse HEAD\)" = "\$TESTED_SHA"/);
   assert.match(quality, new RegExp(`verify_blob '0008_auth_multi_user\\.sql' '${AUTH_MIGRATION_BLOB}'`));
   assert.match(quality, /Preview 2 points at Production D1\. Refusing deployment\./);
