@@ -12,11 +12,24 @@ async function assertNoOverflow(page,label){const size=await page.evaluate(()=>(
 
 async function mockNewAccount(page){
   const goals=[];
+  const areas=[];
+  await page.route('**/api/v1/areas*',async route=>{
+    const request=route.request();
+    if(request.method()==='POST'){
+      const body=request.postDataJSON();
+      const area={id:500+areas.length+1,name:body.name,status:'active',template_key:body.template_key??null,sort_order:body.sort_order??100};
+      areas.push(area);
+      await route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({item:area})});
+      return;
+    }
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:areas})});
+  });
   await page.route('**/api/v1/goals*',async route=>{
     const request=route.request();
     if(request.method()==='POST'){
       const body=request.postDataJSON();
-      const goal={id:901,name:body.name,status:'active',measurement_type:body.measurement_type,target_period:body.target_period,target_value:body.target_value??null,minimum_value:body.minimum_value??null,unit:body.unit??null,why_text:body.why_text??null};
+      const area=areas.find(candidate=>Number(candidate.id)===Number(body.area_id));
+      const goal={id:901,name:body.name,status:'active',area_id:body.area_id??null,area_name:area?.name??null,measurement_type:body.measurement_type,target_period:body.target_period,target_value:body.target_value??null,minimum_value:body.minimum_value??null,unit:body.unit??null,why_text:body.why_text??null};
       goals.splice(0,goals.length,goal);
       await route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({item:goal})});
       return;
@@ -25,19 +38,21 @@ async function mockNewAccount(page){
   });
   await page.route('**/api/v1/daily-plan*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[]})}));
   await page.route('**/api/v1/today*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({progress:[],direction:goals.length?[{name:goals[0].name,target_minutes:0,actual_minutes:0}]:[]})}));
+  return {goals,areas};
 }
 
 async function exercise(page,browserName,viewport){
   if(viewport==='375px')await page.addInitScript(()=>{localStorage.setItem('growth-compass:preview2:e2:palette','ivory');localStorage.setItem('growth-compass:preview2:e2:theme','light');localStorage.setItem('growth-compass:preview2:e2:palette-appearance-v2','1');});
-  await mockNewAccount(page);
+  const state=await mockNewAccount(page);
   const response=await page.goto(BASE_URL,{waitUntil:'domcontentloaded',timeout:15_000});
   assert.ok(response?.ok(),`${browserName} ${viewport}: Experience 2 must load`);
   assert.equal(await page.locator('html').getAttribute('data-theme'),viewport==='375px'?'light':'dark',`${browserName} ${viewport}: onboarding should respect the selected appearance`);
   const welcome=page.locator('.today-first-run');
   await welcome.waitFor({state:'visible',timeout:15_000});
-  await page.getByRole('heading',{name:'Welcome to Growth Compass'}).waitFor({state:'visible'});
-  assert.equal(await page.getByRole('button',{name:'Build my compass'}).count(),1);
-  assert.match(await welcome.innerText(),/Direction[\s\S]*Plan[\s\S]*Progress/);
+  await page.getByRole('heading',{name:'Build a compass for the life you want to grow.'}).waitFor({state:'visible'});
+  assert.equal(await page.getByRole('button',{name:'Create my compass'}).count(),1);
+  assert.match(await welcome.innerText(),/Direction[\s\S]*Plan[\s\S]*Action[\s\S]*Progress/);
+  assert.match(await welcome.innerText(),/Start with one area/);
   assert.doesNotMatch(await welcome.innerText(),/Nothing running|No other plans yet|No duration|Nothing recorded yet/);
   await assertNoOverflow(page,`${browserName} ${viewport}`);
   await capture(page,browserName,viewport,'welcome');
@@ -47,23 +62,32 @@ async function exercise(page,browserName,viewport){
   assert.equal(await page.locator('#todayHowPanel').isVisible(),true);
   await how.click();
 
-  await page.getByRole('button',{name:'Build my compass'}).click();
-  const dialog=page.getByRole('dialog',{name:'What matters enough to move toward?'});
+  await page.getByRole('button',{name:'Create my compass'}).click();
+  const dialog=page.getByRole('dialog',{name:'Where do you want to grow first?'});
   await dialog.waitFor({state:'visible'});
-  assert.equal(await page.locator('#todayFirstGoalName').isFocused(),true,`${browserName} ${viewport}: first goal name should receive focus`);
+  assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('name')),'todayFirstArea',`${browserName} ${viewport}: life-area choice should receive initial focus`);
+  assert.equal(await dialog.getByText('Time spent').count(),0,`${browserName} ${viewport}: first-run setup should defer measurement administration`);
+  await dialog.locator('input[name="todayFirstArea"][value="career"]').check();
   await page.locator('#todayFirstGoalName').fill('Build a meaningful first direction');
   await page.locator('#todayFirstGoalWhy').fill('It gives the rest of the system a reason to exist.');
   await assertNoOverflow(page,`${browserName} ${viewport} goal dialog`);
   await capture(page,browserName,viewport,'goal-dialog');
-  await dialog.getByRole('button',{name:'Set my first direction'}).click();
+  await dialog.getByRole('button',{name:'Set my direction'}).click();
 
-  await page.getByRole('heading',{name:'Turn direction into a workable plan'}).waitFor({state:'visible',timeout:15_000});
-  assert.match(await page.locator('.today-first-run').innerText(),/Build a meaningful first direction/);
-  assert.match(await page.locator('.today-first-run').innerText(),/2 of 3/);
+  await page.getByRole('heading',{name:'Your compass has started.'}).waitFor({state:'visible',timeout:15_000});
+  const continuation=page.locator('.today-first-run');
+  assert.match(await continuation.innerText(),/Career/);
+  assert.match(await continuation.innerText(),/Build a meaningful first direction/);
+  assert.match(await continuation.innerText(),/2 of 4/);
+  assert.equal(state.areas.length,1,`${browserName} ${viewport}: starter life area should be created once`);
+  assert.equal(state.areas[0].name,'Career');
+  assert.equal(state.goals[0].area_id,state.areas[0].id);
+  assert.equal(state.goals[0].measurement_type,'milestone',`${browserName} ${viewport}: first-run should use a neutral milestone measurement until the user refines it`);
+  assert.equal(state.goals[0].target_period,'none');
   await assertNoOverflow(page,`${browserName} ${viewport} continuation`);
   await capture(page,browserName,viewport,'plan-continuation');
 
-  await page.getByRole('button',{name:'Plan what matters'}).click();
+  await page.getByRole('button',{name:'Plan my first step'}).click();
   await page.locator('.plan-view').waitFor({state:'visible',timeout:15_000});
 }
 
