@@ -48,7 +48,7 @@ test('Experience 2 Today supports direct Start Done and Plans changed recovery w
 });
 
 test('Experience 2 Today never hides legal additional in-progress intentions',()=>{
-  assert.match(today,/const activeItems=model\.today\.filter\(item=>item\.status==='in_progress'\)/);
+  assert.match(today,/const activeItems=\(model\.today\|\|\[\]\)\.filter\(item=>item\.status==='in_progress'\)/);
   assert.match(today,/const \[active,\.\.\.additional\]=activeItems/);
   assert.match(today,/Also in progress/);
   assert.match(today,/additional\.map\(item=>itemHtml\(item\)\)/);
