@@ -6,13 +6,17 @@ When older Preview 2 handoff documents disagree with this file or `docs/PREVIEW2
 
 ## Canonical Preview 2 auth origin
 
-The authoritative Preview 2 Worker/origin is:
+The authoritative Preview 2 Worker/origin and **normal user entry URL** is:
 
-`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev`
+`https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/`
 
-Experience 2 is:
+Opening the root serves the Preview 2 Experience Selector. Real owner/tester authentication acceptance must start at this root URL, pass Cloudflare Access while it is still enabled, then choose **Experience 2 — New**.
+
+Experience 2 also has this direct deep link:
 
 `https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/experience/2/`
+
+The Experience 2 deep link is valid for focused direct testing, but it is not the normal base entry URL and must not be substituted for the root when documenting the standard user login flow.
 
 Cloudflare Git-generated commit and branch preview hostnames are useful deployment evidence, but they are **not** the canonical authentication origin. Do not use them for `BETTER_AUTH_URL`, Google/Apple callbacks, tester invitations or the final Cloudflare Access policy.
 
@@ -100,8 +104,8 @@ Do **not** blindly reapply migration `0008`. If the schema is already current, t
 6. Configure Google/Apple callback URLs against the canonical Preview 2 origin.
 7. If email/password is desired, configure Resend and the verified sender.
 8. Set Preview 2 Worker secret `GC_AUTH_MODE=enforced` while Cloudflare Access is **still present**.
-9. Sign in with the owner email and confirm `/api/account/me` resolves role `owner` and profile `default`. Verify current owner Goals, Activities, Journal, Progress and Schedule remain present.
-10. Create one disposable invitation in Account settings. Register that tester and verify the workspace starts empty.
+9. Open `https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/`, pass Cloudflare Access if prompted, choose **Experience 2 — New**, sign in with the owner email, and confirm `/api/account/me` resolves role `owner` and profile `default`. Verify current owner Goals, Activities, Journal, Progress and Schedule remain present.
+10. Create one disposable invitation in Account settings. Register that tester through the same root-entry → Experience 2 flow and verify the workspace starts empty.
 11. Create several tester records and verify the owner cannot see them; verify the tester cannot read/update/delete owner records or access owner-only legacy boundaries.
 12. Reset the tester workspace and verify only tester records are removed.
 13. Verify owner → sign out → tester and tester → sign out → owner handoffs leave no stale UI or private data behind.
@@ -114,8 +118,11 @@ Do **not** blindly reapply migration `0008`. If the schema is already current, t
 
 After `GC_AUTH_MODE=enforced`, while Cloudflare Access is still protecting entry, verify:
 
-- Cloudflare Access still appears first;
-- Growth Compass login appears after Access;
+- start at the canonical root `https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/`;
+- Cloudflare Access still appears first when required;
+- the root Experience Selector appears after Access;
+- choose **Experience 2 — New**;
+- Growth Compass login appears in Experience 2;
 - owner signs in with the exact `GC_OWNER_EMAIL` identity;
 - `/api/account/me` shows role `owner` and profile `default`;
 - existing Goals are present;
@@ -125,7 +132,7 @@ After `GC_AUTH_MODE=enforced`, while Cloudflare Access is still protecting entry
 - existing Schedule/private data is intact;
 - account panel shows the correct identity/role;
 - sign-out succeeds and invalidates the old session;
-- signing back in restores the same owner workspace.
+- signing back in through the same root-entry flow restores the same owner workspace.
 
 ## Disposable tester acceptance checklist
 
@@ -152,7 +159,7 @@ Do **not** drop migration `0008` tables and do not move or rewrite owner data. T
 ## Tester lifecycle
 
 - Owner enters a tester email in **Account → Invite testers**.
-- The tester opens the same canonical Experience 2 URL.
+- The tester opens `https://personal-growth-tracker-preview2.m-nejatmand.workers.dev/`, passes Access if still enabled, and chooses **Experience 2 — New**.
 - The tester signs in with Google, Apple, or verified email/password using the invited email.
 - First successful account creation creates a new private profile with no owner data.
 - **Reset my workspace** deletes only that tester’s V1 product records; it cannot reset the owner workspace.
@@ -166,5 +173,5 @@ Do **not** drop migration `0008` tables and do not move or rewrite owner data. T
 - User A/User B isolation tests green for Areas, Goals, Activities, Daily Plan, Schedule/Capacity, Progress, Journal, Wellbeing, export and legacy-route boundaries.
 - Chromium and WebKit browser acceptance green.
 - Exact Preview 2 migration and deployment SHA recorded.
-- One disposable real sign-in tested on the canonical hostname before inviting additional people.
+- One disposable real sign-in tested through the canonical root-entry flow before inviting additional people.
 - Cloudflare Access removed only after real owner/tester acceptance succeeds.
