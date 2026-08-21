@@ -28,9 +28,11 @@ async function mockNewAccount(page){
 }
 
 async function exercise(page,browserName,viewport){
+  if(viewport==='375px')await page.addInitScript(()=>{localStorage.setItem('growth-compass:preview2:e2:palette','ivory');localStorage.setItem('growth-compass:preview2:e2:theme','light');localStorage.setItem('growth-compass:preview2:e2:palette-appearance-v2','1');});
   await mockNewAccount(page);
   const response=await page.goto(BASE_URL,{waitUntil:'domcontentloaded',timeout:15_000});
   assert.ok(response?.ok(),`${browserName} ${viewport}: Experience 2 must load`);
+  assert.equal(await page.locator('html').getAttribute('data-theme'),viewport==='375px'?'light':'dark',`${browserName} ${viewport}: onboarding should respect the selected appearance`);
   const welcome=page.locator('.today-first-run');
   await welcome.waitFor({state:'visible',timeout:15_000});
   await page.getByRole('heading',{name:'Welcome to Growth Compass'}).waitFor({state:'visible'});
@@ -51,6 +53,7 @@ async function exercise(page,browserName,viewport){
   assert.equal(await page.locator('#todayFirstGoalName').isFocused(),true,`${browserName} ${viewport}: first goal name should receive focus`);
   await page.locator('#todayFirstGoalName').fill('Build a meaningful first direction');
   await page.locator('#todayFirstGoalWhy').fill('It gives the rest of the system a reason to exist.');
+  await assertNoOverflow(page,`${browserName} ${viewport} goal dialog`);
   await capture(page,browserName,viewport,'goal-dialog');
   await dialog.getByRole('button',{name:'Set my first direction'}).click();
 
