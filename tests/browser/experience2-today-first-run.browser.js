@@ -49,17 +49,37 @@ async function exercise(page,browserName,viewport){
   assert.equal(await page.locator('html').getAttribute('data-theme'),viewport==='375px'?'light':'dark',`${browserName} ${viewport}: onboarding should respect the selected appearance`);
   const welcome=page.locator('.today-first-run');
   await welcome.waitFor({state:'visible',timeout:15_000});
-  await page.getByRole('heading',{name:'Build a compass for the life you want to grow.'}).waitFor({state:'visible'});
+  await page.getByRole('heading',{name:'Start with what matters.'}).waitFor({state:'visible'});
   assert.equal(await page.getByRole('button',{name:'Create my compass'}).count(),1);
   assert.match(await welcome.innerText(),/Direction[\s\S]*Plan[\s\S]*Action[\s\S]*Progress/);
   assert.match(await welcome.innerText(),/Start with one area/);
   assert.doesNotMatch(await welcome.innerText(),/Nothing running|No other plans yet|No duration|Nothing recorded yet/);
+
+  const flowSteps=page.locator('.today-onboarding-step');
+  assert.equal(await flowSteps.count(),4,`${browserName} ${viewport}: onboarding should expose four understandable flow steps`);
+  const stepExpectations=[
+    ['Direction','every later plan a reason'],
+    ['Plan','Plans are intentions and can change'],
+    ['Action','adjust the plan instead of carrying old intentions forward'],
+    ['Progress','future decisions use real evidence']
+  ];
+  for(const [title,detail] of stepExpectations){
+    const step=flowSteps.filter({hasText:title}).first();
+    await step.locator('summary').click();
+    assert.equal(await step.getAttribute('open'),'',`${browserName} ${viewport}: ${title} card should expand when selected`);
+    assert.match(await step.innerText(),new RegExp(detail.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  }
+
   await assertNoOverflow(page,`${browserName} ${viewport}`);
   await capture(page,browserName,viewport,'welcome');
 
   const how=page.getByRole('button',{name:'How Growth Compass works'});
   await how.click();
-  assert.equal(await page.locator('#todayHowPanel').isVisible(),true);
+  const howPanel=page.locator('#todayHowPanel');
+  assert.equal(await howPanel.isVisible(),true);
+  const howText=await howPanel.innerText();
+  assert.match(howText,/Direction[\s\S]*Plan[\s\S]*Action[\s\S]*Progress/);
+  assert.match(howText,/You can begin with Direction only/);
   await how.click();
 
   await page.getByRole('button',{name:'Create my compass'}).click();
@@ -71,7 +91,7 @@ async function exercise(page,browserName,viewport){
   }
   assert.equal(await dialog.getByText('Time spent').count(),0,`${browserName} ${viewport}: first-run setup should defer measurement administration`);
   await dialog.locator('input[name="todayFirstArea"][value="career"]').check({force:true});
-  assert.equal(await page.locator('#todayFirstAreaCustomWrap').isVisible(),false,`${browserName} ${viewport}: custom-area naming must stay hidden unless Something else is selected`);
+  assert.equal(await page.locator('#todayFirstAreaCustomWrap').isVisible(),false,`${browserName} ${viewport}: custom life-area naming stays hidden unless Something else is selected`);
   await page.locator('#todayFirstGoalName').fill('Build a meaningful first direction');
   await page.locator('#todayFirstGoalWhy').fill('It gives the rest of the system a reason to exist.');
   await assertNoOverflow(page,`${browserName} ${viewport} goal dialog`);
