@@ -16,9 +16,9 @@ const FIRST_RUN_AREAS=Object.freeze([
 ]);
 const ONBOARDING_STEPS=Object.freeze([
   Object.freeze({key:'direction',number:'1',title:'Direction',copy:'Choose what matters.',detail:'Choose one area and define the change you want to move toward. Direction gives every later plan a reason.'}),
-  Object.freeze({key:'plan',number:'2',title:'Plan',copy:'Choose the next useful step.',detail:'Turn that direction into a realistic next step that fits your actual time. Plans are intentions and can change.'}),
-  Object.freeze({key:'action',number:'3',title:'Action',copy:'Do what matters now.',detail:'Focus on the next useful thing. When real life changes, adjust the plan instead of carrying old intentions forward.'}),
-  Object.freeze({key:'progress',number:'4',title:'Progress',copy:'Record what actually happened.',detail:'Record the facts after you act. Growth Compass keeps progress separate from plans so future decisions use real evidence.'})
+  Object.freeze({key:'plan',number:'2',title:'Plan',copy:'Choose the next useful step.',detail:'Turn that direction into a realistic next step and place it around the time your life already needs. Plans are intentions and can change.'}),
+  Object.freeze({key:'action',number:'3',title:'Action',copy:'Do what matters now.',detail:'A Plan becomes Action when you actually do the next useful thing. When real life changes, adjust the Plan instead of carrying old intentions forward.'}),
+  Object.freeze({key:'progress',number:'4',title:'Progress',copy:'Record what actually happened.',detail:'Action creates factual Progress. Progress then helps you improve the next Plan — and, when needed, rethink the Direction.'})
 ]);
 
 function ensureFirstRunStyles(){
@@ -33,6 +33,7 @@ function itemMeta(item){return [item.activity_label&&item.activity_label!==item.
 function glyph(item){return escapeHtml(String(item.activity_label||item.title||'A').trim().slice(0,1).toUpperCase()||'A');}
 function summaryRows(model,key){return Array.isArray(model?.summary?.[key])?model.summary[key]:[];}
 function activeGoals(model){return Array.isArray(model?.goals)?model.goals.filter(goal=>goal.status!=='archived'):[];}
+function activeRoutine(model){return Array.isArray(model?.routineItems)?model.routineItems.filter(item=>Number(item.active??1)===1):[];}
 function hasOperationalSignal(model){return Boolean((model.today||[]).length||(model.tomorrowItems||[]).length||summaryRows(model,'progress').length||summaryRows(model,'direction').length);}
 
 export function todayStage(model){
@@ -45,16 +46,21 @@ async function loadGoalSignal(){
   try{const response=await api.get('/v1/goals?include_archived=1');return {known:true,goals:Array.isArray(response?.items)?response.items:[]};}
   catch{return {known:false,goals:[]};}
 }
+async function loadRoutineSignal(date){
+  try{const response=await api.get(`/v1/capacity/commitments?date=${encodeURIComponent(date)}`);return {known:true,items:Array.isArray(response?.items)?response.items:[]};}
+  catch{return {known:false,items:[]};}
+}
 
 export async function loadToday(date=todayKey()){
   const tomorrow=addDays(date,1);
-  const [todayPlan,tomorrowPlan,todaySummary,goalSignal]=await Promise.all([
+  const [todayPlan,tomorrowPlan,todaySummary,goalSignal,routineSignal]=await Promise.all([
     api.get(`/v1/daily-plan?date=${encodeURIComponent(date)}`),
     api.get(`/v1/daily-plan?date=${encodeURIComponent(tomorrow)}`),
     api.get(`/v1/today?date=${encodeURIComponent(date)}&period=week`),
-    loadGoalSignal()
+    loadGoalSignal(),
+    loadRoutineSignal(date)
   ]);
-  return {date,tomorrow,today:todayPlan.items||[],tomorrowItems:tomorrowPlan.items||[],summary:todaySummary,goals:goalSignal.goals,goalsKnown:goalSignal.known};
+  return {date,tomorrow,today:todayPlan.items||[],tomorrowItems:tomorrowPlan.items||[],summary:todaySummary,goals:goalSignal.goals,goalsKnown:goalSignal.known,routineItems:routineSignal.items,routineKnown:routineSignal.known};
 }
 
 function directionHtml(direction=[]){
@@ -95,6 +101,7 @@ function onboardingSteps(current='direction'){
   const currentIndex=Math.max(0,ONBOARDING_STEPS.findIndex(step=>step.key===current));
   return `<div class="today-onboarding-steps" aria-label="Growth Compass flow">${ONBOARDING_STEPS.map((step,index)=>`<details class="today-onboarding-step${index<currentIndex?' is-done':''}${index===currentIndex?' is-current':''}" data-today-flow-step="${step.key}"><summary><span>${index<currentIndex?'✓':step.number}</span><div><strong>${step.title}</strong><p>${step.copy}</p></div><b aria-hidden="true">+</b></summary><div class="today-onboarding-step-body"><p class="today-onboarding-step-detail">${step.detail}</p><button type="button" class="today-step-action" data-today-step-action="${step.key}">${stepActionLabel(step,current)}<span aria-hidden="true">→</span></button></div></details>`).join('')}</div>`;
 }
+function flowLoopHtml(){return `<p class="today-flow-loop"><strong>Direction</strong> guides the <strong>Plan</strong>. The Plan chooses <strong>Actions</strong>. Actions create <strong>Progress</strong>. Progress helps you adjust what comes next.</p>`;}
 
 function welcomeHtml(){
   return `<div class="today-view today-first-run">
@@ -105,21 +112,25 @@ function welcomeHtml(){
       <p class="today-onboarding-micro">Start with one area. You can change everything later.</p>
       <div class="today-onboarding-guide"><strong>How your compass grows</strong><span>Open any step to understand it or start there.</span></div>
       ${onboardingSteps('direction')}
+      ${flowLoopHtml()}
     </section>
   </div>`;
 }
 
+function routineChoiceHtml(){return `<section class="today-routine-start" aria-labelledby="todayRoutineTitle"><div><p class="eyebrow">Make the Plan fit your real life</p><h3 id="todayRoutineTitle">How predictable is your week?</h3><p>Growth Compass can protect the hours that are already spoken for, so it never suggests exercise in the middle of work.</p></div><div class="today-routine-choices"><button type="button" data-today-set-routine><strong>I have a regular routine</strong><span>Set work, sleep, school, commute or family time once.</span><b>Set my routine →</b></button><button type="button" data-today-plan-flexible><strong>My week changes a lot</strong><span>Choose times as you plan. Add fixed blocks only when they become useful.</span><b>Keep it flexible →</b></button></div><button type="button" class="ghost-button today-routine-skip" data-today-go-plan>Skip for now</button></section>`;}
 function planPromptHtml(model){
   const goal=activeGoals(model)[0];
   const areaName=goal?.area_name||firstRunAreaName||'Your first direction';
+  const needsRoutineChoice=model?.routineKnown===true&&activeRoutine(model).length===0;
   return `<div class="today-view today-first-run">
     <section class="living-surface today-onboarding today-onboarding-next" aria-labelledby="todayPlanStartTitle">
       <div class="today-onboarding-kicker"><span>Compass started</span><b>2 of 4</b></div>
       <div class="today-onboarding-copy"><p class="eyebrow">Your first direction</p><h2 id="todayPlanStartTitle">Your compass has started.</h2><p>You do not need a full roadmap. Choose one useful next step that would move this direction forward.</p></div>
       ${goal?`<div class="today-created-direction"><span>${escapeHtml(areaName)}</span><strong>${escapeHtml(goal.name)}</strong>${goal.why_text?`<p>${escapeHtml(goal.why_text)}</p>`:''}</div>`:''}
-      <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-go-plan>Plan my first step</button><button type="button" class="ghost-button" data-today-go-goals>Review my direction</button></div>
-      <div class="today-onboarding-guide"><strong>Keep building</strong><span>Open a step to learn more or go straight to that part of the app.</span></div>
+      ${needsRoutineChoice?routineChoiceHtml():`<div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-go-plan>Plan my first step</button><button type="button" class="ghost-button" data-today-go-goals>Review my direction</button></div>`}
+      <div class="today-onboarding-guide"><strong>Keep building</strong><span>Schedule is the time layer inside Plan — not another goal to maintain.</span></div>
       ${onboardingSteps('plan')}
+      ${flowLoopHtml()}
     </section>
   </div>`;
 }
@@ -194,6 +205,8 @@ export function bindToday(model,{reload}={}){
   const refresh=reload||(()=>Promise.resolve());
   document.querySelector('[data-today-build-compass]')?.addEventListener('click',()=>{void openFirstGoal(refresh);});
   document.querySelectorAll('[data-today-step-action]').forEach(button=>button.addEventListener('click',()=>{const step=button.dataset.todayStepAction;if(step==='direction'){if(todayStage(model)==='welcome'){void openFirstGoal(refresh);return;}firstRunContinuation='';navigateTo('goals');return;}if(step==='plan'){firstRunContinuation='';navigateTo('plan');return;}if(step==='action'){document.querySelector('[data-open-add]')?.click();return;}if(step==='progress'){firstRunContinuation='';navigateTo('progress');}}));
+  document.querySelector('[data-today-set-routine]')?.addEventListener('click',()=>{firstRunContinuation='';navigateTo('schedule');});
+  document.querySelector('[data-today-plan-flexible]')?.addEventListener('click',()=>{try{localStorage.setItem('growth-compass:preview2:e2:schedule-style','flexible');}catch{}firstRunContinuation='';navigateTo('plan');});
   document.querySelectorAll('[data-today-go-plan]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('plan');}));
   document.querySelectorAll('[data-today-go-goals]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('goals');}));
   document.querySelector('[data-today-jump-plan]')?.addEventListener('click',()=>document.querySelector('#todayPlanList')?.scrollIntoView({behavior:'smooth',block:'start'}));
