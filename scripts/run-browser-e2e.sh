@@ -99,7 +99,8 @@ assert_contains 'Experience 1 /experience/1/' "$e1" '/experience/1/bootstrap.js'
 echo 'Preview 2 Experience 1 adapter route smoke passed.'
 
 e2="$(curl --fail --silent --show-error "$base/experience/2/")"
-assert_contains 'Experience 2 /experience/2/' "$e2" 'Growth Compass Preview 2 — Ambient Luxury experience.'
+assert_contains 'Experience 2 /experience/2/' "$e2" 'connect what matters with what you do, learn from what happens, and adjust deliberately.'
+assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/css/growth-experience.css'
 assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/js/app.js'
 echo 'Preview 2 Experience 2 route smoke passed.'
 
@@ -111,6 +112,7 @@ assert_worker_alive 'Experience 1 browser acceptance'
 # resources between suites and prevents a long Playwright process from starving
 # the single acceptance Worker under CI. Visual evidence intentionally runs last.
 for suite in \
+  tests/browser/experience2-growth-composition.browser.js \
   tests/browser/experience2-activities.browser.js \
   tests/browser/experience2-goals.browser.js \
   tests/browser/experience2-insights.browser.js \
