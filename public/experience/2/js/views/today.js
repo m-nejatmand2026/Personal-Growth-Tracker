@@ -84,13 +84,16 @@ function progressHtml(progress=[]){
   return `<article class="static-surface today-metric"><span class="metric-label">Factual progress today</span><strong class="metric-value">${minutesLabel(minutes)}</strong><p>${progress.length} recorded ${progress.length===1?'entry':'entries'}</p></article>`;
 }
 
-function onboardingSteps(current='direction'){
-  const currentIndex=Math.max(0,ONBOARDING_STEPS.findIndex(step=>step.key===current));
-  return `<div class="today-onboarding-steps" aria-label="Growth Compass flow">${ONBOARDING_STEPS.map((step,index)=>`<details class="today-onboarding-step${index<currentIndex?' is-done':''}${index===currentIndex?' is-current':''}" data-today-flow-step="${step.key}"><summary><span>${index<currentIndex?'✓':step.number}</span><div><strong>${step.title}</strong><p>${step.copy}</p></div><b aria-hidden="true">+</b></summary><p class="today-onboarding-step-detail">${step.detail}</p></details>`).join('')}</div>`;
+function stepActionLabel(step,current='direction'){
+  if(step.key==='direction')return current==='direction'?'Create direction':'Review direction';
+  if(step.key==='plan')return 'Open Plan';
+  if(step.key==='action')return 'Add an action';
+  return 'Open Progress';
 }
 
-function howPanelHtml(){
-  return `<div class="today-how-grid">${ONBOARDING_STEPS.map(step=>`<article class="today-how-item"><span>${step.number}</span><div><strong>${step.title}</strong><p>${step.detail}</p></div></article>`).join('')}</div><p class="today-how-note">You can begin with Direction only. Plan, Action, and Progress become useful as you move forward.</p>`;
+function onboardingSteps(current='direction'){
+  const currentIndex=Math.max(0,ONBOARDING_STEPS.findIndex(step=>step.key===current));
+  return `<div class="today-onboarding-steps" aria-label="Growth Compass flow">${ONBOARDING_STEPS.map((step,index)=>`<details class="today-onboarding-step${index<currentIndex?' is-done':''}${index===currentIndex?' is-current':''}" data-today-flow-step="${step.key}"><summary><span>${index<currentIndex?'✓':step.number}</span><div><strong>${step.title}</strong><p>${step.copy}</p></div><b aria-hidden="true">+</b></summary><div class="today-onboarding-step-body"><p class="today-onboarding-step-detail">${step.detail}</p><button type="button" class="today-step-action" data-today-step-action="${step.key}">${stepActionLabel(step,current)}<span aria-hidden="true">→</span></button></div></details>`).join('')}</div>`;
 }
 
 function welcomeHtml(){
@@ -98,9 +101,9 @@ function welcomeHtml(){
     <section class="living-surface today-onboarding" aria-labelledby="todayWelcomeTitle">
       <div class="today-onboarding-kicker"><span>Empty compass</span><b>Start with one direction · about 90 seconds</b></div>
       <div class="today-onboarding-copy"><p class="eyebrow">Welcome to Growth Compass</p><h2 id="todayWelcomeTitle">Start with what matters.</h2><p>Choose one area you want to grow. Growth Compass helps you turn that direction into a practical next step, act on it, and learn from what actually happened.</p></div>
-      <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-build-compass>Create my compass</button><button type="button" class="ghost-button today-how-toggle" data-today-how aria-expanded="false" aria-controls="todayHowPanel">How Growth Compass works</button></div>
+      <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-build-compass>Create my compass</button></div>
       <p class="today-onboarding-micro">Start with one area. You can change everything later.</p>
-      <div class="today-how-panel" id="todayHowPanel" tabindex="-1" hidden>${howPanelHtml()}</div>
+      <div class="today-onboarding-guide"><strong>How your compass grows</strong><span>Open any step to understand it or start there.</span></div>
       ${onboardingSteps('direction')}
     </section>
   </div>`;
@@ -115,6 +118,7 @@ function planPromptHtml(model){
       <div class="today-onboarding-copy"><p class="eyebrow">Your first direction</p><h2 id="todayPlanStartTitle">Your compass has started.</h2><p>You do not need a full roadmap. Choose one useful next step that would move this direction forward.</p></div>
       ${goal?`<div class="today-created-direction"><span>${escapeHtml(areaName)}</span><strong>${escapeHtml(goal.name)}</strong>${goal.why_text?`<p>${escapeHtml(goal.why_text)}</p>`:''}</div>`:''}
       <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-go-plan>Plan my first step</button><button type="button" class="ghost-button" data-today-go-goals>Review my direction</button></div>
+      <div class="today-onboarding-guide"><strong>Keep building</strong><span>Open a step to learn more or go straight to that part of the app.</span></div>
       ${onboardingSteps('plan')}
     </section>
   </div>`;
@@ -188,8 +192,8 @@ function changeItem(item,reload){
 
 export function bindToday(model,{reload}={}){
   const refresh=reload||(()=>Promise.resolve());
-  document.querySelector('[data-today-how]')?.addEventListener('click',event=>{const button=event.currentTarget;const panel=document.querySelector('#todayHowPanel');if(!panel)return;const open=panel.hidden;panel.hidden=!open;button.setAttribute('aria-expanded',String(open));if(open)panel.focus?.({preventScroll:true});});
   document.querySelector('[data-today-build-compass]')?.addEventListener('click',()=>{void openFirstGoal(refresh);});
+  document.querySelectorAll('[data-today-step-action]').forEach(button=>button.addEventListener('click',()=>{const step=button.dataset.todayStepAction;if(step==='direction'){if(todayStage(model)==='welcome'){void openFirstGoal(refresh);return;}firstRunContinuation='';navigateTo('goals');return;}if(step==='plan'){firstRunContinuation='';navigateTo('plan');return;}if(step==='action'){document.querySelector('[data-open-add]')?.click();return;}if(step==='progress'){firstRunContinuation='';navigateTo('progress');}}));
   document.querySelectorAll('[data-today-go-plan]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('plan');}));
   document.querySelectorAll('[data-today-go-goals]').forEach(button=>button.addEventListener('click',()=>{firstRunContinuation='';navigateTo('goals');}));
   document.querySelector('[data-today-jump-plan]')?.addEventListener('click',()=>document.querySelector('#todayPlanList')?.scrollIntoView({behavior:'smooth',block:'start'}));
