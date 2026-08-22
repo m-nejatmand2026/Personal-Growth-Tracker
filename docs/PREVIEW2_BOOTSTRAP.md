@@ -72,7 +72,7 @@ The resolved ID is checked against the explicit Production and Preview 1 IDs bef
 
 The original Preview 2 bootstrap used a manual-only migration gate. That is no longer the current branch behavior.
 
-The current `.github/workflows/deploy-preview2-branch.yml` is allowed to advance **only the explicitly authorized Preview 2 migration set**. It currently requires exactly eight SQL migration files and pins the Git blob for every authorized migration, including `0008_auth_multi_user.sql`.
+The current `.github/workflows/deploy-preview2-branch.yml` is allowed to advance **only the explicitly authorized Preview 2 migration set**. It currently requires exactly nine SQL migration files and pins the Git blob for every authorized migration, including `0008_auth_multi_user.sql` and `0009_time_aware_capacity.sql`.
 
 The workflow then invokes:
 
@@ -95,11 +95,11 @@ The script is still fail-closed and Preview-2-only. It:
 10. runs `PRAGMA quick_check;` and requires `ok`;
 11. never deploys a Worker itself.
 
-The command is idempotent. If all eight migrations are already applied, it performs no schema change and still verifies integrity.
+The command is idempotent. If all nine migrations are already applied, it performs no schema change and still verifies integrity.
 
 ### Adding a future migration
 
-A ninth migration must not silently start running just because a SQL file exists.
+A tenth migration must not silently start running just because a SQL file exists.
 
 A deliberate schema change requires updating the branch workflow's authorized migration count and exact blob pin in the same reviewed Preview 2 change. Until that happens, the workflow must fail closed.
 
@@ -147,7 +147,7 @@ Use this order:
 ```text
 confirm the resolved database is personal-growth-tracker-preview2
 → determine whether the migration set itself changed
-→ if no schema change was intended, restore the authorized eight-file set
+→ if no schema change was intended, restore the authorized nine-file set
 → if a new migration is intentional, review it and explicitly update the authorized count/blob pin
 → rerun the guarded migration path
 → require zero pending migrations and PRAGMA quick_check = ok
