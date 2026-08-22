@@ -1,4 +1,4 @@
-const CACHE='growth-compass-preview2-e2-v91';
+const CACHE='growth-compass-preview2-e2-v92';
 const CORE=[
   '/experience/2/',
   '/experience/2/css/foundation.css',
