@@ -51,6 +51,8 @@ async function exercise(page,browserName,viewport){
   await welcome.waitFor({state:'visible',timeout:15_000});
   await page.getByRole('heading',{name:'Start with what matters.'}).waitFor({state:'visible'});
   assert.equal(await page.getByRole('button',{name:'Create my compass'}).count(),1);
+  assert.equal(await page.getByRole('button',{name:'How Growth Compass works'}).count(),0,`${browserName} ${viewport}: duplicated how-it-works section should be gone`);
+  assert.match(await welcome.innerText(),/How your compass grows/);
   assert.match(await welcome.innerText(),/Direction[\s\S]*Plan[\s\S]*Action[\s\S]*Progress/);
   assert.match(await welcome.innerText(),/Start with one area/);
   assert.doesNotMatch(await welcome.innerText(),/Nothing running|No other plans yet|No duration|Nothing recorded yet/);
@@ -58,16 +60,17 @@ async function exercise(page,browserName,viewport){
   const flowSteps=page.locator('.today-onboarding-step');
   assert.equal(await flowSteps.count(),4,`${browserName} ${viewport}: onboarding should expose four understandable flow steps`);
   const stepExpectations=[
-    ['direction','Direction','every later plan a reason'],
-    ['plan','Plan','Plans are intentions and can change'],
-    ['action','Action','adjust the plan instead of carrying old intentions forward'],
-    ['progress','Progress','future decisions use real evidence']
+    ['direction','Direction','every later plan a reason','Create direction'],
+    ['plan','Plan','Plans are intentions and can change','Open Plan'],
+    ['action','Action','adjust the plan instead of carrying old intentions forward','Add an action'],
+    ['progress','Progress','future decisions use real evidence','Open Progress']
   ];
-  for(const [key,title,detail] of stepExpectations){
+  for(const [key,title,detail,actionLabel] of stepExpectations){
     const step=page.locator(`[data-today-flow-step="${key}"]`);
     await step.locator('summary').click();
     assert.equal(await step.getAttribute('open'),'',`${browserName} ${viewport}: ${title} card should expand when selected`);
     assert.match(await step.innerText(),new RegExp(detail.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+    assert.equal(await step.getByRole('button',{name:actionLabel}).count(),1,`${browserName} ${viewport}: ${title} should offer a real next action`);
     await step.locator('summary').click();
     assert.equal(await step.getAttribute('open'),null,`${browserName} ${viewport}: ${title} card should collapse when selected again`);
   }
@@ -75,16 +78,9 @@ async function exercise(page,browserName,viewport){
   await assertNoOverflow(page,`${browserName} ${viewport}`);
   await capture(page,browserName,viewport,'welcome');
 
-  const how=page.getByRole('button',{name:'How Growth Compass works'});
-  await how.click();
-  const howPanel=page.locator('#todayHowPanel');
-  assert.equal(await howPanel.isVisible(),true);
-  const howText=await howPanel.innerText();
-  assert.match(howText,/Direction[\s\S]*Plan[\s\S]*Action[\s\S]*Progress/);
-  assert.match(howText,/You can begin with Direction only/);
-  await how.click();
-
-  await page.getByRole('button',{name:'Create my compass'}).click();
+  const directionStep=page.locator('[data-today-flow-step="direction"]');
+  await directionStep.locator('summary').click();
+  await directionStep.getByRole('button',{name:'Create direction'}).click();
   const dialog=page.getByRole('dialog',{name:'Where do you want to grow first?'});
   await dialog.waitFor({state:'visible'});
   if(!(browserName==='WebKit'&&viewport==='375px')){
