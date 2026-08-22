@@ -39,7 +39,7 @@ async function mockNewAccount(page){
   });
   await page.route('**/api/v1/capacity/commitments*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[]})}));
   await page.route('**/api/v1/daily-plan*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[]})}));
-  await page.route('**/api/v1/today*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({progress:[],direction:goals.length?[{name:goals[0].name,target_minutes:0,actual_minutes:0}]:[]})}));
+  await page.route('**/api/v1/today*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({progress:[],direction:[]})}));
   return {goals,areas};
 }
 
@@ -115,6 +115,21 @@ async function exercise(page,browserName,viewport){
   assert.equal(state.goals[0].target_period,'none');
   await assertNoOverflow(page,`${browserName} ${viewport} continuation`);
   await capture(page,browserName,viewport,'routine-choice');
+
+  await page.reload({waitUntil:'domcontentloaded',timeout:15_000});
+  const guided=page.locator('.today-compass-ready');
+  await guided.waitFor({state:'visible',timeout:15_000});
+  await page.getByRole('heading',{name:'Make your direction real.'}).waitFor({state:'visible'});
+  const guidedText=await guided.innerText();
+  assert.match(guidedText,/Build a meaningful first direction/);
+  assert.match(guidedText,/Direction tells Plan what matters/);
+  assert.match(guidedText,/Direction[\s\S]*Plan[\s\S]*Action[\s\S]*Progress/);
+  assert.match(guidedText,/How predictable is your week\?/);
+  assert.doesNotMatch(guidedText,/Your day is open/);
+  assert.equal(await page.getByRole('button',{name:/I have a regular routine/i}).count(),1);
+  assert.equal(await page.getByRole('button',{name:/My week changes a lot/i}).count(),1);
+  await assertNoOverflow(page,`${browserName} ${viewport} guided bridge`);
+  await capture(page,browserName,viewport,'guided-bridge');
 
   await page.getByRole('button',{name:/My week changes a lot/i}).click();
   await page.locator('.plan-view').waitFor({state:'visible',timeout:15_000});
