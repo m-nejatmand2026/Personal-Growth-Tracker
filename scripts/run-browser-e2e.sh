@@ -115,6 +115,7 @@ for suite in \
   tests/browser/experience2-goals.browser.js \
   tests/browser/experience2-insights.browser.js \
   tests/browser/experience2-install.browser.js \
+  tests/browser/experience2-navigation-history.browser.js \
   tests/browser/experience2-journal.browser.js \
   tests/browser/experience2-logger.browser.js \
   tests/browser/experience2-progress.browser.js \
