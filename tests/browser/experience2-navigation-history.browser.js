@@ -58,7 +58,7 @@ for(const [browserName,browserType] of BROWSERS){
   test(`${browserName} 375px keeps phone back navigation inside Experience 2 page history`,async()=>{
     const browser=await browserType.launch();
     try{
-      const context=await browser.newContext({viewport:{width:375,height:812},isMobile:true,hasTouch:true});
+      const context=await browser.newContext({viewport:{width:375,height:812},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
       await exercise(await context.newPage(),browserName);
       await context.close();
     }finally{await browser.close();}
