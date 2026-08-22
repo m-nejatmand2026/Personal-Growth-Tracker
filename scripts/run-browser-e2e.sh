@@ -44,6 +44,7 @@ assert_worker_alive() {
 run_e2_suite() {
   local file="$1"
   echo "Running isolated Experience 2 browser suite: $file"
+  # Keep each browser suite in a fresh Node process so Playwright engines release resources between files.
   if ! GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test "$file"; then
     echo "Experience 2 browser suite failed: $file" >&2
     cat "$WORKER_LOG" >&2 || true
