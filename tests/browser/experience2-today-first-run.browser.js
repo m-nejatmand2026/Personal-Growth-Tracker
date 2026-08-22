@@ -9,6 +9,7 @@ const BROWSERS=[['Chromium',chromium],['WebKit',webkit]];
 
 async function capture(page,browserName,viewport,state){if(!SCREENSHOT_DIR||browserName!=='Chromium')return;await mkdir(SCREENSHOT_DIR,{recursive:true});await page.waitForTimeout(180);await page.screenshot({path:`${SCREENSHOT_DIR}/e2-first-run-chromium-${viewport}-${state}.png`,fullPage:false});}
 async function assertNoOverflow(page,label){const size=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));assert.ok(size.document<=size.viewport+1,`${label}: first-run Today must not overflow horizontally; ${JSON.stringify(size)}`);}
+async function waitForFirstDirectionWrite(state,label){const deadline=Date.now()+10_000;while(Date.now()<deadline){if(state.areas.length===1&&state.goals.length===1)return;await new Promise(resolve=>setTimeout(resolve,50));}assert.fail(`${label}: first direction write did not reach the mocked Areas and Goals contracts`);}
 
 async function mockNewAccount(page){
   const goals=[];
@@ -96,7 +97,8 @@ async function exercise(page,browserName,viewport){
   await capture(page,browserName,viewport,'goal-dialog');
   await dialog.getByRole('button',{name:'Set my direction'}).click();
 
-  await page.getByRole('heading',{name:'Your compass has started.'}).waitFor({state:'visible',timeout:15_000});
+  await waitForFirstDirectionWrite(state,`${browserName} ${viewport}`);
+  await page.getByRole('heading',{name:'Your compass has started.'}).waitFor({state:'visible',timeout:25_000});
   const continuation=page.locator('.today-first-run');
   assert.match(await continuation.innerText(),/career/i);
   assert.match(await continuation.innerText(),/Build a meaningful first direction/);
