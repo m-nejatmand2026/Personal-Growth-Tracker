@@ -76,7 +76,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.head.ref == 'feature/experience-v2'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
 
     steps:
       - name: Checkout exact tested Preview 2 commit
@@ -124,6 +124,90 @@ jobs:
         run: |
           set -euo pipefail
           node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('wrangler.jsonc','utf8'));const prod=c.d1_databases?.find(x=>x.binding==='DB');const p1=c.env?.preview?.d1_databases?.find(x=>x.binding==='DB');const id=fs.readFileSync('.preview2-db-id','utf8').trim();if(c.name!=='personal-growth-tracker')throw new Error('Unexpected Worker base name: '+c.name);if(!prod?.database_id||!p1?.database_id)throw new Error('Production and Preview 1 D1 identities must remain explicit.');if(!id)throw new Error('Preview 2 D1 id is empty.');if(id===prod.database_id)throw new Error('Preview 2 points at Production D1. Refusing deployment.');if(id===p1.database_id)throw new Error('Preview 2 points at Preview 1 D1. Refusing deployment.');c.env||={};c.env.preview2={name:'personal-growth-tracker-preview2',observability:{enabled:true,head_sampling_rate:1},d1_databases:[{binding:'DB',database_name:'personal-growth-tracker-preview2',database_id:id,migrations_dir:'migrations'}]};fs.writeFileSync('.wrangler.preview2.json',JSON.stringify(c,null,2));"
+
+      - name: Capture current Preview 2 rollback identity and D1 bookmark
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BACKUP_KEY: preview2-ambient-luxury-2026-08-22
+        run: |
+          set -euo pipefail
+          mkdir -p .artifacts/preview2-backup
+          node <<'NODE'
+          const fs = require('fs');
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const backupKey = process.env.BACKUP_KEY;
+          const worker = 'personal-growth-tracker-preview2';
+          const database = 'personal-growth-tracker-preview2';
+          const dbId = fs.readFileSync('.preview2-db-id','utf8').trim();
+          const api = `https://api.cloudflare.com/client/v4/accounts/${account}`;
+          async function cf(path) {
+            const response = await fetch(api + path, { headers: { Authorization: `Bearer ${token}` } });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok || body.success === false) throw new Error(`Cloudflare API ${response.status} for ${path}`);
+            return body.result;
+          }
+          (async () => {
+            const deploymentResult = await cf(`/workers/scripts/${worker}/deployments`);
+            const deployments = Array.isArray(deploymentResult?.deployments) ? deploymentResult.deployments : (Array.isArray(deploymentResult) ? deploymentResult : []);
+            const latest = [...deployments].sort((a,b)=>String(b?.created_on||'').localeCompare(String(a?.created_on||'')))[0];
+            if (!latest) throw new Error('No active Preview 2 Worker deployment found; refusing replacement without rollback identity.');
+            const bookmarkResult = await cf(`/d1/database/${dbId}/time_travel/bookmark`);
+            const bookmark = bookmarkResult?.bookmark || '';
+            if (!bookmark) throw new Error('No Preview 2 D1 Time Travel bookmark returned; refusing replacement without data restore point.');
+            const versionIds = Array.isArray(latest.versions) ? latest.versions.map(v=>v?.version_id||v?.id).filter(Boolean) : [];
+            const snapshot = {
+              backup_key: backupKey,
+              display_name: 'Preview 2 — Ambient Luxury Snapshot (2026-08-22)',
+              captured_at_utc: new Date().toISOString(),
+              worker_name: worker,
+              worker_deployment_id: latest.id || null,
+              worker_created_on: latest.created_on || null,
+              worker_message: latest.annotations?.['workers/message'] || null,
+              worker_version_ids: versionIds,
+              d1_name: database,
+              d1_id: dbId,
+              d1_time_travel_bookmark: bookmark,
+              restore_notes: 'Worker: rollback to one of worker_version_ids using Cloudflare Workers rollback. D1: restore the isolated Preview 2 database to d1_time_travel_bookmark only if database rollback is also required. A full SQL export is stored beside this file.'
+            };
+            fs.writeFileSync('.artifacts/preview2-backup/restore-manifest.json', JSON.stringify(snapshot,null,2));
+            fs.writeFileSync('.artifacts/preview2-backup/RESTORE.txt', [
+              snapshot.display_name,
+              `Backup key: ${backupKey}`,
+              `Captured UTC: ${snapshot.captured_at_utc}`,
+              `Worker: ${worker}`,
+              `Deployment ID: ${snapshot.worker_deployment_id || 'n/a'}`,
+              `Worker message: ${snapshot.worker_message || 'n/a'}`,
+              `Worker version IDs: ${versionIds.join(', ') || 'n/a'}`,
+              `D1: ${database}`,
+              `D1 bookmark: ${bookmark}`,
+              '',
+              'Restore Worker code/config first using the recorded Cloudflare Worker version.',
+              'Restore D1 only if the data itself must also return to this exact snapshot; D1 restore overwrites the current Preview 2 database.',
+              'Never target Preview 1 or Production with these restore values.'
+            ].join('\n'));
+          })().catch(error=>{console.error(error);process.exit(1);});
+          NODE
+
+      - name: Export complete isolated Preview 2 D1 backup
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4.123.0 d1 export DB --remote --env preview2 --config .wrangler.preview2.json --output=.artifacts/preview2-backup/d1-full.sql --skip-confirmation
+          test -s .artifacts/preview2-backup/d1-full.sql || { echo 'Preview 2 D1 export is empty; refusing deployment.'; exit 1; }
+
+      - name: Upload recoverable pre-redesign Preview 2 backup
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: preview2-ambient-luxury-2026-08-22-${{ github.run_id }}
+          path: .artifacts/preview2-backup
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Apply only the explicitly authorized Preview 2 migration set
         shell: bash
