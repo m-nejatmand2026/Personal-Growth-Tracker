@@ -58,16 +58,18 @@ async function exercise(page,browserName,viewport){
   const flowSteps=page.locator('.today-onboarding-step');
   assert.equal(await flowSteps.count(),4,`${browserName} ${viewport}: onboarding should expose four understandable flow steps`);
   const stepExpectations=[
-    ['Direction','every later plan a reason'],
-    ['Plan','Plans are intentions and can change'],
-    ['Action','adjust the plan instead of carrying old intentions forward'],
-    ['Progress','future decisions use real evidence']
+    ['direction','Direction','every later plan a reason'],
+    ['plan','Plan','Plans are intentions and can change'],
+    ['action','Action','adjust the plan instead of carrying old intentions forward'],
+    ['progress','Progress','future decisions use real evidence']
   ];
-  for(const [title,detail] of stepExpectations){
-    const step=flowSteps.filter({hasText:title}).first();
+  for(const [key,title,detail] of stepExpectations){
+    const step=page.locator(`[data-today-flow-step="${key}"]`);
     await step.locator('summary').click();
     assert.equal(await step.getAttribute('open'),'',`${browserName} ${viewport}: ${title} card should expand when selected`);
     assert.match(await step.innerText(),new RegExp(detail.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+    await step.locator('summary').click();
+    assert.equal(await step.getAttribute('open'),null,`${browserName} ${viewport}: ${title} card should collapse when selected again`);
   }
 
   await assertNoOverflow(page,`${browserName} ${viewport}`);
