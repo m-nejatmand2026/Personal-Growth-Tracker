@@ -46,7 +46,7 @@ test('production Worker configuration boots locally with the complete D1 migrati
   const migrationCount = await env.DB.prepare(
     'SELECT COUNT(*) AS count FROM d1_migrations'
   ).first();
-  assert.equal(Number(migrationCount.count), 8);
+  assert.equal(Number(migrationCount.count), 9);
 
   for (const table of [
     'profiles',
@@ -69,6 +69,12 @@ test('production Worker configuration boots locally with the complete D1 migrati
       "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
     ).bind(table).first();
     assert.equal(row?.name, table, `expected migrated table ${table}`);
+  }
+
+  const capacityColumns = await env.DB.prepare('PRAGMA table_info(capacity_commitments)').all();
+  const capacityColumnNames = new Set((capacityColumns.results || []).map((column) => column.name));
+  for (const column of ['start_time', 'end_time', 'flexibility']) {
+    assert.equal(capacityColumnNames.has(column), true, `expected time-aware Capacity column ${column}`);
   }
 });
 
