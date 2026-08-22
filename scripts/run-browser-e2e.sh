@@ -88,7 +88,7 @@ base='http://127.0.0.1:8787'
 
 selector="$(curl --fail --silent --show-error "$base/")"
 assert_contains 'selector /' "$selector" 'Current / Recovered'
-assert_contains 'selector /' "$selector" 'New / Ambient Luxury'
+assert_contains 'selector /' "$selector" 'New / Growth System'
 assert_contains 'selector /' "$selector" 'href="/experience/1/"'
 assert_contains 'selector /' "$selector" 'href="/experience/2/"'
 echo 'Preview 2 selector route smoke passed.'
@@ -107,10 +107,6 @@ echo 'Preview 2 Experience 2 route smoke passed.'
 GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser
 assert_worker_alive 'Experience 1 browser acceptance'
 
-# Keep one isolated local Worker/D1 so cross-screen behavior is realistic, but run
-# each Experience 2 file in a fresh Node process. This releases browser-engine
-# resources between suites and prevents a long Playwright process from starving
-# the single acceptance Worker under CI. Visual evidence intentionally runs last.
 for suite in \
   tests/browser/experience2-growth-composition.browser.js \
   tests/browser/experience2-activities.browser.js \
