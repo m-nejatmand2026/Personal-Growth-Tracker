@@ -14,6 +14,12 @@ const FIRST_RUN_AREAS=Object.freeze([
   Object.freeze({key:'personal',name:'Personal Growth',copy:'Character, habits and mindset',sample:'Become more consistent with the habits I care about'}),
   Object.freeze({key:'custom',name:'Something else',copy:'Create a life area that fits you',sample:'Describe the change you want to move toward'})
 ]);
+const ONBOARDING_STEPS=Object.freeze([
+  Object.freeze({key:'direction',number:'1',title:'Direction',copy:'Choose what matters.',detail:'Choose one area and define the change you want to move toward. Direction gives every later plan a reason.'}),
+  Object.freeze({key:'plan',number:'2',title:'Plan',copy:'Choose the next useful step.',detail:'Turn that direction into a realistic next step that fits your actual time. Plans are intentions and can change.'}),
+  Object.freeze({key:'action',number:'3',title:'Action',copy:'Do what matters now.',detail:'Focus on the next useful thing. When real life changes, adjust the plan instead of carrying old intentions forward.'}),
+  Object.freeze({key:'progress',number:'4',title:'Progress',copy:'Record what actually happened.',detail:'Record the facts after you act. Growth Compass keeps progress separate from plans so future decisions use real evidence.'})
+]);
 
 function ensureFirstRunStyles(){
   if(typeof document==='undefined'||document.querySelector(`link[href="${FIRST_RUN_STYLESHEET}"]`))return;
@@ -79,25 +85,23 @@ function progressHtml(progress=[]){
 }
 
 function onboardingSteps(current='direction'){
-  const steps=[
-    ['direction','1','Direction','Choose what matters.'],
-    ['plan','2','Plan','Choose the next useful step.'],
-    ['action','3','Action','Do what matters now.'],
-    ['progress','4','Progress','Record what actually happened.']
-  ];
-  const currentIndex=Math.max(0,steps.findIndex(([key])=>key===current));
-  return `<div class="today-onboarding-steps" aria-label="Growth Compass flow">${steps.map(([key,number,title,copy],index)=>`<article class="today-onboarding-step${index<currentIndex?' is-done':''}${index===currentIndex?' is-current':''}"><span>${index<currentIndex?'✓':number}</span><div><strong>${title}</strong><p>${copy}</p></div></article>`).join('')}</div>`;
+  const currentIndex=Math.max(0,ONBOARDING_STEPS.findIndex(step=>step.key===current));
+  return `<div class="today-onboarding-steps" aria-label="Growth Compass flow">${ONBOARDING_STEPS.map((step,index)=>`<details class="today-onboarding-step${index<currentIndex?' is-done':''}${index===currentIndex?' is-current':''}" data-today-flow-step="${step.key}"><summary><span>${index<currentIndex?'✓':step.number}</span><div><strong>${step.title}</strong><p>${step.copy}</p></div><b aria-hidden="true">+</b></summary><p class="today-onboarding-step-detail">${step.detail}</p></details>`).join('')}</div>`;
+}
+
+function howPanelHtml(){
+  return `<div class="today-how-grid">${ONBOARDING_STEPS.map(step=>`<article class="today-how-item"><span>${step.number}</span><div><strong>${step.title}</strong><p>${step.detail}</p></div></article>`).join('')}</div><p class="today-how-note">You can begin with Direction only. Plan, Action, and Progress become useful as you move forward.</p>`;
 }
 
 function welcomeHtml(){
   return `<div class="today-view today-first-run">
     <section class="living-surface today-onboarding" aria-labelledby="todayWelcomeTitle">
       <div class="today-onboarding-kicker"><span>Empty compass</span><b>Start with one direction · about 90 seconds</b></div>
-      <div class="today-onboarding-copy"><p class="eyebrow">Welcome to Growth Compass</p><h2 id="todayWelcomeTitle">Build a compass for the life you want to grow.</h2><p>Connect where you want to go with what you do next, then record what actually happened so you can adjust without turning plans into debt.</p></div>
+      <div class="today-onboarding-copy"><p class="eyebrow">Welcome to Growth Compass</p><h2 id="todayWelcomeTitle">Start with what matters.</h2><p>Choose one area you want to grow. Growth Compass helps you turn that direction into a practical next step, act on it, and learn from what actually happened.</p></div>
       <div class="today-onboarding-actions"><button type="button" class="primary-button" data-today-build-compass>Create my compass</button><button type="button" class="ghost-button today-how-toggle" data-today-how aria-expanded="false" aria-controls="todayHowPanel">How Growth Compass works</button></div>
       <p class="today-onboarding-micro">Start with one area. You can change everything later.</p>
+      <div class="today-how-panel" id="todayHowPanel" tabindex="-1" hidden>${howPanelHtml()}</div>
       ${onboardingSteps('direction')}
-      <div class="today-how-panel" id="todayHowPanel" hidden><p><strong>Direction gives the system a reason.</strong> Plan turns direction into a useful next step. Action is what you choose to do now. Progress records the facts so you can learn and adjust.</p><p>You do not need to plan your whole life today. Targets, schedules, habits, and deeper setup can wait until they become useful.</p></div>
     </section>
   </div>`;
 }
