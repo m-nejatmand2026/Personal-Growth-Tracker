@@ -29,6 +29,7 @@
 .today-first-area-option.is-selected .today-first-area-card{border-color:color-mix(in srgb,var(--gc-primary) 52%,var(--gc-border));background:color-mix(in srgb,var(--gc-primary-subtle) 62%,var(--gc-raised));box-shadow:0 9px 24px color-mix(in srgb,var(--gc-glow-primary) 10%,transparent)}
 .today-first-area-option>input:focus-visible+.today-first-area-card{outline:2px solid var(--gc-primary);outline-offset:2px}
 .today-first-area-custom{display:grid;gap:7px;padding:12px;border:1px solid color-mix(in srgb,var(--gc-primary) 22%,var(--gc-border));border-radius:14px;background:color-mix(in srgb,var(--gc-primary-subtle) 28%,transparent)}
+.today-first-area-custom[hidden]{display:none}
 .today-first-area-custom label{margin:0}
 .today-first-goal-prompt>span,.today-first-goal-why>span{font-size:12px;font-weight:700}
 .today-first-goal-prompt small,.today-first-goal-why small{font-weight:500;color:var(--gc-text-subtle)}
