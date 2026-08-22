@@ -71,6 +71,7 @@ async function exercise(page,browserName,viewport){
   }
   assert.equal(await dialog.getByText('Time spent').count(),0,`${browserName} ${viewport}: first-run setup should defer measurement administration`);
   await dialog.locator('input[name="todayFirstArea"][value="career"]').check({force:true});
+  assert.equal(await page.locator('#todayFirstAreaCustomWrap').isVisible(),false,`${browserName} ${viewport}: custom-area naming must stay hidden unless Something else is selected`);
   await page.locator('#todayFirstGoalName').fill('Build a meaningful first direction');
   await page.locator('#todayFirstGoalWhy').fill('It gives the rest of the system a reason to exist.');
   await assertNoOverflow(page,`${browserName} ${viewport} goal dialog`);
