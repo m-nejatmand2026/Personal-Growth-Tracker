@@ -41,16 +41,17 @@ test('Experience 2 PWA identity no longer advertises the retired Ambient Luxury 
   assert.match(manifest,/Connect what matters with what you do/i);
 });
 
-test('Preview 2 guarded deploy captures rollback identity and D1 export before deployment',async()=>{
+test('Preview 2 guarded deploy captures rollback identity and D1 Time Travel before deployment',async()=>{
   const workflow=await text('.github/workflows/quality.yml');
   const backup=workflow.indexOf('Capture current Preview 2 rollback identity and D1 bookmark');
-  const exportStep=workflow.indexOf('Export complete isolated Preview 2 D1 backup');
-  const upload=workflow.indexOf('Upload recoverable pre-redesign Preview 2 backup');
+  const upload=workflow.indexOf('Upload non-sensitive Preview 2 rollback manifest');
   const migrate=workflow.indexOf('Apply only the explicitly authorized Preview 2 migration set');
   const deploy=workflow.indexOf('Deploy exact tested Preview 2 Worker only');
-  assert.ok(backup>0&&exportStep>backup&&upload>exportStep,'backup identity, SQL export and artifact upload must all be present');
-  assert.ok(upload<migrate,'backup must complete before any Preview 2 migration');
+  assert.ok(backup>0&&upload>backup,'rollback identity and metadata artifact must both be present');
+  assert.ok(upload<migrate,'rollback metadata must complete before any Preview 2 migration');
   assert.ok(migrate<deploy,'deployment remains after migration verification');
+  assert.match(workflow,/d1\/database\/\$\{dbId\}\/time_travel\/bookmark/);
   assert.match(workflow,/preview2-ambient-luxury-2026-08-22/);
   assert.match(workflow,/retention-days: 90/);
+  assert.doesNotMatch(workflow,/d1 export DB/,'raw personal D1 exports must not be uploaded from this public repository');
 });
