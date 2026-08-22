@@ -100,7 +100,8 @@ test('Direction modal flows remain keyboard-modal safe',()=>{
   assert.match(view,/event\.key!=='Tab'/);
   assert.match(view,/host\.onkeydown=trap/);
   assert.match(view,/host\.onkeydown=null/);
-  assert.match(view,/opener\?\.focus/);
+  assert.match(view,/target\?\.isConnected/);
+  assert.match(view,/target\.focus\?\.\(\{preventScroll:true\}\)/);
   assert.match(directionCss,/@media\(max-width:760px\)/);
   assert.match(directionCss,/env\(safe-area-inset-bottom\)/);
   assert.match(css,/\.goal-editor-close\{width:48px;height:48px/);
