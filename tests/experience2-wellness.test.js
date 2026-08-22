@@ -1,56 +1,7 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-
-const view=await readFile(new URL('../public/experience/2/js/views/wellness.js',import.meta.url),'utf8');
-const content=await readFile(new URL('../public/experience/2/js/views/wellness-content.js',import.meta.url),'utf8');
-const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.url),'utf8');
-const html=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
-const css=await readFile(new URL('../public/experience/2/css/wellness.css',import.meta.url),'utf8');
-const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
-
-test('Experience 2 Wellness replaces the placeholder as an independent local capability',()=>{
-  assert.match(app,/renderWellness,bindWellness,deactivateWellness/);
-  assert.match(app,/current==='wellness'/);
-  assert.doesNotMatch(view,/api\.|\/v1\/|progressCapability|wellbeingCapability/);
-  assert.doesNotMatch(content,/api\.|\/v1\//);
-});
-
-test('Wellness keeps the rights-safe local playback and no-logging boundary',()=>{
-  assert.match(view,/Guided voice uses your device/);
-  assert.match(view,/Ambient sound is generated locally/);
-  assert.match(view,/not added to Progress or Wellbeing/);
-  assert.match(view,/Nothing here is logged/);
-  assert.match(view,/AudioContext/);
-  assert.match(view,/speechSynthesis/);
-});
-
-test('Wellness offers the starter practice library and explicit 4–2–8–2 breathing rhythm',()=>{
-  for(const title of ['Gentle arrival','A steadier breath','Open attention','Settle and restore'])assert.ok(content.includes(title));
-  assert.match(content,/id:'inhale',label:'Inhale',seconds:4/);
-  assert.match(content,/id:'hold-in',label:'Hold',seconds:2/);
-  assert.match(content,/id:'exhale',label:'Exhale',seconds:8/);
-  assert.match(content,/id:'hold-out',label:'Hold',seconds:2/);
-  assert.match(content,/return to normal breathing if the rhythm feels uncomfortable/i);
-});
-
-test('Wellness session lifecycle supports start pause resume end restart and navigation cleanup',()=>{
-  assert.match(view,/startMeditation/);
-  assert.match(view,/startBreathing/);
-  assert.match(view,/function toggle/);
-  assert.match(view,/function end/);
-  assert.match(view,/ring\.disabled=false/);
-  assert.match(view,/classList\.toggle\('wellness-paused',session\.paused\)/);
-  assert.match(css,/\.wellness-paused \.wellness-breath-ring i\{animation-play-state:paused\}/);
-  assert.match(view,/export function deactivateWellness/);
-  assert.match(app,/deactivateWellness\(\)/);
-});
-
-test('Wellness is responsive, reduced-motion safe and precached only inside Experience 2',()=>{
-  assert.match(html,/\/experience\/2\/css\/wellness\.css/);
-  assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-  for(const asset of ['/experience/2/css/wellness.css','/experience/2/js/views/wellness-content.js','/experience/2/js/views/wellness.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);
-  assert.match(sw,/growth-compass-preview2-e2-v\d+/);
-  assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/);
-});
+import test from 'node:test';import assert from 'node:assert/strict';import { readFile } from 'node:fs/promises';
+const view=await readFile(new URL('../public/experience/2/js/views/wellness.js',import.meta.url),'utf8');const content=await readFile(new URL('../public/experience/2/js/views/wellness-content.js',import.meta.url),'utf8');const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.url),'utf8');const html=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');const css=await readFile(new URL('../public/experience/2/css/wellness.css',import.meta.url),'utf8');const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
+test('Experience 2 Wellness replaces the placeholder as an independent local capability',()=>{assert.match(app,/renderWellness\s*,\s*bindWellness\s*,\s*deactivateWellness/);assert.match(app,/current==='wellness'/);assert.doesNotMatch(view,/api\.|\/v1\/|progressCapability|wellbeingCapability/);assert.doesNotMatch(content,/api\.|\/v1\//);});
+test('Wellness keeps the rights-safe local playback and no-logging boundary',()=>{assert.match(view,/Guided voice uses your device/);assert.match(view,/Ambient sound is generated locally/);assert.match(view,/not added to Progress or Wellbeing/);assert.match(view,/Nothing here is logged/);assert.match(view,/AudioContext/);assert.match(view,/speechSynthesis/);});
+test('Wellness offers the starter practice library and explicit 4–2–8–2 breathing rhythm',()=>{for(const title of ['Gentle arrival','A steadier breath','Open attention','Settle and restore'])assert.ok(content.includes(title));assert.match(content,/id:'inhale',label:'Inhale',seconds:4/);assert.match(content,/id:'hold-in',label:'Hold',seconds:2/);assert.match(content,/id:'exhale',label:'Exhale',seconds:8/);assert.match(content,/id:'hold-out',label:'Hold',seconds:2/);assert.match(content,/return to normal breathing if the rhythm feels uncomfortable/i);});
+test('Wellness session lifecycle supports start pause resume end restart and navigation cleanup',()=>{assert.match(view,/startMeditation/);assert.match(view,/startBreathing/);assert.match(view,/function toggle/);assert.match(view,/function end/);assert.match(view,/ring\.disabled=false/);assert.match(view,/classList\.toggle\('wellness-paused',session\.paused\)/);assert.match(css,/\.wellness-paused \.wellness-breath-ring i\{animation-play-state:paused\}/);assert.match(view,/export function deactivateWellness/);assert.match(app,/deactivateWellness\(\)/);});
+test('Wellness is responsive, reduced-motion safe and precached only inside Experience 2',()=>{assert.match(html,/\/experience\/2\/css\/wellness\.css/);assert.match(css,/@media\(max-width:760px\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);for(const asset of ['/experience/2/css/wellness.css','/experience/2/js/views/wellness-content.js','/experience/2/js/views/wellness.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);assert.match(sw,/growth-compass-preview2-e2-v\d+/);assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/);});

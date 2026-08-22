@@ -1,50 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-
-const view=await readFile(new URL('../public/experience/2/js/views/insights.js',import.meta.url),'utf8');
-const wellbeing=await readFile(new URL('../public/experience/2/js/capabilities/wellbeing.js',import.meta.url),'utf8');
-const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.url),'utf8');
-const html=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
-const css=await readFile(new URL('../public/experience/2/css/insights.css',import.meta.url),'utf8');
-const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
-
-test('Experience 2 Insights replaces the placeholder and depends only on Progress and Wellbeing capabilities',()=>{
-  assert.match(app,/loadInsights,renderInsights/);
-  assert.match(app,/current==='insights'/);
-  assert.match(view,/progressCapability\.list/);
-  assert.match(view,/wellbeingCapability\.listEnergy/);
-  assert.doesNotMatch(view,/\/v1\/progress|\/v1\/wellbeing|api\./);
-  assert.match(wellbeing,/\/v1\/wellbeing\/energy\?/);
-});
-
-test('Insights exposes evidence stages and sample sizes without causal claims',()=>{
-  for(const text of ['Still learning','Basic summaries','Early patterns','Stronger evidence','0–6 days','7–20 days','21–41 days','42+ days'])assert.ok(view.includes(text),`Insights source must include ${text}`);
-  assert.match(view,/Association is never presented as cause/);
-  assert.match(view,/still cannot establish cause/);
-  assert.match(view,/trackedDays/);
-  assert.match(view,/pairedDays/);
-  assert.match(view,/progress\.length/);
-  assert.match(view,/energy\.length/);
-});
-
-test('Insights refuses to invent a pattern just to populate the page',()=>{
-  assert.match(view,/No defensible matched pattern yet/);
-  assert.match(view,/will not invent an insight just to fill the page/);
-  assert.doesNotMatch(view,/caused by|improves your|makes you|because you/i);
-});
-
-test('Insights loads bounded recent evidence in parallel',()=>{
-  assert.match(view,/addDays\(date,-59\)/);
-  assert.match(view,/Promise\.all/);
-  assert.match(view,/limit:300/);
-});
-
-test('Insights presentation is responsive and fully precached in the isolated Experience 2 PWA',()=>{
-  assert.match(html,/\/experience\/2\/css\/insights\.css/);
-  assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(css,/@media\(max-width:430px\)/);
-  for(const asset of ['/experience/2/css/insights.css','/experience/2/js/views/insights.js','/experience/2/js/capabilities/wellbeing.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);
-  assert.match(sw,/growth-compass-preview2-e2-v\d+/);
-  assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/);
-});
+const view=await readFile(new URL('../public/experience/2/js/views/insights.js',import.meta.url),'utf8');const wellbeing=await readFile(new URL('../public/experience/2/js/capabilities/wellbeing.js',import.meta.url),'utf8');const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.url),'utf8');const html=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');const css=await readFile(new URL('../public/experience/2/css/insights.css',import.meta.url),'utf8');const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
+test('Experience 2 Insights replaces the placeholder and depends only on Progress and Wellbeing capabilities',()=>{assert.match(app,/loadInsights\s*,\s*renderInsights/);assert.match(app,/current==='insights'/);assert.match(view,/progressCapability\.list/);assert.match(view,/wellbeingCapability\.listEnergy/);assert.doesNotMatch(view,/\/v1\/progress|\/v1\/wellbeing|api\./);assert.match(wellbeing,/\/v1\/wellbeing\/energy\?/);});
+test('Insights exposes evidence stages and sample sizes without causal claims',()=>{for(const text of ['Still learning','Basic summaries','Early patterns','Stronger evidence','0–6 days','7–20 days','21–41 days','42+ days'])assert.ok(view.includes(text),`Insights source must include ${text}`);assert.match(view,/Association is never presented as cause/);assert.match(view,/still cannot establish cause/);assert.match(view,/trackedDays/);assert.match(view,/pairedDays/);assert.match(view,/progress\.length/);assert.match(view,/energy\.length/);});
+test('Insights refuses to invent a pattern just to populate the page',()=>{assert.match(view,/No defensible matched pattern yet/);assert.match(view,/will not invent an insight just to fill the page/);assert.doesNotMatch(view,/caused by|improves your|makes you|because you/i);});
+test('Insights loads bounded recent evidence in parallel',()=>{assert.match(view,/addDays\(date,-59\)/);assert.match(view,/Promise\.all/);assert.match(view,/limit:300/);});
+test('Insights presentation is responsive and fully precached in the isolated Experience 2 PWA',()=>{assert.match(html,/\/experience\/2\/css\/insights\.css/);assert.match(css,/@media\(max-width:760px\)/);assert.match(css,/@media\(max-width:430px\)/);for(const asset of ['/experience/2/css/insights.css','/experience/2/js/views/insights.js','/experience/2/js/capabilities/wellbeing.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);assert.match(sw,/growth-compass-preview2-e2-v\d+/);assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/);});

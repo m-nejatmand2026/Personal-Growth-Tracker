@@ -13,124 +13,13 @@ const shellCss=await readFile(new URL('../public/experience/2/css/shell.css',imp
 const index=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
 const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
 
-test('Experience 2 presents Goals data through a dedicated Direction UX boundary',()=>{
-  assert.match(app,/loadGoals,renderGoals,bindGoals/);
-  assert.match(app,/goals:'Direction'/);
-  assert.match(app,/bindGoals\(model,\{reload:render,navigate:show\}\)/);
-  assert.match(facade,/direction\.css/);
-  assert.match(facade,/from '\.\/direction\.js'/);
-  assert.match(goals,/api\.get\('\/v1\/goals'\)/);
-  assert.match(goals,/areasCapability\.list\(\)/);
-  assert.doesNotMatch(view,/renderFoundation\('goals'/);
-});
-
-test('Direction creation starts with meaning instead of measurement administration',()=>{
-  assert.match(view,/Where do you want to go\?/);
-  assert.match(view,/Add direction/);
-  assert.match(view,/Where do you want to move\?/);
-  assert.match(view,/Three small decisions\. Details can wait\./);
-  for(const label of ['Career','Health','Learning','Finance','Relationships','Personal Growth','Something else'])assert.match(view,new RegExp(label));
-  assert.match(view,/Choose an area/);
-  assert.match(view,/What would you like to move toward\?/);
-  assert.match(view,/Why does this matter\?/);
-  assert.match(view,/That is enough to start/);
-  assert.match(view,/measurement_type:'milestone'/);
-  assert.match(view,/target_period:'none'/);
-  const createSection=view.slice(view.indexOf('function createEditor'),view.indexOf('function successDialog'));
-  assert.doesNotMatch(createSection,/Time spent|Quantity|Good-enough minimum|Priority|Status|Optional target/);
-});
-
-test('Direction creation reuses canonical Areas and Goals capabilities and never writes Progress',()=>{
-  assert.match(goals,/dependsOn:Object\.freeze\(\['areas'\]\)/);
-  assert.match(goals,/createArea\(input\)\{return areasCapability\.create\(input\);\}/);
-  assert.match(view,/goalsCapability\.createArea/);
-  assert.match(view,/goalsCapability\.create\(/);
-  assert.match(view,/goalsCapability\.update\(goal\.id,payload\)/);
-  assert.match(view,/goalsCapability\.archive\(goal\.id\)/);
-  assert.doesNotMatch(view,/\/v1\/areas|\/v1\/goals|\/v1\/progress|api\.post|api\.put|api\.delete/);
-  assert.match(areas,/api\.post\('\/v1\/areas'/);
-});
-
-test('Direction gives immediate continuation after creation instead of dropping into a list',()=>{
-  assert.match(view,/Direction created/);
-  assert.match(view,/You know where you're moving\./);
-  assert.match(view,/Plan my first step/);
-  assert.match(view,/Add tracking details/);
-  assert.match(view,/Done for now/);
-  assert.match(view,/navigate\?\.\('plan'\)/);
-  assert.match(view,/Next useful move/);
-  assert.match(view,/Make this direction actionable/);
-});
-
-test('Direction cards open a useful detail view before exposing administration',()=>{
-  assert.match(view,/data-goal-open/);
-  assert.match(view,/Why this matters/);
-  assert.match(view,/Tracking/);
-  assert.match(view,/Status/);
-  assert.match(view,/Plan next step/);
-  assert.match(view,/Edit direction/);
-  assert.match(view,/Archive/);
-  assert.match(directionCss,/\.goal-card-main/);
-  assert.match(directionCss,/\.goal-card-next/);
-  assert.match(directionCss,/\.direction-detail/);
-});
-
-test('Advanced Direction editing preserves full Goal power behind progressive disclosure',()=>{
-  assert.match(view,/Tracking & targets/);
-  assert.match(view,/More options/);
-  for(const label of ['Time spent','Quantity','Completed','Milestones'])assert.match(view,new RegExp(label));
-  assert.match(view,/Optional target/);
-  assert.match(view,/Good-enough minimum/);
-  assert.match(view,/Priority/);
-  assert.match(view,/Status/);
-  assert.match(view,/Targets are guidance, not debt/);
-  assert.match(view,/Progress remains factual evidence/);
-  assert.doesNotMatch(view,/catch.?up|overdue|streak debt/i);
-});
-
-test('Direction modal flows remain keyboard-modal safe',()=>{
-  assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="goalEditorTitle"/);
-  assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="directionSuccessTitle"/);
-  assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="directionDetailTitle"/);
-  assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="goalArchiveTitle"/);
-  assert.match(view,/data-goal-archive-cancel/);
-  assert.match(view,/data-goal-archive-confirm/);
-  assert.doesNotMatch(view,/window\.confirm|confirm\(/);
-  assert.match(view,/event\.key==='Escape'/);
-  assert.match(view,/event\.key!=='Tab'/);
-  assert.match(view,/host\.onkeydown=trap/);
-  assert.match(view,/host\.onkeydown=null/);
-  assert.match(view,/target\?\.isConnected/);
-  assert.match(view,/target\.focus\?\.\(\{preventScroll:true\}\)/);
-  assert.match(directionCss,/@media\(max-width:760px\)/);
-  assert.match(directionCss,/env\(safe-area-inset-bottom\)/);
-  assert.match(css,/\.goal-editor-close\{width:48px;height:48px/);
-});
-
-test('Direction presentation follows Experience 2 semantic tokens and responsive hierarchy',()=>{
-  assert.match(directionCss,/var\(--gc-primary\)/);
-  assert.match(directionCss,/var\(--gc-text\)/);
-  assert.match(directionCss,/var\(--gc-border\)/);
-  assert.match(directionCss,/var\(--gc-raised\)/);
-  assert.match(directionCss,/@media\(max-width:500px\)/);
-  assert.match(directionCss,/\.direction-area-grid/);
-  assert.match(directionCss,/\.direction-success/);
-  assert.match(directionCss,/\.direction-examples/);
-  assert.doesNotMatch(directionCss,/#[0-9a-fA-F]{3,8}\b/);
-});
-
-test('Experience 2 mobile shell keeps Direction behind one accessible Explore control',()=>{
-  assert.match(index,/id="mobileExploreToggle"[^>]*aria-expanded="false"[^>]*aria-controls="mobileSecondary"/);
-  assert.match(index,/class="mobile-secondary" id="mobileSecondary" aria-label="More destinations" aria-hidden="true"/);
-  assert.match(index,/mobileSecondary[\s\S]*data-view="goals"/);
-  assert.match(shellCss,/@media\(max-width:900px\)[\s\S]*\.mobile-explore-toggle\{display:flex/);
-  assert.match(shellCss,/\.mobile-secondary\.open\{display:grid/);
-  assert.match(app,/function setMobileExplore\(open\)/);
-  assert.match(app,/mobileSecondary\.inert=!expanded/);
-});
-
-test('Experience 2 PWA precaches Direction facade, implementation and presentation assets',()=>{
-  assert.match(sw,/growth-compass-preview2-e2-v\d+/);
-  for(const asset of ['/experience/2/css/goals.css','/experience/2/css/direction.css','/experience/2/js/views/goals.js','/experience/2/js/views/direction.js','/experience/2/js/capabilities/goals.js','/experience/2/js/capabilities/areas.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);
-  assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/);
-});
+test('Experience 2 presents Goals data through a dedicated Direction UX boundary',()=>{assert.match(app,/loadGoals\s*,\s*renderGoals\s*,\s*bindGoals/);assert.match(app,/goals:'Direction'/);assert.match(app,/bindGoals\(model,\{reload:render,navigate:show\}\)/);assert.match(facade,/direction\.css/);assert.match(facade,/from '\.\/direction\.js'/);assert.match(goals,/api\.get\('\/v1\/goals'\)/);assert.match(goals,/areasCapability\.list\(\)/);assert.doesNotMatch(view,/renderFoundation\('goals'/);});
+test('Direction creation starts with meaning instead of measurement administration',()=>{assert.match(view,/Where do you want to go\?/);assert.match(view,/Add direction/);assert.match(view,/Where do you want to move\?/);assert.match(view,/Three small decisions\. Details can wait\./);for(const label of ['Career','Health','Learning','Finance','Relationships','Personal Growth','Something else'])assert.match(view,new RegExp(label));assert.match(view,/Choose an area/);assert.match(view,/What would you like to move toward\?/);assert.match(view,/Why does this matter\?/);assert.match(view,/That is enough to start/);assert.match(view,/measurement_type:'milestone'/);assert.match(view,/target_period:'none'/);const createSection=view.slice(view.indexOf('function createEditor'),view.indexOf('function successDialog'));assert.doesNotMatch(createSection,/Time spent|Quantity|Good-enough minimum|Priority|Status|Optional target/);});
+test('Direction creation reuses canonical Areas and Goals capabilities and never writes Progress',()=>{assert.match(goals,/dependsOn:Object\.freeze\(\['areas'\]\)/);assert.match(goals,/createArea\(input\)\{return areasCapability\.create\(input\);\}/);assert.match(view,/goalsCapability\.createArea/);assert.match(view,/goalsCapability\.create\(/);assert.match(view,/goalsCapability\.update\(goal\.id,payload\)/);assert.match(view,/goalsCapability\.archive\(goal\.id\)/);assert.doesNotMatch(view,/\/v1\/areas|\/v1\/goals|\/v1\/progress|api\.post|api\.put|api\.delete/);assert.match(areas,/api\.post\('\/v1\/areas'/);});
+test('Direction gives immediate continuation after creation instead of dropping into a list',()=>{assert.match(view,/Direction created/);assert.match(view,/You know where you're moving\./);assert.match(view,/Plan my first step/);assert.match(view,/Add tracking details/);assert.match(view,/Done for now/);assert.match(view,/navigate\?\.\('plan'\)/);assert.match(view,/Next useful move/);assert.match(view,/Make this direction actionable/);});
+test('Direction cards open a useful detail view before exposing administration',()=>{assert.match(view,/data-goal-open/);assert.match(view,/Why this matters/);assert.match(view,/Tracking/);assert.match(view,/Status/);assert.match(view,/Plan next step/);assert.match(view,/Edit direction/);assert.match(view,/Archive/);assert.match(directionCss,/\.goal-card-main/);assert.match(directionCss,/\.goal-card-next/);assert.match(directionCss,/\.direction-detail/);});
+test('Advanced Direction editing preserves full Goal power behind progressive disclosure',()=>{assert.match(view,/Tracking & targets/);assert.match(view,/More options/);for(const label of ['Time spent','Quantity','Completed','Milestones'])assert.match(view,new RegExp(label));assert.match(view,/Optional target/);assert.match(view,/Good-enough minimum/);assert.match(view,/Priority/);assert.match(view,/Status/);assert.match(view,/Targets are guidance, not debt/);assert.match(view,/Progress remains factual evidence/);assert.doesNotMatch(view,/catch.?up|overdue|streak debt/i);});
+test('Direction modal flows remain keyboard-modal safe',()=>{assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="goalEditorTitle"/);assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="directionSuccessTitle"/);assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="directionDetailTitle"/);assert.match(view,/role="dialog" aria-modal="true" aria-labelledby="goalArchiveTitle"/);assert.match(view,/data-goal-archive-cancel/);assert.match(view,/data-goal-archive-confirm/);assert.doesNotMatch(view,/window\.confirm|confirm\(/);assert.match(view,/event\.key==='Escape'/);assert.match(view,/event\.key!=='Tab'/);assert.match(view,/host\.onkeydown=trap/);assert.match(view,/host\.onkeydown=null/);assert.match(view,/target\?\.isConnected/);assert.match(view,/target\.focus\?\.\(\{preventScroll:true\}\)/);assert.match(directionCss,/@media\(max-width:760px\)/);assert.match(directionCss,/env\(safe-area-inset-bottom\)/);assert.match(css,/\.goal-editor-close\{width:48px;height:48px/);});
+test('Direction presentation follows Experience 2 semantic tokens and responsive hierarchy',()=>{assert.match(directionCss,/var\(--gc-primary\)/);assert.match(directionCss,/var\(--gc-text\)/);assert.match(directionCss,/var\(--gc-border\)/);assert.match(directionCss,/var\(--gc-raised\)/);assert.match(directionCss,/@media\(max-width:500px\)/);assert.match(directionCss,/\.direction-area-grid/);assert.match(directionCss,/\.direction-success/);assert.match(directionCss,/\.direction-examples/);assert.doesNotMatch(directionCss,/#[0-9a-fA-F]{3,8}\b/);});
+test('Experience 2 mobile shell makes Compass primary while keeping Direction out of overflow navigation',()=>{assert.match(index,/class="mobile-secondary" id="mobileSecondary" aria-label="More destinations" aria-hidden="true"/);const dock=index.match(/<nav class="mobile-dock"[\s\S]*?<\/nav>/)?.[0]||'';assert.match(dock,/data-view="compass"/);assert.doesNotMatch(dock,/data-view="goals"/);const secondary=index.match(/<div class="mobile-secondary"[\s\S]*?<\/div>/)?.[0]||'';assert.doesNotMatch(secondary,/data-view="goals"/);assert.match(app,/goals:'compass'/);assert.match(shellCss,/\.mobile-secondary\.open\{display:grid/);});
+test('Experience 2 PWA precaches Direction facade, implementation and presentation assets',()=>{assert.match(sw,/growth-compass-preview2-e2-v\d+/);for(const asset of ['/experience/2/css/goals.css','/experience/2/css/direction.css','/experience/2/js/views/goals.js','/experience/2/js/views/direction.js','/experience/2/js/capabilities/goals.js','/experience/2/js/capabilities/areas.js'])assert.ok(sw.includes(`'${asset}'`),`${asset} must be precached`);assert.doesNotMatch(sw,/growth-compass-preview1|experience\/1/);});

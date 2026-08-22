@@ -10,7 +10,7 @@ if(app){new MutationObserver(syncIsolation).observe(document.body,{childList:tru
 
 document.addEventListener('keydown',event=>{
   const dialog=modal();if(!dialog)return;
-  if(event.key==='Escape'&&!event.defaultPrevented){const close=dialog.querySelector('button[aria-label^="Close"],[data-logger-close],[data-reflect-close]');if(close){event.preventDefault();close.click();}return;}
+  if(event.key==='Escape'&&!event.defaultPrevented){const close=dialog.querySelector('button[aria-label^="Close"],[data-modal-close]');if(close){event.preventDefault();close.click();}return;}
   if(event.key!=='Tab'||event.defaultPrevented)return;
   const nodes=focusable(dialog);if(!nodes.length)return;
   const first=nodes[0],last=nodes.at(-1);

@@ -1,53 +1,7 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-
-const view=await readFile(new URL('../public/experience/2/js/views/progress.js',import.meta.url),'utf8');
-const capability=await readFile(new URL('../public/experience/2/js/capabilities/progress.js',import.meta.url),'utf8');
-const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.url),'utf8');
-const html=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
-const css=await readFile(new URL('../public/experience/2/css/progress.css',import.meta.url),'utf8');
-const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
-
-test('Experience 2 Progress replaces the placeholder with the canonical Progress API',()=>{
-  assert.match(app,/loadProgress,renderProgress,bindProgress/);
-  assert.match(app,/current==='progress'/);
-  assert.match(capability,/\/v1\/progress\?/);
-  assert.match(capability,/api\.delete\(`\/v1\/progress\/\$\{id\}`\)/);
-  assert.doesNotMatch(view,/\/v1\/today|\/v1\/goals|\/v1\/insights/);
-});
-
-test('Progress preserves Plan versus factual evidence semantics',()=>{
-  assert.match(view,/What actually happened/);
-  assert.match(view,/Planned intentions stay out/);
-  assert.match(view,/evidence only/);
-  assert.match(view,/Interpretation and associations belong in Insights/);
-  assert.doesNotMatch(view,/streak|score|behind|overdue|catch.?up/i);
-});
-
-test('Progress supports mixed factual measurement types and read-only legacy evidence',()=>{
-  assert.match(view,/item\.minutes!=null/);
-  assert.match(view,/item\.quantity!=null/);
-  assert.match(view,/item\.boolean_value!=null/);
-  assert.match(view,/record_kind==='progress'/);
-  assert.match(view,/Earlier Beta/);
-  assert.match(view,/canonical\?`<button[^`]+data-progress-delete/);
-});
-
-test('Progress summarizes only loaded factual history and uses Monday week boundaries',()=>{
-  assert.match(view,/function weekStart/);
-  assert.match(view,/getUTCDay\(\)\|\|7/);
-  assert.match(view,/week=model\.items\.filter/);
-  assert.match(view,/Last 30 days/);
-  assert.match(view,/limit:500/);
-});
-
-test('Progress owns responsive presentation and is available offline with the Experience 2 shell',()=>{
-  assert.match(html,/\/experience\/2\/css\/progress\.css/);
-  assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(css,/@media\(max-width:430px\)/);
-  assert.match(sw,/growth-compass-preview2-e2-v\d+/);
-  assert.match(sw,/\/experience\/2\/css\/progress\.css/);
-  assert.match(sw,/\/experience\/2\/js\/capabilities\/progress\.js/);
-  assert.match(sw,/\/experience\/2\/js\/views\/progress\.js/);
-});
+import test from 'node:test';import assert from 'node:assert/strict';import { readFile } from 'node:fs/promises';
+const view=await readFile(new URL('../public/experience/2/js/views/progress.js',import.meta.url),'utf8');const capability=await readFile(new URL('../public/experience/2/js/capabilities/progress.js',import.meta.url),'utf8');const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.url),'utf8');const html=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');const css=await readFile(new URL('../public/experience/2/css/progress.css',import.meta.url),'utf8');const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
+test('Experience 2 Progress replaces the placeholder with the canonical Progress API',()=>{assert.match(app,/loadProgress\s*,\s*renderProgress\s*,\s*bindProgress/);assert.match(app,/current==='progress'/);assert.match(capability,/\/v1\/progress\?/);assert.match(capability,/api\.delete\(`\/v1\/progress\/\$\{id\}`\)/);assert.doesNotMatch(view,/\/v1\/today|\/v1\/goals|\/v1\/insights/);});
+test('Progress preserves Plan versus factual evidence semantics',()=>{assert.match(view,/What actually happened/);assert.match(view,/Planned intentions stay out/);assert.match(view,/evidence only/);assert.match(view,/Interpretation and associations belong in Insights/);assert.doesNotMatch(view,/streak|score|behind|overdue|catch.?up/i);});
+test('Progress supports mixed factual measurement types and read-only legacy evidence',()=>{assert.match(view,/item\.minutes!=null/);assert.match(view,/item\.quantity!=null/);assert.match(view,/item\.boolean_value!=null/);assert.match(view,/record_kind==='progress'/);assert.match(view,/Earlier Beta/);assert.match(view,/canonical\?`<button[^`]+data-progress-delete/);});
+test('Progress summarizes only loaded factual history and uses Monday week boundaries',()=>{assert.match(view,/function weekStart/);assert.match(view,/getUTCDay\(\)\|\|7/);assert.match(view,/week=model\.items\.filter/);assert.match(view,/Last 30 days/);assert.match(view,/limit:500/);});
+test('Progress owns responsive presentation and is available offline with the Experience 2 shell',()=>{assert.match(html,/\/experience\/2\/css\/progress\.css/);assert.match(css,/@media\(max-width:760px\)/);assert.match(css,/@media\(max-width:430px\)/);assert.match(sw,/growth-compass-preview2-e2-v\d+/);assert.match(sw,/\/experience\/2\/css\/progress\.css/);assert.match(sw,/\/experience\/2\/js\/capabilities\/progress\.js/);assert.match(sw,/\/experience\/2\/js\/views\/progress\.js/);});

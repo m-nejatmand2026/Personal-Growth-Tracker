@@ -1,45 +1,6 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-
-const navigation=await readFile(new URL('../public/experience/2/js/navigation-history.js',import.meta.url),'utf8');
-const css=await readFile(new URL('../public/experience/2/css/navigation-history.css',import.meta.url),'utf8');
-const index=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
-const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');
-const runner=await readFile(new URL('../scripts/run-browser-e2e.sh',import.meta.url),'utf8');
-const browser=await readFile(new URL('./browser/experience2-navigation-history.browser.js',import.meta.url),'utf8');
-
-test('Experience 2 page changes create real browser history entries',()=>{
-  assert.match(navigation,/history\.replaceState/);
-  assert.match(navigation,/history\.pushState/);
-  assert.match(navigation,/addEventListener\('popstate'/);
-  assert.match(navigation,/MutationObserver/);
-  assert.match(navigation,/attributeFilter:\['aria-current'\]/);
-  assert.doesNotMatch(navigation,/window\.close|location\.assign|location\.replace/);
-});
-
-test('Experience 2 exposes an accessible in-app back control on mobile',()=>{
-  assert.match(navigation,/data\.appBack|dataset\.appBack/);
-  assert.match(navigation,/Back to previous page/);
-  assert.match(navigation,/history\.back\(\)/);
-  assert.match(css,/min-height:44px/);
-  assert.match(css,/\.mobile-header\.has-history-back/);
-  assert.match(css,/\.mobile-history-back\[hidden\]\{display:none\}/);
-});
-
-test('navigation history is loaded and remains available offline in the Experience 2 PWA',()=>{
-  assert.match(index,/\/experience\/2\/js\/navigation-history\.js/);
-  assert.match(sw,/growth-compass-preview2-e2-v98/);
-  assert.match(sw,/\/experience\/2\/js\/navigation-history\.js/);
-  assert.match(sw,/\/experience\/2\/css\/navigation-history\.css/);
-});
-
-test('release-blocking browser acceptance covers phone back and the visible back control',()=>{
-  assert.match(runner,/tests\/browser\/experience2-navigation-history\.browser\.js/);
-  assert.match(browser,/history\.back\(\)/);
-  assert.match(browser,/history\.forward\(\)/);
-  assert.match(browser,/data-app-back/);
-  assert.match(browser,/width:375,height:812/);
-  assert.match(browser,/chromium/);
-  assert.match(browser,/webkit/);
-});
+import test from 'node:test';import assert from 'node:assert/strict';import { readFile } from 'node:fs/promises';
+const navigation=await readFile(new URL('../public/experience/2/js/navigation-history.js',import.meta.url),'utf8');const css=await readFile(new URL('../public/experience/2/css/navigation-history.css',import.meta.url),'utf8');const index=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');const sw=await readFile(new URL('../public/experience/2/sw.js',import.meta.url),'utf8');const runner=await readFile(new URL('../scripts/run-browser-e2e.sh',import.meta.url),'utf8');const browser=await readFile(new URL('./browser/experience2-navigation-history.browser.js',import.meta.url),'utf8');
+test('Experience 2 page changes create real browser history entries',()=>{assert.match(navigation,/history\.replaceState/);assert.match(navigation,/history\.pushState/);assert.match(navigation,/addEventListener\('popstate'/);assert.match(navigation,/MutationObserver/);assert.match(navigation,/attributeFilter:\['data-current-view'\]/);assert.doesNotMatch(navigation,/window\.close|location\.assign|location\.replace/);});
+test('Experience 2 exposes an accessible in-app back control on mobile',()=>{assert.match(navigation,/data\.appBack|dataset\.appBack/);assert.match(navigation,/Back to previous page/);assert.match(navigation,/history\.back\(\)/);assert.match(css,/min-height:44px/);assert.match(css,/\.mobile-header\.has-history-back/);assert.match(css,/\.mobile-history-back\[hidden\]\{display:none\}/);});
+test('navigation history is loaded and remains available offline in the Experience 2 PWA',()=>{assert.match(index,/\/experience\/2\/js\/navigation-history\.js/);assert.match(sw,/growth-compass-preview2-e2-v\d+/);assert.match(sw,/\/experience\/2\/js\/navigation-history\.js/);assert.match(sw,/\/experience\/2\/css\/navigation-history\.css/);});
+test('release-blocking browser acceptance covers phone back and the visible back control',()=>{assert.match(runner,/tests\/browser\/experience2-navigation-history\.browser\.js/);assert.match(browser,/history\.back\(\)/);assert.match(browser,/history\.forward\(\)/);assert.match(browser,/data-app-back/);assert.match(browser,/width:375,height:812/);assert.match(browser,/chromium/);assert.match(browser,/webkit/);});
