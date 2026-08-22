@@ -11,7 +11,7 @@ const startHere = await readFile(new URL('../START_PREVIEW2_CHAT.md', import.met
 const CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803';
 const SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38';
 const AUTH_MIGRATION_BLOB = 'c902d52f0a5d33bda61df5cc59f50d11c0627792';
-const TIME_AWARE_MIGRATION_BLOB = '9e5d150e9e8f9b1be96288a8c05fcec482f32105';
+const TIME_AWARE_MIGRATION_BLOB = '9c5866c1868c788430a7954ce8b15c4a558d99c0';
 const CANONICAL_PREVIEW2_ORIGIN = 'https://personal-growth-tracker-preview2.m-nejatmand.workers.dev';
 
 test('Preview 2 branch deploy remains isolated to the dedicated branch, Worker and D1', () => {
