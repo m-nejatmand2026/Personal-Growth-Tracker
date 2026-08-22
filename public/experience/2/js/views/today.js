@@ -34,11 +34,12 @@ function glyph(item){return escapeHtml(String(item.activity_label||item.title||'
 function summaryRows(model,key){return Array.isArray(model?.summary?.[key])?model.summary[key]:[];}
 function activeGoals(model){return Array.isArray(model?.goals)?model.goals.filter(goal=>goal.status!=='archived'):[];}
 function activeRoutine(model){return Array.isArray(model?.routineItems)?model.routineItems.filter(item=>Number(item.active??1)===1):[];}
-function hasOperationalSignal(model){return Boolean((model.today||[]).length||(model.tomorrowItems||[]).length||summaryRows(model,'progress').length||summaryRows(model,'direction').length);}
+function hasOperationalSignal(model){return Boolean((model.today||[]).length||(model.tomorrowItems||[]).length||summaryRows(model,'progress').length);}
 
 export function todayStage(model){
   if(model?.goalsKnown===true&&!hasOperationalSignal(model)&&Array.isArray(model.goals)&&model.goals.length===0)return 'welcome';
   if(firstRunContinuation==='plan'&&model?.goalsKnown===true&&activeGoals(model).length)return 'plan';
+  if(model?.goalsKnown===true&&!hasOperationalSignal(model)&&activeGoals(model).length)return 'guided';
   return 'operational';
 }
 
@@ -101,7 +102,7 @@ function onboardingSteps(current='direction'){
   const currentIndex=Math.max(0,ONBOARDING_STEPS.findIndex(step=>step.key===current));
   return `<div class="today-onboarding-steps" aria-label="Growth Compass flow">${ONBOARDING_STEPS.map((step,index)=>`<details class="today-onboarding-step${index<currentIndex?' is-done':''}${index===currentIndex?' is-current':''}" data-today-flow-step="${step.key}"><summary><span>${index<currentIndex?'✓':step.number}</span><div><strong>${step.title}</strong><p>${step.copy}</p></div><b aria-hidden="true">+</b></summary><div class="today-onboarding-step-body"><p class="today-onboarding-step-detail">${step.detail}</p><button type="button" class="today-step-action" data-today-step-action="${step.key}">${stepActionLabel(step,current)}<span aria-hidden="true">→</span></button></div></details>`).join('')}</div>`;
 }
-function flowLoopHtml(){return `<p class="today-flow-loop"><strong>Direction</strong> guides the <strong>Plan</strong>. The Plan chooses <strong>Actions</strong>. Actions create <strong>Progress</strong>. Progress helps you adjust what comes next.</p>`;}
+function flowLoopHtml(){return `<p class="today-flow-loop"><strong>Direction</strong> guides the <strong>Plan</strong>. The Plan chooses <strong>Actions</strong> and gives them a realistic time. Actions create <strong>Progress</strong>. Progress helps you adjust the next Plan — or the Direction.</p>`;}
 
 function welcomeHtml(){
   return `<div class="today-view today-first-run">
@@ -135,6 +136,25 @@ function planPromptHtml(model){
   </div>`;
 }
 
+function guidedHtml(model){
+  const goals=activeGoals(model);
+  const goal=goals[0];
+  const areaName=goal?.area_name||'Direction';
+  const more=Math.max(0,goals.length-1);
+  const needsRoutineChoice=model?.routineKnown===true&&activeRoutine(model).length===0;
+  return `<div class="today-view today-first-run today-compass-ready">
+    <section class="living-surface today-onboarding" aria-labelledby="todayCompassReadyTitle">
+      <div class="today-onboarding-kicker"><span>Direction set</span><b>${needsRoutineChoice?'Next: make time realistic':'Next: choose one useful step'}</b></div>
+      <div class="today-onboarding-copy"><p class="eyebrow">Your compass</p><h2 id="todayCompassReadyTitle">Make your direction real.</h2><p>You already know where you want to go. Now choose one useful next step and give it a time that fits your life. Growth Compass keeps the connection visible instead of turning your direction into a pile of unrelated tasks.</p></div>
+      ${goal?`<div class="today-created-direction today-current-direction"><span>${escapeHtml(areaName)}</span><strong>${escapeHtml(goal.name)}</strong>${goal.why_text?`<p>${escapeHtml(goal.why_text)}</p>`:''}${more?`<small>+ ${more} other active ${more===1?'direction':'directions'}</small>`:''}</div>`:''}
+      ${needsRoutineChoice?routineChoiceHtml():`<div class="today-onboarding-actions today-compass-actions"><button type="button" class="primary-button" data-today-go-plan>Plan my next step</button><button type="button" class="secondary-button" data-today-step-action="action">Add something now</button><button type="button" class="ghost-button" data-today-go-goals>Review direction</button></div>`}
+      <div class="today-onboarding-guide"><strong>One simple loop</strong><span>Direction tells Plan what matters. Time makes the Plan realistic. Action creates factual Progress.</span></div>
+      ${onboardingSteps('plan')}
+      ${flowLoopHtml()}
+    </section>
+  </div>`;
+}
+
 function openDayHtml(){
   return `<section class="static-surface today-open-day"><div><p class="eyebrow">Today</p><h2>Your day is open</h2><p>Nothing needs to be added just to fill space. Plan something only if it genuinely deserves attention.</p></div><button type="button" class="secondary-button" data-today-go-plan>Plan today</button></section>`;
 }
@@ -143,6 +163,7 @@ export function renderToday(model){
   const stage=todayStage(model);
   if(stage==='welcome'){ensureFirstRunStyles();return welcomeHtml();}
   if(stage==='plan'){ensureFirstRunStyles();return planPromptHtml(model);}
+  if(stage==='guided'){ensureFirstRunStyles();return guidedHtml(model);}
   const activeItems=(model.today||[]).filter(item=>item.status==='in_progress');
   const planned=(model.today||[]).filter(item=>item.status==='planned');
   const plannedMinutes=(model.today||[]).reduce((sum,item)=>sum+Math.max(0,Number(item.planned_minutes)||0),0);
