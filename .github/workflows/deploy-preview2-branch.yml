@@ -98,7 +98,7 @@ jobs:
           GC_PREVIEW2_MIGRATION_CONFIRM: personal-growth-tracker-preview2
         run: |
           set -euo pipefail
-          authorized_count='8'
+          authorized_count='9'
           actual_count="$(find migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d '[:space:]')"
           test "$actual_count" = "$authorized_count" || {
             echo "Preview 2 migration set changed: expected $authorized_count SQL files, found $actual_count. Refusing migration."
@@ -121,6 +121,7 @@ jobs:
           verify_blob '0006_activities_contract.sql' '5b6d5b038738fd055ff3b7456e8c2f69dd20c89b'
           verify_blob '0007_wellbeing_energy.sql' '3c3a3c25a28ff6c23b00c2d4828d55e9c0217201'
           verify_blob '0008_auth_multi_user.sql' 'c902d52f0a5d33bda61df5cc59f50d11c0627792'
+          verify_blob '0009_time_aware_capacity.sql' '9e5d150e9e8f9b1be96288a8c05fcec482f32105'
           bash scripts/migrate-preview2.sh
 
       - name: Verify no pending Preview 2 migrations before deploy
