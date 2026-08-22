@@ -1,6 +1,24 @@
+let activeModalCount = 0;
+
+function isFocusableVisible(element) {
+  if (element.closest('[hidden],[aria-hidden="true"],[inert]')) return false;
+  const style = window.getComputedStyle?.(element);
+  return !style || (style.display !== 'none' && style.visibility !== 'hidden');
+}
+
 function focusableElements(root) {
   return [...root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
-    .filter((element) => !element.hidden && element.getAttribute('aria-hidden') !== 'true');
+    .filter(isFocusableVisible);
+}
+
+function isolateBackground(root) {
+  const changed = [];
+  for (const element of document.body.children) {
+    if (element === root || !(element instanceof HTMLElement)) continue;
+    changed.push({ element, inert: element.inert });
+    element.inert = true;
+  }
+  return () => changed.forEach(({ element, inert }) => { element.inert = inert; });
 }
 
 export function activateModal(root, options = {}) {
@@ -9,11 +27,20 @@ export function activateModal(root, options = {}) {
   const dialog = root.querySelector('[role="dialog"]');
   if (!dialog) return () => {};
   let closed = false;
+  const restoreBackground = isolateBackground(root);
+
+  dialog.setAttribute('aria-modal', 'true');
+  if (!dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
+  activeModalCount += 1;
+  document.body.classList.add('gc-modal-open');
 
   function close() {
     if (closed) return;
     closed = true;
     document.removeEventListener('keydown', onKeyDown, true);
+    restoreBackground();
+    activeModalCount = Math.max(0, activeModalCount - 1);
+    if (!activeModalCount) document.body.classList.remove('gc-modal-open');
     options.onClose?.();
     if (previousFocus?.isConnected) previousFocus.focus();
   }

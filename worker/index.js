@@ -1,25 +1,70 @@
-import { json } from './core/http.js';
+import { HttpError, json } from './core/http.js';
 import { routeApi } from './router.js';
 
+const SECURITY_HEADERS = Object.freeze({
+  'content-security-policy': "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.resend.com; manifest-src 'self'; worker-src 'self'; media-src 'self' blob:; form-action 'self' https://accounts.google.com https://appleid.apple.com",
+  'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+  'referrer-policy': 'no-referrer',
+  'strict-transport-security': 'max-age=31536000; includeSubDomains',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY'
+});
+
+function secureResponse(response) {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+function logApiFailure(request, url, error) {
+  const status = error instanceof HttpError ? error.status : 500;
+  if (status < 500) return;
+  console.error(JSON.stringify({ event: 'api_error', path: url.pathname, method: request.method, status, error_name: error?.name || 'Error', message: error?.message || 'Unexpected error', ray_id: request.headers.get('cf-ray') || null }));
+}
+
+async function serveHtmlAsset(request, env, assetPath, { transform } = {}) {
+  if (!env.ASSETS) return new Response('Not found', { status: 404 });
+  const assetUrl = new URL(assetPath, request.url);
+  const source = await env.ASSETS.fetch(assetUrl);
+  if (!source.ok) return source;
+  const original = await source.text();
+  const html = transform ? transform(original) : original;
+  const headers = new Headers(source.headers);
+  headers.set('content-type', 'text/html; charset=utf-8');
+  headers.set('cache-control', 'no-store');
+  return new Response(html, { status: source.status, statusText: source.statusText, headers });
+}
+
+function serveSelector(request, env) {
+  return serveHtmlAsset(request, env, '/selector/');
+}
+
+function serveExperienceOne(request, env) {
+  return serveHtmlAsset(request, env, '/experience/1/', {
+    transform: (html) => html
+      .replace('href="/manifest.webmanifest"', 'href="/experience/1/manifest.webmanifest"')
+      .replace('</body>', '<script type="module" src="/experience/1/bootstrap.js"></script></body>')
+  });
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
     if (!url.pathname.startsWith('/api/')) {
-      return env.ASSETS
-        ? env.ASSETS.fetch(request)
-        : new Response('Not found', { status: 404 });
+      if (url.pathname === '/') return secureResponse(await serveSelector(request, env));
+      if (url.pathname === '/experience/1') return Response.redirect(new URL('/experience/1/', request.url), 308);
+      if (url.pathname === '/experience/1/') return secureResponse(await serveExperienceOne(request, env));
+      const response = env.ASSETS ? await env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
+      return secureResponse(response);
     }
 
     try {
-      return await routeApi(request, env);
+      return secureResponse(await routeApi(request, env, ctx));
     } catch (error) {
-      console.error(JSON.stringify({
-        event: 'api_error',
-        path: url.pathname,
-        method: request.method,
-        message: error?.message || 'Unexpected error'
-      }));
-      return json({ error: error?.message || 'Unexpected error' }, 500);
+      logApiFailure(request, url, error);
+      if (error instanceof HttpError) return secureResponse(json({ error: error.message }, error.status));
+      return secureResponse(json({ error: 'Unexpected server error' }, 500));
     }
   }
 };

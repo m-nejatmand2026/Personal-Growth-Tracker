@@ -1,10 +1,16 @@
-import { bindBudgetPanel, budgetPanelHtml, loadBudgetModel } from '../../features/plan/budgets.js';
+import {
+  bindBudgetPanel,
+  budgetPanelHtml,
+  loadBudgetModel
+} from './ui.js';
 
 export const plansModule = Object.freeze({
   id: 'plans',
   contractVersion: 1,
   dependsOn: ['goals'],
   defaultEnabled: true,
+  publishes: Object.freeze([]),
+  subscribes: Object.freeze([]),
   slots: Object.freeze([{ name: 'plan', order: 40 }]),
   async load({ date }) {
     return loadBudgetModel(date);

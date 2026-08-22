@@ -1,0 +1,54 @@
+/* Wellbeing-owned Today presentation. */
+.today-state-section{padding:14px}
+.today-state-section .os-section-head{margin-bottom:10px}
+.daily-state-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.state-card{min-width:0;min-height:82px;display:grid;grid-template-columns:1fr;gap:6px;align-content:start;justify-items:start;padding:9px;border:1px solid var(--gc-border);border-radius:var(--gc-radius-lg);background:var(--gc-surface);color:var(--gc-text);text-align:left;box-shadow:none}
+button.state-card{cursor:pointer}
+button.state-card:hover{border-color:color-mix(in srgb,var(--gc-brand) 28%,var(--gc-border));background:var(--gc-surface-subtle)}
+.state-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:999px;background:var(--gc-brand-soft);color:var(--gc-brand);font-size:14px}
+.sleep-icon{background:var(--gc-reflection-soft);color:#735a9c}
+.context-icon{background:var(--gc-info-soft);color:#476d8e}
+.state-card div>span,.state-card strong,.state-card small{display:block;min-width:0}
+.state-card div>span{color:var(--gc-text-muted);font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.state-card strong{margin-top:2px;font-size:11px;line-height:1.2;overflow-wrap:anywhere}
+.state-card small{margin-top:2px;color:var(--gc-text-muted);font-size:9px;overflow-wrap:anywhere}
+
+.energy-drawer{overflow:hidden;border:1px solid var(--gc-border);border-radius:var(--gc-radius-lg);background:var(--gc-surface);box-shadow:var(--gc-shadow-sm)}
+.energy-drawer>summary{min-height:var(--gc-target-min);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none}
+.energy-drawer>summary::-webkit-details-marker{display:none}
+.energy-drawer>summary span:first-child strong,.energy-drawer>summary span:first-child small{display:block}
+.energy-drawer>summary span:first-child small{margin-top:2px;color:var(--gc-text-muted);font-size:11px;font-weight:400}
+.energy-drawer>summary>span:last-child{color:var(--gc-brand-strong);font-size:11px;font-weight:800;text-align:right}
+.energy-drawer[open]>summary{background:var(--gc-surface-subtle)}
+.energy-drawer-body{padding:16px;border-top:1px solid var(--gc-border)}
+.energy-help{margin-top:0}
+.energy-axis{text-align:center;font-size:11px;font-weight:800}
+.energy-axis.high{margin-bottom:6px;color:#b34732}
+.energy-axis.low{margin-top:6px;color:#315fa8}
+.valence{display:flex;justify-content:space-between;gap:8px;margin:4px 2px;color:var(--gc-text-muted);font-size:10px;font-weight:700}
+.energy-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));overflow:hidden;border:1px solid var(--gc-text);border-radius:var(--gc-radius-md)}
+.energy-cell{min-width:0;min-height:50px;padding:4px 2px;border:0;border-right:1px solid rgba(13,27,42,.45);border-bottom:1px solid rgba(13,27,42,.45);background:var(--gc-surface);color:var(--gc-text);font-size:9.5px;line-height:1.05;cursor:pointer;overflow-wrap:anywhere}
+.energy-cell:nth-child(6n){border-right:0}
+.energy-cell:nth-last-child(-n+6){border-bottom:0}
+.energy-cell.tl{background:#ef8c77}.energy-cell.tr{background:#a7d66f}.energy-cell.bl{background:#9dbbdf}.energy-cell.br{background:#e8d55d}
+.energy-cell.selected,.energy-cell[aria-pressed="true"]{box-shadow:inset 0 0 0 4px var(--gc-text);font-weight:850}
+.energy-result{display:flex;align-items:center;gap:10px;min-height:36px;margin-top:12px}
+.energy-result strong{font-size:16px}
+.energy-drawer .actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:10px}
+.energy-drawer [data-wellbeing-energy-save]{min-height:var(--gc-target-min)}
+
+@media (min-width:640px){
+  .daily-state-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .today-state-section{padding:18px}
+  .state-card{min-height:var(--gc-target-min);grid-template-columns:44px minmax(0,1fr);gap:11px;align-items:center;align-content:initial;justify-items:stretch;padding:12px 13px}
+  .state-icon{width:44px;height:44px;font-size:18px}
+  .state-card div>span{font-size:10px;letter-spacing:.08em}
+  .state-card strong{font-size:14px}
+  .state-card small{font-size:10.5px}
+}
+
+@media (max-width:420px){
+  .energy-drawer-body{padding:13px 10px}
+  .energy-cell{min-height:48px;font-size:8.5px}
+  .energy-drawer .actions{grid-template-columns:1fr}
+}

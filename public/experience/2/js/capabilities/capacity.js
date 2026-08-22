@@ -1,0 +1,3 @@
+import{api}from'../core/api.js';
+const base='/v1/capacity/commitments';
+export const capacityCapability=Object.freeze({summary:({date,period='week'})=>api.get(`/v1/capacity?date=${encodeURIComponent(date)}&period=${encodeURIComponent(period)}`),commitments:({date=null,includeInactive=false}={})=>{const query=new URLSearchParams();if(date)query.set('date',date);if(includeInactive)query.set('include_inactive','1');return api.get(`${base}${query.size?`?${query}`:''}`)},create:input=>api.post(base,input),update:(id,input)=>api.put(`${base}/${Number(id)}`,input)});

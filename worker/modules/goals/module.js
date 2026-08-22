@@ -3,13 +3,15 @@ import {
   createGoalRoute,
   listGoalsRoute,
   updateGoalRoute
-} from '../../routes/goals.js';
+} from './routes.js';
 
 export const goalsModule = Object.freeze({
   id: 'goals',
   contractVersion: 1,
   dependsOn: ['areas'],
   defaultEnabled: true,
+  ownsTables: Object.freeze(['goals']),
+  compatibilityTables: Object.freeze([]),
   routes: Object.freeze([
     { method: 'GET', pattern: '/api/v1/goals', handler: listGoalsRoute },
     { method: 'POST', pattern: '/api/v1/goals', handler: createGoalRoute },
