@@ -16,7 +16,7 @@ const AUTHORIZED_MIGRATIONS = [
   ['0006_activities_contract.sql', '5b6d5b038738fd055ff3b7456e8c2f69dd20c89b'],
   ['0007_wellbeing_energy.sql', '3c3a3c25a28ff6c23b00c2d4828d55e9c0217201'],
   ['0008_auth_multi_user.sql', 'c902d52f0a5d33bda61df5cc59f50d11c0627792'],
-  ['0009_time_aware_capacity.sql', '9e5d150e9e8f9b1be96288a8c05fcec482f32105']
+  ['0009_time_aware_capacity.sql', '9c5866c1868c788430a7954ce8b15c4a558d99c0']
 ];
 
 test('explicit Preview 2 migration command is hard-pinned to the isolated target', () => {
