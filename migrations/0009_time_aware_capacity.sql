@@ -1,11 +1,13 @@
-PRAGMA foreign_keys = ON;
-
+-- Module-Owner: capacity
+--
 -- Time-aware capacity for Preview 2.
 -- Existing duration-only commitments remain valid and unchanged.
 -- start_time/end_time are local civil clock times (HH:MM). An end time that
 -- is earlier than the start time represents an overnight block.
 -- flexibility controls whether the planner should treat a block as fixed,
 -- preferred, or freely movable when proposing alternative times.
+
+PRAGMA foreign_keys = ON;
 
 ALTER TABLE capacity_commitments ADD COLUMN start_time TEXT;
 ALTER TABLE capacity_commitments ADD COLUMN end_time TEXT;
