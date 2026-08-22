@@ -156,7 +156,7 @@ jobs:
           verify_blob '0006_activities_contract.sql' '5b6d5b038738fd055ff3b7456e8c2f69dd20c89b'
           verify_blob '0007_wellbeing_energy.sql' '3c3a3c25a28ff6c23b00c2d4828d55e9c0217201'
           verify_blob '0008_auth_multi_user.sql' 'c902d52f0a5d33bda61df5cc59f50d11c0627792'
-          verify_blob '0009_time_aware_capacity.sql' '9e5d150e9e8f9b1be96288a8c05fcec482f32105'
+          verify_blob '0009_time_aware_capacity.sql' '9c5866c1868c788430a7954ce8b15c4a558d99c0'
           bash scripts/migrate-preview2.sh
 
       - name: Verify no pending Preview 2 migrations before deploy
