@@ -37,6 +37,7 @@ async function mockNewAccount(page){
     }
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:goals})});
   });
+  await page.route('**/api/v1/capacity/commitments*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[]})}));
   await page.route('**/api/v1/daily-plan*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[]})}));
   await page.route('**/api/v1/today*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({progress:[],direction:goals.length?[{name:goals[0].name,target_minutes:0,actual_minutes:0}]:[]})}));
   return {goals,areas};
@@ -55,6 +56,7 @@ async function exercise(page,browserName,viewport){
   assert.equal(await page.getByRole('button',{name:'How Growth Compass works'}).count(),0,`${browserName} ${viewport}: duplicated how-it-works section should be gone`);
   assert.match(await welcome.innerText(),/How your compass grows/);
   assert.match(await welcome.innerText(),/Direction[\s\S]*Plan[\s\S]*Action[\s\S]*Progress/);
+  assert.match(await welcome.innerText(),/Direction guides the Plan[\s\S]*Plan chooses Actions[\s\S]*Actions create Progress/i);
   assert.match(await welcome.innerText(),/Start with one area/);
   assert.doesNotMatch(await welcome.innerText(),/Nothing running|No other plans yet|No duration|Nothing recorded yet/);
 
@@ -62,9 +64,9 @@ async function exercise(page,browserName,viewport){
   assert.equal(await flowSteps.count(),4,`${browserName} ${viewport}: onboarding should expose four understandable flow steps`);
   const stepExpectations=[
     ['direction','Direction','every later plan a reason','Create direction'],
-    ['plan','Plan','Plans are intentions and can change','Open Plan'],
-    ['action','Action','adjust the plan instead of carrying old intentions forward','Add an action'],
-    ['progress','Progress','future decisions use real evidence','Open Progress']
+    ['plan','Plan','place it around the time your life already needs','Open Plan'],
+    ['action','Action','Plan becomes Action','Add an action'],
+    ['progress','Progress','Action creates factual Progress','Open Progress']
   ];
   for(const [key,title,detail,actionLabel] of stepExpectations){
     const step=page.locator(`[data-today-flow-step="${key}"]`);
@@ -103,15 +105,18 @@ async function exercise(page,browserName,viewport){
   assert.match(await continuation.innerText(),/career/i);
   assert.match(await continuation.innerText(),/Build a meaningful first direction/);
   assert.match(await continuation.innerText(),/2 of 4/i);
+  assert.match(await continuation.innerText(),/How predictable is your week\?/i);
+  assert.equal(await page.getByRole('button',{name:/I have a regular routine/i}).count(),1);
+  assert.equal(await page.getByRole('button',{name:/My week changes a lot/i}).count(),1);
   assert.equal(state.areas.length,1,`${browserName} ${viewport}: starter life area should be created once`);
   assert.equal(state.areas[0].name,'Career');
   assert.equal(state.goals[0].area_id,state.areas[0].id);
   assert.equal(state.goals[0].measurement_type,'milestone',`${browserName} ${viewport}: first-run should use a neutral milestone measurement until the user refines it`);
   assert.equal(state.goals[0].target_period,'none');
   await assertNoOverflow(page,`${browserName} ${viewport} continuation`);
-  await capture(page,browserName,viewport,'plan-continuation');
+  await capture(page,browserName,viewport,'routine-choice');
 
-  await page.getByRole('button',{name:'Plan my first step'}).click();
+  await page.getByRole('button',{name:/My week changes a lot/i}).click();
   await page.locator('.plan-view').waitFor({state:'visible',timeout:15_000});
 }
 
