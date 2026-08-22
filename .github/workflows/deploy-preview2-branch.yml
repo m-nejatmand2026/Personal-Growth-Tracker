@@ -1,4 +1,4 @@
-name: Preview 2 Branch Deploy
+name: Preview 2 Branch Safety Gate
 
 on:
   push:
@@ -12,12 +12,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy-preview2:
-    name: Test, bootstrap and deploy isolated Preview 2
+  preview2-branch-safety:
+    name: Keep branch pushes non-deploying
     if: github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' && github.ref == 'refs/heads/feature/experience-v2'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-
+    timeout-minutes: 5
     steps:
       - name: Checkout exact Preview 2 commit
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -25,202 +24,12 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - name: Set up Node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
-        with:
-          node-version: '24'
-          package-manager-cache: false
-
-      - name: Verify isolated Preview 2 credentials and branch
+      - name: Enforce single guarded deployment authority
         shell: bash
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           test "$GITHUB_REF" = 'refs/heads/feature/experience-v2'
           test "$GITHUB_REPOSITORY" = 'm-nejatmand2026/Personal-Growth-Tracker'
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN repository secret.'; exit 1; }
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID repository secret.'; exit 1; }
-
-      - name: Install pinned application, Worker and browser runtimes
-        run: npm install --no-package-lock --no-audit --no-fund
-
-      - name: Run unit, contract and modularity boundary tests
-        run: npm test
-
-      - name: Run real Worker and isolated D1 integration tests
-        run: |
-          npm run test:integration
-          npm run test:auth-integration
-
-      - name: Install pinned browser binaries
-        run: ./node_modules/.bin/playwright install --with-deps chromium webkit
-
-      - name: Run local Worker browser acceptance gate
-        env:
-          GC_E2E_SCREENSHOT_DIR: .artifacts/ui-preview2-branch
-        run: |
-          bash scripts/run-browser-e2e.sh
-          bash scripts/run-auth-browser-e2e.sh
-
-      - name: Find or create isolated Preview 2 D1
-        shell: bash
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          name='personal-growth-tracker-preview2'
-          npx --yes wrangler@4.123.0 d1 list --json > .preview2-d1-list.json
-          db_id="$(node -e "const fs=require('fs');const raw=JSON.parse(fs.readFileSync('.preview2-d1-list.json','utf8'));const list=Array.isArray(raw)?raw:(raw.result||raw.databases||[]);const m=list.filter(x=>x&&x.name==='personal-growth-tracker-preview2');if(m.length>1)throw new Error('Multiple Preview 2 D1 databases; refusing ambiguous bootstrap.');if(m.length===1)process.stdout.write(m[0].uuid||m[0].id||m[0].database_id||'');")"
-          if [ -z "$db_id" ]; then
-            echo 'Preview 2 D1 does not exist; creating isolated database.'
-            npx --yes wrangler@4.123.0 d1 create "$name"
-            npx --yes wrangler@4.123.0 d1 list --json > .preview2-d1-list.json
-            db_id="$(node -e "const fs=require('fs');const raw=JSON.parse(fs.readFileSync('.preview2-d1-list.json','utf8'));const list=Array.isArray(raw)?raw:(raw.result||raw.databases||[]);const m=list.filter(x=>x&&x.name==='personal-growth-tracker-preview2');if(m.length!==1)throw new Error('Expected exactly one Preview 2 D1 after creation, found '+m.length);const id=m[0].uuid||m[0].id||m[0].database_id||'';if(!id)throw new Error('Preview 2 D1 has no identifier.');process.stdout.write(id);")"
-          fi
-          test -n "$db_id"
-          printf '%s' "$db_id" > .preview2-db-id
-          echo 'Preview 2 D1 resolved successfully.'
-
-      - name: Build isolated Preview 2 Wrangler config and enforce D1 separation
-        shell: bash
-        run: |
-          set -euo pipefail
-          node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('wrangler.jsonc','utf8'));const prod=c.d1_databases?.find(x=>x.binding==='DB');const p1=c.env?.preview?.d1_databases?.find(x=>x.binding==='DB');const id=fs.readFileSync('.preview2-db-id','utf8').trim();if(c.name!=='personal-growth-tracker')throw new Error('Unexpected Worker base name: '+c.name);if(!prod?.database_id||!p1?.database_id)throw new Error('Production and Preview 1 D1 identities must remain explicit.');if(!id)throw new Error('Preview 2 D1 id is empty.');if(id===prod.database_id)throw new Error('Preview 2 points at Production D1. Refusing deployment.');if(id===p1.database_id)throw new Error('Preview 2 points at Preview 1 D1. Refusing deployment.');c.env||={};c.env.preview2={name:'personal-growth-tracker-preview2',observability:{enabled:true,head_sampling_rate:1},d1_databases:[{binding:'DB',database_name:'personal-growth-tracker-preview2',database_id:id,migrations_dir:'migrations'}]};fs.writeFileSync('.wrangler.preview2.json',JSON.stringify(c,null,2));"
-
-      - name: Apply only the explicitly authorized Preview 2 migration set
-        shell: bash
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          GC_PREVIEW2_MIGRATION_CONFIRM: personal-growth-tracker-preview2
-        run: |
-          set -euo pipefail
-          authorized_count='9'
-          actual_count="$(find migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d '[:space:]')"
-          test "$actual_count" = "$authorized_count" || {
-            echo "Preview 2 migration set changed: expected $authorized_count SQL files, found $actual_count. Refusing migration."
-            exit 1
-          }
-          verify_blob() {
-            file="$1"
-            expected="$2"
-            actual="$(git rev-parse "HEAD:migrations/$file")"
-            test "$actual" = "$expected" || {
-              echo "Unauthorized Preview 2 migration content for $file. Refusing migration."
-              exit 1
-            }
-          }
-          verify_blob '0001_init.sql' 'dc9c757af309667e1bf70f66614b5166ac27dce7'
-          verify_blob '0002_version_one_core_model.sql' '04753e438bd6bc19868ea700a99961b3696441c3'
-          verify_blob '0003_capacity_schedule_flexibility.sql' 'd4f8d9c1250d85ac0865e321fc8a7ed3226ac489'
-          verify_blob '0004_daily_plan.sql' 'feca2348e3a4780695db8b01cfef9fe104ae355c'
-          verify_blob '0005_journal.sql' '0d1e2c0e4988bb313d154d6db06827db203c56a5'
-          verify_blob '0006_activities_contract.sql' '5b6d5b038738fd055ff3b7456e8c2f69dd20c89b'
-          verify_blob '0007_wellbeing_energy.sql' '3c3a3c25a28ff6c23b00c2d4828d55e9c0217201'
-          verify_blob '0008_auth_multi_user.sql' 'c902d52f0a5d33bda61df5cc59f50d11c0627792'
-          verify_blob '0009_time_aware_capacity.sql' '9c5866c1868c788430a7954ce8b15c4a558d99c0'
-          bash scripts/migrate-preview2.sh
-
-      - name: Verify no pending Preview 2 migrations before deploy
-        shell: bash
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          output="$(npx --yes wrangler@4.123.0 d1 migrations list DB --remote --env preview2 --config .wrangler.preview2.json 2>&1)"
-          printf '%s\n' "$output"
-          printf '%s\n' "$output" | grep -F 'No migrations to apply' >/dev/null || {
-            echo 'Preview 2 still has pending D1 migrations after the authorized migration operation. Refusing Worker deployment.'
-            exit 1
-          }
-
-      - name: Preview 2 deployment dry run
-        run: npx --yes wrangler@4.123.0 deploy --dry-run --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2
-
-      - name: Deploy Preview 2 Worker only
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4.123.0 deploy --env preview2 --config .wrangler.preview2.json --name personal-growth-tracker-preview2 --message "git:${GITHUB_SHA}"
-
-      - name: Verify access boundary, Worker route and isolated D1 directly
-        shell: bash
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          GC_PREVIEW2_INTERNAL_AUTH_ENABLED: ${{ vars.GC_PREVIEW2_INTERNAL_AUTH_ENABLED }}
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const token = process.env.CLOUDFLARE_API_TOKEN;
-          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
-          const worker = 'personal-growth-tracker-preview2';
-          const base = `https://${worker}.m-nejatmand.workers.dev`;
-          const api = `https://api.cloudflare.com/client/v4/accounts/${account}`;
-          const internalAuth = String(process.env.GC_PREVIEW2_INTERNAL_AUTH_ENABLED || '').toLowerCase() === 'true';
-
-          async function cf(path, options = {}) {
-            const response = await fetch(api + path, {
-              ...options,
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                ...(options.headers || {})
-              }
-            });
-            const body = await response.json().catch(() => ({}));
-            if (!response.ok || body.success === false) {
-              const message = (body.errors || []).map((error) => `${error.code ?? 'error'}:${error.message ?? 'Cloudflare API error'}`).join('; ');
-              throw new Error(`Cloudflare API ${response.status} for ${path}: ${message || 'request failed'}`);
-            }
-            return body.result;
-          }
-
-          if (internalAuth) {
-            const status = await fetch(`${base}/api/account/status`, { redirect: 'manual' });
-            if (status.status !== 200) throw new Error(`Internal-auth Preview 2 account status failed (HTTP ${status.status}).`);
-            const privateApi = await fetch(`${base}/api/v1/areas`, { redirect: 'manual' });
-            if (privateApi.status !== 401) throw new Error(`Private API must reject anonymous users after Access removal (HTTP ${privateApi.status}).`);
-            console.log('Internal Growth Compass auth boundary is active: public sign-in route, private product API.');
-          } else {
-            const anonymous = await fetch(`${base}/api/health`, { redirect: 'manual' });
-            if (anonymous.status >= 200 && anonymous.status < 300) {
-              throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}) before internal auth activation; Access boundary is missing.`);
-            }
-            console.log(`Anonymous Preview 2 is blocked as expected (HTTP ${anonymous.status}).`);
-          }
-
-          const subdomain = await cf(`/workers/scripts/${worker}/subdomain`);
-          if (!subdomain?.enabled) throw new Error('Preview 2 workers.dev route is not enabled.');
-
-          const databases = await cf('/d1/database?per_page=1000');
-          const list = Array.isArray(databases) ? databases : [];
-          const exact = (name) => list.filter((database) => database?.name === name);
-          const preview2 = exact('personal-growth-tracker-preview2');
-          const preview1 = exact('personal-growth-tracker-preview');
-          const production = exact('personal-growth-tracker');
-          if (preview2.length !== 1 || !preview2[0]?.uuid) {
-            throw new Error(`Expected exactly one Preview 2 D1 database; found ${preview2.length}.`);
-          }
-          if (preview1.length !== 1 || production.length !== 1) {
-            throw new Error('Preview 1 and Production D1 identities must remain explicit for isolation verification.');
-          }
-          if (preview2[0].uuid === preview1[0].uuid || preview2[0].uuid === production[0].uuid) {
-            throw new Error('Preview 2 D1 overlaps Preview 1 or Production; refusing acceptance.');
-          }
-
-          const query = await cf(`/d1/database/${preview2[0].uuid}/query`, {
-            method: 'POST',
-            body: JSON.stringify({ sql: "PRAGMA quick_check; SELECT 'ok' AS status;" })
-          });
-          const serialized = JSON.stringify(query);
-          if (!serialized.includes('"quick_check":"ok"') || !serialized.includes('"status":"ok"')) {
-            throw new Error('Preview 2 D1 direct health verification failed.');
-          }
-
-          console.log(`Preview 2 deployment and isolated D1 checks passed: ${base}`);
-          NODE
+          echo 'Branch push accepted. Deployment is intentionally delegated to the Quality PR workflow.'
+          echo 'Quality deploys only the exact tested PR head after tests pass, captures the named Worker/D1 rollback snapshot first, and then verifies isolated Preview 2.'
+          echo 'This workflow performs no Cloudflare write and cannot race the guarded deployment.'
