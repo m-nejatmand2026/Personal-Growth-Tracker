@@ -27,6 +27,31 @@ assert_contains() {
   fi
 }
 
+assert_worker_alive() {
+  local label="$1"
+  if ! kill -0 "$WORKER_PID" 2>/dev/null; then
+    echo "Local Growth Compass Worker stopped during $label." >&2
+    cat "$WORKER_LOG" >&2 || true
+    exit 1
+  fi
+  if ! curl --fail --silent --show-error http://127.0.0.1:8787/api/health >/dev/null 2>&1; then
+    echo "Local Growth Compass Worker became unhealthy during $label." >&2
+    cat "$WORKER_LOG" >&2 || true
+    exit 1
+  fi
+}
+
+run_e2_suite() {
+  local file="$1"
+  echo "Running isolated Experience 2 browser suite: $file"
+  if ! GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test "$file"; then
+    echo "Experience 2 browser suite failed: $file" >&2
+    cat "$WORKER_LOG" >&2 || true
+    exit 1
+  fi
+  assert_worker_alive "$file"
+}
+
 rm -rf "$STATE_DIR"
 
 ./node_modules/.bin/wrangler d1 migrations apply DB \
@@ -79,6 +104,26 @@ assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/js/app.js'
 echo 'Preview 2 Experience 2 route smoke passed.'
 
 GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/1/ npm run test:browser
-# Experience 2 suites all share one local Worker/D1. Serialize test files so Playwright
-# engines cannot overwhelm or terminate the single acceptance server under CI load.
-GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test --test-concurrency=1 tests/browser/experience2-logger.browser.js tests/browser/experience2-goals.browser.js tests/browser/experience2-activities.browser.js tests/browser/experience2-schedule.browser.js tests/browser/experience2-progress.browser.js tests/browser/experience2-insights.browser.js tests/browser/experience2-journal.browser.js tests/browser/experience2-wellness.browser.js tests/browser/experience2-settings.browser.js tests/browser/experience2-today-first-run.browser.js tests/browser/experience2-today.browser.js tests/browser/experience2-install.browser.js tests/browser/experience2-visual.browser.js
+assert_worker_alive 'Experience 1 browser acceptance'
+
+# Keep one isolated local Worker/D1 so cross-screen behavior is realistic, but run
+# each Experience 2 file in a fresh Node process. This releases browser-engine
+# resources between suites and prevents a long Playwright process from starving
+# the single acceptance Worker under CI. Visual evidence intentionally runs last.
+for suite in \
+  tests/browser/experience2-activities.browser.js \
+  tests/browser/experience2-goals.browser.js \
+  tests/browser/experience2-insights.browser.js \
+  tests/browser/experience2-install.browser.js \
+  tests/browser/experience2-journal.browser.js \
+  tests/browser/experience2-logger.browser.js \
+  tests/browser/experience2-progress.browser.js \
+  tests/browser/experience2-schedule.browser.js \
+  tests/browser/experience2-settings.browser.js \
+  tests/browser/experience2-today-first-run.browser.js \
+  tests/browser/experience2-today.browser.js \
+  tests/browser/experience2-wellness.browser.js \
+  tests/browser/experience2-visual.browser.js
+do
+  run_e2_suite "$suite"
+done
