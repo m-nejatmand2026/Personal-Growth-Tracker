@@ -15,7 +15,8 @@ const AUTHORIZED_MIGRATIONS = [
   ['0005_journal.sql', '0d1e2c0e4988bb313d154d6db06827db203c56a5'],
   ['0006_activities_contract.sql', '5b6d5b038738fd055ff3b7456e8c2f69dd20c89b'],
   ['0007_wellbeing_energy.sql', '3c3a3c25a28ff6c23b00c2d4828d55e9c0217201'],
-  ['0008_auth_multi_user.sql', 'c902d52f0a5d33bda61df5cc59f50d11c0627792']
+  ['0008_auth_multi_user.sql', 'c902d52f0a5d33bda61df5cc59f50d11c0627792'],
+  ['0009_time_aware_capacity.sql', '9e5d150e9e8f9b1be96288a8c05fcec482f32105']
 ];
 
 test('explicit Preview 2 migration command is hard-pinned to the isolated target', () => {
@@ -58,7 +59,7 @@ test('Preview 2 branch deployment can apply only the explicitly authorized migra
   assert.match(branchDeploy, /Apply only the explicitly authorized Preview 2 migration set/);
   assert.match(branchDeploy, /GC_PREVIEW2_MIGRATION_CONFIRM: personal-growth-tracker-preview2/);
   assert.match(branchDeploy, /bash scripts\/migrate-preview2\.sh/);
-  assert.match(branchDeploy, /authorized_count='8'/);
+  assert.match(branchDeploy, /authorized_count='9'/);
   for (const [filename, sha] of AUTHORIZED_MIGRATIONS) {
     assert.match(branchDeploy, new RegExp(filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     assert.match(branchDeploy, new RegExp(sha));
