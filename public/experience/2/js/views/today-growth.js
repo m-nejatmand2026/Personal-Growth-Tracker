@@ -18,6 +18,14 @@ const MOOD=Object.freeze([
 function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function toast(message){const host=document.querySelector('#toastHost');if(!host)return;host.innerHTML=`<div class="today-growth-toast static-surface">${escapeHtml(message)}</div>`;setTimeout(()=>{if(host.textContent===message)host.innerHTML='';},2400);}
 function valueButtons(kind,values,current=null){return values.map((item,index)=>`<button type="button" class="checkin-value${Number(current)===Number(item.score)?' is-selected':''}" data-checkin-kind="${kind}" data-checkin-index="${index}" aria-pressed="${Number(current)===Number(item.score)}"><span aria-hidden="true"></span><strong>${escapeHtml(item.label)}</strong></button>`).join('');}
+function navigate(view){if(typeof window.__gcExperience2Navigate==='function'){window.__gcExperience2Navigate(view);return;}document.dispatchEvent(new CustomEvent('gc:navigate-view',{detail:{view}}));}
+function replaceNavAction(root,selector,handler){root.querySelectorAll(selector).forEach(button=>{const clone=button.cloneNode(true);button.replaceWith(clone);clone.addEventListener('click',handler);});}
+function repairFirstRunNavigation(root){
+  replaceNavAction(root,'[data-today-set-routine]',()=>navigate('schedule'));
+  replaceNavAction(root,'[data-today-plan-flexible]',()=>{try{localStorage.setItem('growth-compass:preview2:e2:schedule-style','flexible');}catch{}navigate('plan');});
+  replaceNavAction(root,'[data-today-go-plan]',()=>navigate('plan'));
+  replaceNavAction(root,'[data-today-go-goals]',()=>navigate('goals'));
+}
 
 function simplifyFirstRun(root){
   const first=root.querySelector('.today-first-run');if(!first)return;
@@ -32,14 +40,18 @@ function simplifyFirstRun(root){
   if(onboarding&&!onboarding.querySelector('.onboarding-compass-line')){
     const line=document.createElement('div');line.className='onboarding-compass-line';line.setAttribute('aria-label','Your compass grows from direction to action');line.innerHTML='<span class="is-current">Direction</span><i></i><span>Next step</span><i></i><span>Today</span><i></i><span>Learn</span>';const actions=onboarding.querySelector('.today-onboarding-actions,.today-routine-start');(actions||onboarding).before(line);
   }
+  repairFirstRunNavigation(root);
 }
 
 function checkinMarkup(existing=null){
   return `<section class="today-checkin" aria-labelledby="todayCheckinTitle"><div class="today-checkin-head"><div><p class="eyebrow">A few seconds of evidence</p><h2 id="todayCheckinTitle">How are you right now?</h2><p>Energy and mood are separate. Recording both helps your baseline become more useful over time.</p></div>${existing?'<span class="checkin-recorded">Recorded today</span>':''}</div><div class="today-checkin-groups"><fieldset><legend>Energy</legend><div class="checkin-scale">${valueButtons('energy',ENERGY,existing?.energy_score)}</div></fieldset><fieldset><legend>Mood</legend><div class="checkin-scale">${valueButtons('mood',MOOD,existing?.valence_score)}</div></fieldset></div><p class="today-checkin-status" role="status">${existing?'You can update today’s check-in if your state has changed.':'Choose one energy level and one mood level.'}</p></section>`;
 }
 
-function bindCheckin(section,date){
-  let energyIndex=null,moodIndex=null,saving=false;
+function bindCheckin(section,date,existing=null){
+  let energyIndex=existing?ENERGY.findIndex(item=>Number(item.score)===Number(existing.energy_score)):null;
+  let moodIndex=existing?MOOD.findIndex(item=>Number(item.score)===Number(existing.valence_score)):null;
+  if(energyIndex<0)energyIndex=null;if(moodIndex<0)moodIndex=null;
+  let saving=false;
   const status=section.querySelector('.today-checkin-status');
   const sync=()=>{
     section.querySelectorAll('[data-checkin-kind="energy"]').forEach(button=>{const selected=Number(button.dataset.checkinIndex)===energyIndex;button.classList.toggle('is-selected',selected);button.setAttribute('aria-pressed',String(selected));});
@@ -65,5 +77,5 @@ export async function enhanceToday({root=document,model}={}){
   if(!view.isConnected)return;
   const section=document.createElement('div');section.innerHTML=checkinMarkup(day?.energy||null);const checkin=section.firstElementChild;
   const grid=view.querySelector('.today-grid');if(grid)grid.after(checkin);else view.append(checkin);
-  bindCheckin(checkin,model.date);
+  bindCheckin(checkin,model.date,day?.energy||null);
 }
