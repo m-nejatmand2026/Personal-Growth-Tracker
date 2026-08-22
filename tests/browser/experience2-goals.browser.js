@@ -6,6 +6,7 @@ import { chromium, webkit } from 'playwright';
 const BASE_URL=process.env.GC_E2E_BASE_URL||'http://127.0.0.1:8787/experience/2/';
 const SCREENSHOT_DIR=process.env.GC_E2E_SCREENSHOT_DIR||'';
 const BROWSERS=[['Chromium',chromium],['WebKit',webkit]];
+const STARTER_AREA_KEYS=['career','health','learning','finance','relationships','personal','custom'];
 async function capture(page,browserName,viewport,state){if(!SCREENSHOT_DIR||browserName!=='Chromium')return;await mkdir(SCREENSHOT_DIR,{recursive:true});await page.waitForTimeout(120);await page.screenshot({path:`${SCREENSHOT_DIR}/e2-direction-chromium-${viewport}-${state}.png`,fullPage:false,animations:'disabled'});}
 async function assertNoOverflow(page,label){const size=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));assert.ok(size.document<=size.viewport+1,`${label}: Direction must not overflow horizontally; ${JSON.stringify(size)}`);}
 async function openDirection(page,viewport){if(viewport==='375px'){const explore=page.locator('#mobileExploreToggle');await explore.waitFor({state:'visible'});await explore.click();assert.equal(await explore.getAttribute('aria-expanded'),'true');const nav=page.locator('#mobileSecondary [data-view="goals"]');await nav.waitFor({state:'visible'});await nav.click();assert.equal(await explore.getAttribute('aria-expanded'),'false');return;}const nav=page.locator('.desktop-rail [data-view="goals"]');await nav.waitFor({state:'visible'});await nav.click();}
@@ -23,7 +24,9 @@ async function exercise(page,browserName,viewport){
   let add=page.locator('[data-goal-new]').first();await add.focus();await add.click();
   let dialog=page.getByRole('dialog',{name:'Where do you want to move?'});await dialog.waitFor({state:'visible'});
   assert.match(await dialog.innerText(),/Three small decisions\. Details can wait\./);
-  assert.equal(await dialog.locator('input[name="directionArea"]').count(),7);
+  const areaInputs=dialog.locator('input[name="directionArea"]');
+  assert.ok(await areaInputs.count()>=STARTER_AREA_KEYS.length,`${browserName} ${viewport}: Direction may include existing custom life areas in addition to starter areas`);
+  for(const key of STARTER_AREA_KEYS)assert.equal(await dialog.locator(`input[name="directionArea"][value="${key}"]`).count(),1,`${browserName} ${viewport}: starter life area ${key} must remain available`);
   assert.equal(await dialog.locator('input[name="goalMeasure"]').count(),0,`${browserName} ${viewport}: simple Direction creation must not start with tracking administration`);
   assert.equal(await dialog.getByText('Optional target').count(),0);
   const custom=dialog.locator('input[name="directionArea"][value="custom"]');await custom.check({force:true});assert.equal(await dialog.locator('#directionCustomArea').isVisible(),true);await dialog.locator('input[name="directionArea"][value="career"]').check({force:true});assert.equal(await dialog.locator('#directionCustomArea').isVisible(),false);
