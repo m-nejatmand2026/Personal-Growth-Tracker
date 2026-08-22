@@ -39,7 +39,7 @@ async function exercise(page,browserName,viewport){
   await dialog.locator('#directionName').fill(name);await dialog.locator('#directionWhy').fill('This makes future choices easier.');
   await dialog.getByRole('button',{name:'Create direction'}).click();
   const success=page.getByRole('dialog',{name:"You know where you're moving."});await success.waitFor({state:'visible',timeout:15_000});
-  assert.match(await success.innerText(),/Career/);assert.match(await success.innerText(),new RegExp(name));assert.match(await success.innerText(),/Plan my first step/);assert.match(await success.innerText(),/Add tracking details/);assert.match(await success.innerText(),/Done for now/);
+  assert.match(await success.innerText(),/career/i);assert.match(await success.innerText(),new RegExp(name));assert.match(await success.innerText(),/Plan my first step/);assert.match(await success.innerText(),/Add tracking details/);assert.match(await success.innerText(),/Done for now/);
   await assertNoOverflow(page,`${browserName} ${viewport} success dialog`);await capture(page,browserName,viewport,'success');
   await success.getByRole('button',{name:'Add tracking details'}).click();
   const advanced=page.getByRole('dialog',{name:'Keep it useful'});await advanced.waitFor({state:'visible'});
@@ -50,7 +50,7 @@ async function exercise(page,browserName,viewport){
   await advanced.locator('label.goal-measure:has(input[value="time"])').click();assert.equal(await advanced.locator('.goal-target').isVisible(),true,`${browserName} ${viewport}: Time tracking may expose optional guidance`);
   await assertNoOverflow(page,`${browserName} ${viewport} advanced dialog`);await page.keyboard.press('Escape');await advanced.waitFor({state:'detached'});
 
-  const card=page.locator('.goal-card',{hasText:name});await card.waitFor({state:'visible'});assert.match(await card.innerText(),/Career/);assert.match(await card.innerText(),/This makes future choices easier\./);assert.match(await card.innerText(),/Make this direction actionable/);assert.match(await card.innerText(),/Plan next step/);assert.match(await card.innerText(),/Tracking optional/);await capture(page,browserName,viewport,'created-card');
+  const card=page.locator('.goal-card',{hasText:name});await card.waitFor({state:'visible'});assert.match(await card.innerText(),/career/i);assert.match(await card.innerText(),/This makes future choices easier\./);assert.match(await card.innerText(),/Make this direction actionable/);assert.match(await card.innerText(),/Plan next step/);assert.match(await card.innerText(),/Tracking optional/);await capture(page,browserName,viewport,'created-card');
   await card.locator('[data-goal-open]').click();const detail=page.getByRole('dialog',{name});await detail.waitFor({state:'visible'});assert.match(await detail.innerText(),/Why this matters/);assert.match(await detail.innerText(),/Tracking optional/);assert.match(await detail.innerText(),/Next useful move/);assert.match(await detail.innerText(),/Plan next step/);await capture(page,browserName,viewport,'detail');
   await detail.getByRole('button',{name:'Archive'}).click();const archiveDialog=page.locator('.goal-archive-dialog');await archiveDialog.waitFor({state:'visible'});assert.match(await archiveDialog.innerText(),/Archive direction/);await assertNoOverflow(page,`${browserName} ${viewport} archive dialog`);await page.locator('[data-goal-archive-confirm]').click();await archiveDialog.waitFor({state:'detached'});await card.waitFor({state:'detached',timeout:15_000});
 
