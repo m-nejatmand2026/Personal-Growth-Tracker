@@ -1,4 +1,4 @@
-const CACHE='growth-compass-preview2-e2-v98';
+const CACHE='growth-compass-preview2-e2-v99';
 const CORE=[
   '/experience/2/',
   '/experience/2/css/foundation.css',
@@ -24,12 +24,8 @@ const CORE=[
   '/experience/2/css/settings.css',
   '/experience/2/css/management.css',
   '/experience/2/css/install-app.css',
-  '/experience/2/css/liquid.css',
-  '/experience/2/css/liquid-polish.css',
-  '/experience/2/css/palettes.css',
-  '/experience/2/css/light-palettes.css',
-  '/experience/2/css/watery-material.css',
-  '/experience/2/css/layout-discipline.css',
+  '/experience/2/css/growth-experience.css',
+  '/experience/2/css/add-hub.css',
   '/experience/2/js/theme-bootstrap.js',
   '/experience/2/js/palette-portal.js',
   '/experience/2/js/auth-bootstrap.js',
@@ -49,6 +45,10 @@ const CORE=[
   '/experience/2/js/capabilities/journal.js',
   '/experience/2/js/views/foundation.js',
   '/experience/2/js/views/today.js',
+  '/experience/2/js/views/today-growth.js',
+  '/experience/2/js/views/compass.js',
+  '/experience/2/js/views/patterns.js',
+  '/experience/2/js/views/reflect.js',
   '/experience/2/js/views/plan.js',
   '/experience/2/js/views/logger.js',
   '/experience/2/js/views/goals.js',
