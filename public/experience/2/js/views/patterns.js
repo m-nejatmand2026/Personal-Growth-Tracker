@@ -1,101 +1,64 @@
 import { loadProgress } from './progress.js';
 import { loadInsights } from './insights.js';
 
-function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));}
 function minutesLabel(value){const minutes=Math.max(0,Math.round(Number(value)||0));const hours=Math.floor(minutes/60),rest=minutes%60;if(!hours)return`${rest}m`;if(!rest)return`${hours}h`;return`${hours}h ${rest}m`;}
 function dayKey(){const now=new Date();const offset=now.getTimezoneOffset()*60000;return new Date(now.getTime()-offset).toISOString().slice(0,10);}
 function addDays(dateText,amount){const date=new Date(`${dateText}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+amount);return date.toISOString().slice(0,10);}
-function median(values=[]){if(!values.length)return null;const sorted=values.map(Number).filter(Number.isFinite).sort((a,b)=>a-b);if(!sorted.length)return null;const i=Math.floor(sorted.length/2);return sorted.length%2?sorted[i]:(sorted[i-1]+sorted[i])/2;}
-function stageFor(count){if(count<=6)return{label:'Building baseline',detail:'Not enough history for patterns yet.'};if(count<=20)return{label:'Descriptive',detail:'Simple trends are becoming visible.'};if(count<=41)return{label:'Early patterns',detail:'Treat associations as hypotheses.'};return{label:'Stronger evidence',detail:'Repeated associations can be more informative, not causal.'};}
+function median(values=[]){const sorted=values.map(Number).filter(Number.isFinite).sort((a,b)=>a-b);if(!sorted.length)return null;const i=Math.floor(sorted.length/2);return sorted.length%2?sorted[i]:(sorted[i-1]+sorted[i])/2;}
 function energyWord(value){if(value==null)return'—';if(value<=-2)return'Drained';if(value<0)return'Low';if(value===0)return'Okay';if(value<2)return'Good';return'Strong';}
-function moodWord(value){if(value==null)return'—';if(value<=-2)return'Very negative';if(value<0)return'Negative';if(value===0)return'Neutral';if(value<2)return'Positive';return'Very positive';}
+function moodWord(value){if(value==null)return'—';if(value<=-2)return'Very low';if(value<0)return'Low';if(value===0)return'Neutral';if(value<2)return'Positive';return'Very good';}
+function uniqueDays(items=[]){return new Set(items.map(item=>item.occurred_on).filter(Boolean));}
 
-export async function loadPatterns(){
-  const [progress,insights]=await Promise.all([loadProgress(),loadInsights()]);
-  return {progress,insights};
-}
+export async function loadPatterns(){const [progress,insights]=await Promise.all([loadProgress(),loadInsights()]);return {progress,insights};}
 
 function lineChart(items=[]){
-  const ordered=[...items].sort((a,b)=>String(a.occurred_on).localeCompare(String(b.occurred_on))).slice(-30);
-  if(ordered.length<2)return '<div class="patterns-chart-empty"><strong>Energy trend is still forming.</strong><span>Keep checking in on ordinary days.</span></div>';
-  const width=600,height=180,pad=18,innerW=width-pad*2,innerH=height-pad*2;
-  const points=ordered.map((item,index)=>{const x=pad+(ordered.length===1?0:index/(ordered.length-1)*innerW);const score=Math.max(-3,Math.min(3,Number(item.energy_score)||0));const y=pad+(3-score)/6*innerH;return{x,y,score,date:item.occurred_on};});
-  const polyline=points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  return `<div class="patterns-chart-wrap"><svg class="patterns-line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Reported energy over the last ${ordered.length} check-ins"><line x1="${pad}" x2="${width-pad}" y1="${height/2}" y2="${height/2}" class="chart-zero"/><polyline points="${polyline}" class="chart-line"/>${points.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="4" class="chart-point"><title>${escapeHtml(p.date)}: ${escapeHtml(energyWord(p.score))}</title></circle>`).join('')}</svg><div class="patterns-chart-axis" aria-hidden="true"><span>Strong</span><span>Okay</span><span>Drained</span></div></div>`;
+  const ordered=[...items].filter(item=>Number.isFinite(Number(item.energy_score))).sort((a,b)=>String(a.occurred_on).localeCompare(String(b.occurred_on))).slice(-30);
+  if(ordered.length<2)return '';
+  const width=640,height=170,padX=12,padY=18,innerW=width-padX*2,innerH=height-padY*2;
+  const points=ordered.map((item,index)=>{const x=padX+(ordered.length===1?0:index/(ordered.length-1)*innerW);const score=Math.max(-3,Math.min(3,Number(item.energy_score)||0));const y=padY+(3-score)/6*innerH;return{x,y,score,date:item.occurred_on};});
+  const path=points.map((p,index)=>`${index?'L':'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  return `<div class="gc-energy-chart"><div class="gc-chart-labels" aria-hidden="true"><span>Strong</span><span>Okay</span><span>Drained</span></div><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Reported energy across ${ordered.length} check-ins"><line x1="0" x2="${width}" y1="${height/2}" y2="${height/2}" class="gc-chart-mid"/><path d="${path}" class="gc-chart-path"/>${points.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="4"><title>${escapeHtml(p.date)}: ${escapeHtml(energyWord(p.score))}</title></circle>`).join('')}</svg></div>`;
 }
-
-function moodEnergyMap(items=[]){
-  const recent=[...items].slice(-42);
-  if(recent.length<4)return '<div class="patterns-chart-empty compact"><strong>Energy × mood is still forming.</strong><span>More ordinary check-ins will reveal the shape.</span></div>';
-  const width=360,height=300,pad=28,innerW=width-pad*2,innerH=height-pad*2;
-  const dots=recent.map(item=>{const e=Math.max(-3,Math.min(3,Number(item.energy_score)||0));const v=Math.max(-3,Math.min(3,Number(item.valence_score)||0));const x=pad+(v+3)/6*innerW;const y=pad+(3-e)/6*innerH;return`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"><title>${escapeHtml(item.occurred_on)} · ${escapeHtml(energyWord(e))} energy · ${escapeHtml(moodWord(v))} mood</title></circle>`;}).join('');
-  return `<div class="patterns-map-wrap"><svg class="patterns-map" viewBox="0 0 ${width} ${height}" role="img" aria-label="Energy and mood observations"><line x1="${width/2}" x2="${width/2}" y1="${pad}" y2="${height-pad}"/><line x1="${pad}" x2="${width-pad}" y1="${height/2}" y2="${height/2}"/>${dots}</svg><span class="map-label map-top">Higher energy</span><span class="map-label map-bottom">Lower energy</span><span class="map-label map-left">More negative</span><span class="map-label map-right">More positive</span></div>`;
-}
-
-function progressFacts(items=[]){
-  const today=dayKey(),from=addDays(today,-6);const week=items.filter(item=>item.occurred_on>=from&&item.occurred_on<=today);const minutes=week.reduce((sum,item)=>sum+Math.max(0,Number(item.minutes)||0),0);const days=new Set(week.map(item=>item.occurred_on)).size;
-  return {today,from,week,minutes,days};
-}
-
-function weekStrip(items=[]){
-  const facts=progressFacts(items);
-  const days=[];
-  for(let offset=0;offset<7;offset+=1){
-    const date=addDays(facts.from,offset);const records=facts.week.filter(item=>item.occurred_on===date);const minutes=records.reduce((sum,item)=>sum+Math.max(0,Number(item.minutes)||0),0);const strength=Math.min(88,Math.max(0,Math.round(minutes/180*88)));const label=new Intl.DateTimeFormat(undefined,{weekday:'short',timeZone:'UTC'}).format(new Date(`${date}T12:00:00Z`));days.push(`<div class="patterns-week-day" style="--day-strength:${strength}" aria-label="${escapeHtml(`${label}: ${minutesLabel(minutes)}, ${records.length} records`)}"><i aria-hidden="true"></i><strong>${escapeHtml(label.slice(0,2))}</strong><span>${minutes?escapeHtml(minutesLabel(minutes)):'—'}</span></div>`);
-  }
-  return `<div class="patterns-week-strip" aria-label="Recorded progress across the last seven days">${days.join('')}</div>`;
-}
-
-export function renderPatterns(model){
-  const energy=model.insights?.energy||[];
-  const progress=model.progress?.items||[];
-  const trackedDays=new Set([...energy.map(item=>item.occurred_on),...progress.map(item=>item.occurred_on)]).size;
-  const stage=stageFor(trackedDays);
-  const typicalEnergy=median(energy.map(item=>item.energy_score));
-  const typicalMood=median(energy.map(item=>item.valence_score));
-  const facts=progressFacts(progress);
-  const recentEnergy=energy.slice(-14);
-  const firstHalf=recentEnergy.slice(0,Math.floor(recentEnergy.length/2));
-  const secondHalf=recentEnergy.slice(Math.floor(recentEnergy.length/2));
-  const early=median(firstHalf.map(item=>item.energy_score)),late=median(secondHalf.map(item=>item.energy_score));
-  const movement=early==null||late==null?'Not enough data':late>early?'Recently higher':late<early?'Recently lower':'Broadly steady';
-  const evidencePct=Math.min(100,Math.round(trackedDays/42*100));
-  return `<div class="composition-view patterns-view">
-    <header class="composition-header">
-      <div><p class="eyebrow">Patterns</p><h2>What is your life showing you?</h2><p>Evidence before interpretation.</p></div>
-      <span class="evidence-stage"><strong>${trackedDays}</strong> tracked ${trackedDays===1?'day':'days'}</span>
-    </header>
-    <section class="patterns-readiness composition-panel">
-      <div class="evidence-orbit" style="--evidence:${evidencePct}" aria-label="${trackedDays} tracked days toward stronger evidence"><strong>${trackedDays}</strong><span>days</span></div>
-      <div><p class="eyebrow">Evidence</p><h3>${escapeHtml(stage.label)}</h3><p>${escapeHtml(stage.detail)}</p></div>
-      <button type="button" class="ghost-button" data-patterns-open="insights">Evidence rules</button>
-    </section>
-    <section class="patterns-question">
-      <div class="composition-section-heading"><div><p class="eyebrow">Energy</p><h3>Your reported energy</h3></div><span>Last 30</span></div>
-      ${lineChart(energy)}
-      <dl class="patterns-fact-row"><div><dt>Typical</dt><dd>${escapeHtml(energyWord(typicalEnergy))}</dd></div><div><dt>Movement</dt><dd>${escapeHtml(movement)}</dd></div><div><dt>Mood</dt><dd>${escapeHtml(moodWord(typicalMood))}</dd></div></dl>
-      <p class="composition-boundary">Descriptions of your records, not explanations of why they changed.</p>
-    </section>
-    <div class="composition-two-column">
-      <section class="patterns-question compact-question">
-        <div class="composition-section-heading"><div><p class="eyebrow">Relationship</p><h3>Energy × mood</h3></div></div>
-        ${moodEnergyMap(energy)}
-      </section>
-      <section class="patterns-question compact-question">
-        <div class="composition-section-heading"><div><p class="eyebrow">Time</p><h3>Last 7 days</h3></div></div>
-        ${weekStrip(progress)}
-        <dl class="patterns-big-facts"><div><dt>Recorded</dt><dd>${minutesLabel(facts.minutes)}</dd></div><div><dt>Records</dt><dd>${facts.week.length}</dd></div><div><dt>Active days</dt><dd>${facts.days}</dd></div></dl>
-        <button type="button" class="secondary-button" data-patterns-open="progress">Progress details</button>
-      </section>
-    </div>
-    <section class="patterns-adjust composition-panel">
-      <div><p class="eyebrow">Adjust</p><h3>Try one change.</h3><p>Compare what happens next without claiming cause.</p></div>
-      <button type="button" class="secondary-button" data-patterns-adjust>Choose adjustment</button>
-    </section>
+function baselineDots(count,target=7){return `<div class="gc-baseline-dots" aria-label="${Math.min(count,target)} of ${target} baseline days">${Array.from({length:target},(_,index)=>`<span class="${index<count?'is-filled':''}"></span>`).join('')}</div>`;}
+function baselineView(energy,progress,trackedDays){
+  const progressDays=uniqueDays(progress).size;const energyDays=uniqueDays(energy).size;const remaining=Math.max(0,7-trackedDays);
+  return `<div class="composition-view gc-instrument patterns-view is-baseline">
+    <header class="gc-page-lead gc-page-lead-compact"><div><p class="eyebrow">Patterns</p><h2>Build a useful baseline.</h2></div></header>
+    <section class="gc-baseline-card" aria-labelledby="baselineTitle"><div class="gc-baseline-count"><strong>${trackedDays}</strong><span>of 7 days</span></div>${baselineDots(trackedDays)}<h3 id="baselineTitle">${trackedDays?'Keep observing ordinary days.':'Start with ordinary days.'}</h3><p>${remaining?`${remaining} more tracked ${remaining===1?'day':'days'} before Growth Compass shows the first trend.`:'Your first trend is ready.'}</p><dl class="gc-baseline-sources"><div><dt>Energy</dt><dd>${energyDays}d</dd></div><div><dt>Activity</dt><dd>${progressDays}d</dd></div><div><dt>Records</dt><dd>${progress.length}</dd></div></dl><div class="gc-baseline-actions"><button type="button" class="primary-button" data-patterns-open="today">Check in today</button><button type="button" class="text-button" data-patterns-open="insights">How evidence works</button></div></section>
   </div>`;
 }
 
-export function bindPatterns(model,{navigate,openAdjustment}={}){
-  document.querySelectorAll('[data-patterns-open]').forEach(button=>button.addEventListener('click',()=>navigate?.(button.dataset.patternsOpen)));
-  document.querySelector('[data-patterns-adjust]')?.addEventListener('click',()=>openAdjustment?.(model));
+function weekStrip(items=[]){
+  const today=dayKey(),from=addDays(today,-6);const days=[];
+  for(let offset=0;offset<7;offset+=1){const date=addDays(from,offset);const records=items.filter(item=>item.occurred_on===date);const minutes=records.reduce((sum,item)=>sum+Math.max(0,Number(item.minutes)||0),0);const height=Math.min(100,Math.max(minutes?12:0,Math.round(minutes/180*100)));const label=new Intl.DateTimeFormat(undefined,{weekday:'short',timeZone:'UTC'}).format(new Date(`${date}T12:00:00Z`));days.push(`<div class="gc-week-bar" aria-label="${escapeHtml(`${label}: ${minutesLabel(minutes)}, ${records.length} records`)}"><i style="height:${height}%"></i><strong>${escapeHtml(label.slice(0,2))}</strong><span>${minutes?escapeHtml(minutesLabel(minutes)):'—'}</span></div>`);}
+  return `<div class="gc-week-bars" aria-label="Recorded activity in the last seven days">${days.join('')}</div>`;
 }
+function recentMovement(energy=[]){const recent=[...energy].slice(-14);if(recent.length<6)return null;const middle=Math.floor(recent.length/2);const earlier=median(recent.slice(0,middle).map(item=>item.energy_score));const later=median(recent.slice(middle).map(item=>item.energy_score));if(earlier==null||later==null)return null;const delta=later-earlier;if(delta>=1)return{label:'Recently higher',direction:'up'};if(delta<=-1)return{label:'Recently lower',direction:'down'};return{label:'Broadly steady',direction:'steady'};}
+function activityAssociation(energy=[],progress=[]){
+  const minutesByDay=new Map();for(const item of progress){const date=item.occurred_on;if(!date)continue;minutesByDay.set(date,(minutesByDay.get(date)||0)+Math.max(0,Number(item.minutes)||0));}
+  const active=[],quiet=[];for(const item of energy){const score=Number(item.energy_score);if(!Number.isFinite(score)||!item.occurred_on)continue;(minutesByDay.get(item.occurred_on)>0?active:quiet).push(score);}
+  if(active.length<3||quiet.length<3)return null;const a=median(active),q=median(quiet);return{active:a,quiet:q,activeN:active.length,quietN:quiet.length,diff:a-q};
+}
+function pearson(items=[]){const pairs=items.map(item=>[Number(item.energy_score),Number(item.valence_score)]).filter(([a,b])=>Number.isFinite(a)&&Number.isFinite(b));if(pairs.length<8)return null;const mx=pairs.reduce((s,p)=>s+p[0],0)/pairs.length,my=pairs.reduce((s,p)=>s+p[1],0)/pairs.length;let n=0,dx=0,dy=0;for(const [x,y] of pairs){const a=x-mx,b=y-my;n+=a*b;dx+=a*a;dy+=b*b;}if(!dx||!dy)return 0;return n/Math.sqrt(dx*dy);}
+function relationshipLabel(r){if(r==null)return null;if(r>=.45)return'Energy and mood often moved together';if(r<=-.45)return'Energy and mood often moved in opposite directions';return'No clear energy–mood relationship yet';}
+
+function evidenceMeter(days){const target=days<21?21:42;const pct=Math.min(100,Math.round(days/target*100));return `<div class="gc-evidence-meter"><span style="width:${pct}%"></span></div><small>${days} tracked days · ${days<21?'early evidence':'repeated evidence'}</small>`;}
+function factsForWeek(progress=[]){const today=dayKey(),from=addDays(today,-6);const week=progress.filter(item=>item.occurred_on>=from&&item.occurred_on<=today);return{week,minutes:week.reduce((s,item)=>s+Math.max(0,Number(item.minutes)||0),0),days:uniqueDays(week).size};}
+
+export function renderPatterns(model){
+  const energy=model.insights?.energy||[];const progress=model.progress?.items||[];const trackedDays=new Set([...uniqueDays(energy),...uniqueDays(progress)]).size;
+  if(trackedDays<7)return baselineView(energy,progress,trackedDays);
+  const typical=median(energy.map(item=>item.energy_score));const mood=median(energy.map(item=>item.valence_score));const movement=recentMovement(energy);const association=activityAssociation(energy,progress);const relation=pearson(energy);const week=factsForWeek(progress);const mature=trackedDays>=21;
+  return `<div class="composition-view gc-instrument patterns-view ${mature?'is-mature':'is-emerging'}">
+    <header class="gc-page-lead gc-page-lead-compact"><div><p class="eyebrow">Patterns</p><h2>${mature?'What keeps repeating?':'Your first signals.'}</h2></div><button type="button" class="text-button" data-patterns-open="insights">Evidence rules</button></header>
+    <section class="gc-evidence-summary"><div><span>Evidence</span><strong>${trackedDays<21?'Emerging':'Building confidence'}</strong></div>${evidenceMeter(trackedDays)}</section>
+    ${energy.length>=2?`<section class="gc-pattern-block"><div class="gc-section-label"><span>Reported energy</span><b>${energy.length} check-ins</b></div><div class="gc-pattern-head"><h3>${movement?.label||`${energyWord(typical)} is typical`}</h3><dl><div><dt>Typical energy</dt><dd>${escapeHtml(energyWord(typical))}</dd></div><div><dt>Typical mood</dt><dd>${escapeHtml(moodWord(mood))}</dd></div></dl></div>${lineChart(energy)}</section>`:''}
+    <section class="gc-pattern-block"><div class="gc-section-label"><span>Last 7 days</span><button type="button" class="text-button" data-patterns-open="progress">Progress details</button></div>${weekStrip(progress)}<dl class="gc-inline-facts"><div><dt>Recorded</dt><dd>${minutesLabel(week.minutes)}</dd></div><div><dt>Active days</dt><dd>${week.days}</dd></div><div><dt>Records</dt><dd>${week.week.length}</dd></div></dl></section>
+    ${mature&&association?`<section class="gc-pattern-block gc-comparison"><div class="gc-section-label"><span>Activity days vs quieter days</span><b>Association only</b></div><h3>${association.diff>=.75?'Reported energy was usually higher on active days.':association.diff<=-.75?'Reported energy was usually lower on active days.':'Reported energy was similar on active and quieter days.'}</h3><div class="gc-compare-bars"><div><span>Active days · n=${association.activeN}</span><i><b style="width:${((association.active+3)/6*100).toFixed(1)}%"></b></i><strong>${escapeHtml(energyWord(association.active))}</strong></div><div><span>Quieter days · n=${association.quietN}</span><i><b style="width:${((association.quiet+3)/6*100).toFixed(1)}%"></b></i><strong>${escapeHtml(energyWord(association.quiet))}</strong></div></div><p>These records move together; they do not prove one caused the other.</p></section>`:''}
+    ${mature&&relation!=null?`<section class="gc-pattern-note"><span>Energy × mood</span><strong>${escapeHtml(relationshipLabel(relation))}</strong><p>Based on ${energy.length} paired check-ins. Association is not causation.</p></section>`:''}
+    <section class="gc-adjust-row"><div><span>Next experiment</span><strong>Change one thing, then watch what happens.</strong></div><button type="button" class="secondary-button" data-patterns-adjust>Choose adjustment</button></section>
+  </div>`;
+}
+
+export function bindPatterns(model,{navigate,openAdjustment}={}){document.querySelectorAll('[data-patterns-open]').forEach(button=>button.addEventListener('click',()=>navigate?.(button.dataset.patternsOpen)));document.querySelector('[data-patterns-adjust]')?.addEventListener('click',()=>openAdjustment?.(model));}
