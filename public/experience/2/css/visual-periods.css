@@ -5,9 +5,12 @@
   .desktop-rail{padding-left:13px;padding-right:13px}
 }
 .patterns-view .evidence-stage{display:none}
+.today-view:not(.today-first-run) .today-open-day{display:none!important}
+.today-glance-action{position:relative;z-index:2;justify-self:start;display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-top:2px;padding:0;border:0;background:transparent;color:var(--gc-text);font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.today-glance-action span{display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--gc-border-strong);border-radius:50%;color:var(--gc-primary)}
 .reflect-period-day,
 .reflect-month-day{background:color-mix(in srgb,var(--gc-primary) calc(var(--period-strength,0)*1%),transparent)}
 .reflect-month-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:12px 0 18px}
 .reflect-month-day{display:block;aspect-ratio:1;border:1px solid var(--gc-border);border-radius:4px}
 .reflect-month-day.has-record{border-color:color-mix(in srgb,var(--gc-primary) 42%,var(--gc-border))}
-@media(max-width:640px){.reflect-month-grid{gap:4px}.reflect-month-day{border-radius:3px}}
+@media(max-width:640px){.reflect-month-grid{gap:4px}.reflect-month-day{border-radius:3px}.today-glance-action{margin-top:0}}
