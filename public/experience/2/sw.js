@@ -1,4 +1,4 @@
-const CACHE='growth-compass-preview2-e2-v104';
+const CACHE='growth-compass-preview2-e2-v105';
 const CORE=[
   '/experience/2/',
   '/experience/2/css/foundation.css',
@@ -14,7 +14,9 @@ const CORE=[
   '/experience/2/css/logger.css',
   '/experience/2/css/goals.css',
   '/experience/2/css/direction.css',
+  '/experience/2/css/lifecycle.css',
   '/experience/2/css/activities.css',
+  '/experience/2/css/tutorial.css',
   '/experience/2/css/schedule.css',
   '/experience/2/css/time-planning.css',
   '/experience/2/css/progress.css',
@@ -31,6 +33,7 @@ const CORE=[
   '/experience/2/css/instrument-90-fixes.css',
   '/experience/2/css/add-hub.css',
   '/experience/2/js/theme-bootstrap.js',
+  '/experience/2/js/tutorial.js',
   '/experience/2/js/palette-portal.js',
   '/experience/2/js/auth-bootstrap.js',
   '/experience/2/js/account-ui.js',
