@@ -1,6 +1,9 @@
 import { readPreference, writePreference } from './core/preferences.js';
 
 const TUTORIAL_KEY='tutorial-state-v1';
+const TUTORIAL_STYLESHEET='/experience/2/css/tutorial.css';
+if(typeof document!=='undefined'&&!document.querySelector(`link[href="${TUTORIAL_STYLESHEET}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=TUTORIAL_STYLESHEET;link.dataset.experience2Tutorial='true';document.head.append(link);}
+
 const steps=[
   {key:'welcome',title:'A quick tour',copy:'Growth Compass has four places to think and one place to act. You can skip this now and replay it later from Settings.',button:'Start tour'},
   {key:'today',title:'Today',copy:'Open here to see what deserves attention now, what comes next, and your quick Energy + Mood check-in.',target:'[data-primary-nav][data-view="today"]',view:'today',button:'Open Today'},
@@ -22,18 +25,13 @@ function card(step){const final=step.key==='done';return `<section class="gc-tut
 function next(){if(index>=steps.length-1){stop('complete');return;}if(steps[index].key==='add-options')closeAdd();index+=1;render();}
 function back(){if(index<=0)return;if(steps[index].key==='add-options')closeAdd();index-=1;render();}
 function activateTarget(step){clearTarget();target=visible(step.target);if(!target)return;target.classList.add('gc-tutorial-target');if(step.view||step.action==='add'){targetClick=()=>{window.setTimeout(()=>{if(!active)return;if(step.action==='add'){index+=1;render();}else next();},180);};target.addEventListener('click',targetClick,true);}}
-function perform(step){if(step.key==='done'){stop('complete');return;}if(step.action==='add'){
-    const button=visible(step.target);button?.click();window.setTimeout(()=>{if(active){index+=1;render();}},180);return;
-  }
-  if(step.view){window.__gcExperience2Navigate?.(step.view);window.setTimeout(()=>{if(active)next();},260);return;}
-  next();
-}
+function perform(step){if(step.key==='done'){stop('complete');return;}if(step.action==='add'){const button=visible(step.target);button?.click();window.setTimeout(()=>{if(active){index+=1;render();}},180);return;}if(step.view){window.__gcExperience2Navigate?.(step.view);window.setTimeout(()=>{if(active)next();},260);return;}next();}
 function render(){if(!active)return;clearTarget();const step=steps[index];if(!layer){layer=document.createElement('div');layer.className='gc-tutorial-layer';document.body.append(layer);}layer.innerHTML=card(step);layer.querySelector('[data-tutorial-skip]')?.addEventListener('click',()=>stop(step.key==='done'?'complete':'skipped'));layer.querySelector('[data-tutorial-next]')?.addEventListener('click',()=>perform(step));layer.querySelector('[data-tutorial-back]')?.addEventListener('click',back);window.setTimeout(()=>{if(active)activateTarget(step);},80);requestAnimationFrame(()=>layer.querySelector('[data-tutorial-next]')?.focus({preventScroll:true}));}
 
 export function startTutorial({force=false}={}){if(active)return;if(!force&&readPreference(TUTORIAL_KEY,null))return;active=true;index=0;document.documentElement.classList.add('gc-tutorial-active');render();}
 export function tutorialState(){return readPreference(TUTORIAL_KEY,'not-started');}
 
-function eligibleForAutomaticStart(){if(readPreference(TUTORIAL_KEY,null)||active)return false;if(!window.__gcExperience2Navigate)return false;if(document.documentElement.classList.contains('auth-checking')||document.documentElement.classList.contains('auth-gated'))return false;const host=document.querySelector('#viewHost');if(!host?.childElementCount)return false;if(host.querySelector('.today-first-run,.first-run,.today-welcome,.today-guided'))return false;return true;}
+function eligibleForAutomaticStart(){if(readPreference(TUTORIAL_KEY,null)||active)return false;if(!window.__gcExperience2Navigate)return false;if(document.documentElement.classList.contains('auth-checking')||document.documentElement.classList.contains('auth-gated'))return false;const host=document.querySelector('#viewHost');if(!host?.childElementCount)return false;if(host.querySelector('.today-first-run,.first-run,.today-welcome,.today-guided,[data-first-run]'))return false;return true;}
 function maybeStart(){if(!eligibleForAutomaticStart())return;window.setTimeout(()=>{if(eligibleForAutomaticStart())startTutorial();},700);}
 
 document.addEventListener('gc:start-tutorial',()=>startTutorial({force:true}));
