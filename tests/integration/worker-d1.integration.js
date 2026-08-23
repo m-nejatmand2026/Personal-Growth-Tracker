@@ -194,3 +194,71 @@ test('real Worker validation and security response behavior survive the D1 bound
   assert.equal(missing.response.status, 404);
   assert.equal(missing.body.error, 'Area not found.');
 });
+
+test('Direction archive restore and permanent removal keep factual Progress', async () => {
+  const goalCreated=await jsonRequest('/api/v1/goals',{method:'POST',body:JSON.stringify({name:'Lifecycle Direction'})});
+  assert.equal(goalCreated.response.status,201);
+  const goal=goalCreated.body.item;
+  const activityCreated=await jsonRequest('/api/v1/activities',{method:'POST',body:JSON.stringify({name:'Lifecycle Activity',goal_id:goal.id})});
+  assert.equal(activityCreated.response.status,201);
+  const activity=activityCreated.body.item;
+  const progressCreated=await jsonRequest('/api/v1/progress',{method:'POST',body:JSON.stringify({activity_key:activity.key,occurred_on:'2026-08-23',minutes:35})});
+  assert.equal(progressCreated.response.status,201);
+
+  const archived=await jsonRequest(`/api/v1/goals/${goal.id}`,{method:'DELETE'});
+  assert.equal(archived.response.status,200);
+  assert.equal(archived.body.item.status,'archived');
+  const archivedList=await jsonRequest('/api/v1/goals?include_archived=1');
+  assert.equal(archivedList.body.items.some(item=>Number(item.id)===Number(goal.id)&&item.status==='archived'),true);
+
+  const restored=await jsonRequest(`/api/v1/goals/${goal.id}`,{method:'PUT',body:JSON.stringify({status:'active'})});
+  assert.equal(restored.response.status,200);
+  assert.equal(restored.body.item.status,'active');
+
+  await jsonRequest(`/api/v1/goals/${goal.id}`,{method:'DELETE'});
+  const removed=await jsonRequest(`/api/v1/goals/${goal.id}/permanent`,{method:'DELETE'});
+  assert.equal(removed.response.status,200);
+  assert.equal(removed.body.removed,true);
+  const allGoals=await jsonRequest('/api/v1/goals?include_archived=1');
+  assert.equal(allGoals.body.items.some(item=>Number(item.id)===Number(goal.id)),false);
+
+  const env=await worker().getEnv();
+  const fact=await env.DB.prepare("SELECT minutes,goal_id,activity_id FROM progress_records WHERE profile_id='default' AND occurred_on='2026-08-23' ORDER BY id DESC LIMIT 1").first();
+  assert.equal(Number(fact.minutes),35);
+  assert.equal(fact.goal_id,null);
+  assert.equal(fact.activity_id,null);
+});
+
+test('Activity archive restore and permanent removal keep factual Progress and its Direction', async () => {
+  const goalCreated=await jsonRequest('/api/v1/goals',{method:'POST',body:JSON.stringify({name:'Activity Lifecycle Direction'})});
+  assert.equal(goalCreated.response.status,201);
+  const goal=goalCreated.body.item;
+  const activityCreated=await jsonRequest('/api/v1/activities',{method:'POST',body:JSON.stringify({name:'Activity Lifecycle Item',goal_id:goal.id})});
+  assert.equal(activityCreated.response.status,201);
+  const activity=activityCreated.body.item;
+  const progressCreated=await jsonRequest('/api/v1/progress',{method:'POST',body:JSON.stringify({activity_key:activity.key,occurred_on:'2026-08-22',minutes:20})});
+  assert.equal(progressCreated.response.status,201);
+
+  const archived=await jsonRequest(`/api/v1/activities/${activity.id}`,{method:'DELETE'});
+  assert.equal(archived.response.status,200);
+  assert.equal(Number(archived.body.item.active),0);
+  const archivedList=await jsonRequest('/api/v1/activities?include_archived=1');
+  assert.equal(archivedList.body.items.some(item=>Number(item.id)===Number(activity.id)&&Number(item.active)===0),true);
+
+  const restored=await jsonRequest(`/api/v1/activities/${activity.id}/restore`,{method:'POST',body:JSON.stringify({})});
+  assert.equal(restored.response.status,200);
+  assert.equal(Number(restored.body.item.active),1);
+
+  await jsonRequest(`/api/v1/activities/${activity.id}`,{method:'DELETE'});
+  const removed=await jsonRequest(`/api/v1/activities/${activity.id}/permanent`,{method:'DELETE'});
+  assert.equal(removed.response.status,200);
+  assert.equal(removed.body.removed,true);
+  const allActivities=await jsonRequest('/api/v1/activities?include_archived=1');
+  assert.equal(allActivities.body.items.some(item=>Number(item.id)===Number(activity.id)),false);
+
+  const env=await worker().getEnv();
+  const fact=await env.DB.prepare("SELECT minutes,goal_id,activity_id FROM progress_records WHERE profile_id='default' AND occurred_on='2026-08-22' ORDER BY id DESC LIMIT 1").first();
+  assert.equal(Number(fact.minutes),20);
+  assert.equal(Number(fact.goal_id),Number(goal.id));
+  assert.equal(fact.activity_id,null);
+});
