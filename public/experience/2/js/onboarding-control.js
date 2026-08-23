@@ -1,0 +1,15 @@
+import { PREFERENCE_PREFIX, readPreference, writePreference } from './core/preferences.js';
+
+const KEY='onboarding-skipped-v1';
+const STYLESHEET='/experience/2/css/onboarding-control.css';
+if(typeof document!=='undefined'&&!document.querySelector(`link[href="${STYLESHEET}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=STYLESHEET;link.dataset.experience2OnboardingControl='true';document.head.append(link);}
+
+function clearSkip(){try{localStorage.removeItem(`${PREFERENCE_PREFIX}${KEY}`);}catch{}}
+function openView(view){if(typeof window.__gcExperience2Navigate==='function')window.__gcExperience2Navigate(view);else document.dispatchEvent(new CustomEvent('gc:navigate-view',{detail:{view}}));}
+function openAdd(){document.querySelector('[data-open-add]')?.click();}
+function skippedMarkup(){return `<section class="gc-onboarding-skipped" aria-labelledby="gcSkippedSetupTitle"><div><p class="eyebrow">Setup skipped</p><h2 id="gcSkippedSetupTitle">Explore first.</h2><p>You can use Growth Compass before defining a Direction. Nothing is locked, and you can resume setup whenever you want.</p></div><div class="gc-onboarding-skipped-actions"><button type="button" class="primary-button" data-onboarding-open-compass>Open Compass</button><button type="button" class="secondary-button" data-onboarding-open-add>Add something</button><button type="button" class="text-button" data-onboarding-resume>Resume setup</button></div></section>`;}
+function renderSkipped(root){if(!root||root.dataset.onboardingSkipped==='true')return;root.dataset.onboardingSkipped='true';root.classList.remove('today-first-run');root.classList.add('today-onboarding-skipped');root.innerHTML=skippedMarkup();root.querySelector('[data-onboarding-open-compass]')?.addEventListener('click',()=>openView('compass'));root.querySelector('[data-onboarding-open-add]')?.addEventListener('click',openAdd);root.querySelector('[data-onboarding-resume]')?.addEventListener('click',()=>{clearSkip();location.reload();});document.dispatchEvent(new CustomEvent('gc:onboarding-skipped'));}
+function addSkip(root){if(root.querySelector('[data-onboarding-skip]'))return;const actionHost=root.querySelector('.today-onboarding-actions')||root.querySelector('.today-onboarding');if(!actionHost)return;const button=document.createElement('button');button.type='button';button.className='text-button gc-onboarding-skip';button.dataset.onboardingSkip='';button.textContent='Skip setup and explore';button.addEventListener('click',()=>{writePreference(KEY,'skipped');renderSkipped(root);});actionHost.append(button);}
+function enhance(){const roots=[...document.querySelectorAll('#viewHost .today-first-run')];if(!roots.length)return;for(const root of roots){if(readPreference(KEY,null))renderSkipped(root);else addSkip(root);}}
+
+const observer=new MutationObserver(enhance);observer.observe(document.documentElement,{subtree:true,childList:true});document.addEventListener('gc:resume-onboarding',()=>{clearSkip();location.reload();});window.addEventListener('load',enhance,{once:true});enhance();
