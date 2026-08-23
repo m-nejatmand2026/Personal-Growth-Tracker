@@ -2,7 +2,7 @@
 
 Backup key: `preview2-ambient-luxury-2026-08-22`
 
-Purpose: preserve the currently deployed Preview 2 interface before the Warm Editorial Instrument / growth-composition redesign replaces it.
+Purpose: preserve the Preview 2 interface that was serving immediately before the Warm Editorial Instrument / growth-composition redesign replaced it.
 
 ## Isolation
 
@@ -15,15 +15,22 @@ This backup is for Preview 2 only:
 
 Never use this backup against Preview 1 or Production.
 
-## Confirmed pre-redesign code reference
+## Captured rollback snapshot
 
-The canonical Preview 2 deployment immediately before the redesign replacement reported:
+The guarded Preview 2 deployment captured this snapshot before any migration or replacement deployment:
 
+- Backup display name: `Preview 2 — Ambient Luxury Snapshot (2026-08-22)`
+- Captured UTC: `2026-08-23T03:39:58.304Z`
+- Worker deployment ID: `4321faaf-2f52-4668-b5d6-46c72eec99c0`
+- Worker version ID: `7ab142c7-226f-4895-86b5-6407c98da597`
 - Worker deployment message: `git:0619e178175a378298b9011f00e48ee839dc3558`
-- Git commit: `0619e178175a378298b9011f00e48ee839dc3558`
-- Deployment created at: `2026-08-22T20:19:42.824103Z`
+- Durable Git recovery commit: `0619e178175a378298b9011f00e48ee839dc3558`
+- Original Worker deployment created at: `2026-08-22T20:19:42.824103Z`
+- D1 Time Travel bookmark: `000000c2-00000000-000050d0-74299128587f62078ac71b082a536e00`
+- GitHub Actions artifact: `preview2-ambient-luxury-2026-08-22-32615651459`
+- Artifact retention expiry: `2026-11-21T03:33:34Z`
 
-That Git SHA is the durable code-level recovery reference for the interface that was serving before the redesign deployment. The guarded deployment still captures the exact Cloudflare Worker deployment/version identity immediately before replacement, because the Worker version is the preferred operational rollback target.
+The Worker version and Git commit are the durable interface recovery references. The D1 Time Travel bookmark is intentionally temporary and is valid only while it remains inside Cloudflare's Time Travel retention window.
 
 ## What the guarded deployment captures before replacement
 
@@ -49,15 +56,22 @@ For the immediate redesign rollback window, the database recovery point is Cloud
 
 Cloudflare also supports restoring D1 by timestamp. The deployment capture time is therefore an additional recovery locator within the Time Travel retention window even if the generated bookmark is not at hand.
 
-The interface itself remains recoverable long-term from the recorded Worker version and the confirmed prior `git:0619e178175a378298b9011f00e48ee839dc3558` deployment message. The redesign work does not introduce a new migration beyond the already-authorized Preview 2 migration set, so bringing the prior interface back should normally require only a Worker/interface rollback, not a database rollback.
+The interface itself remains recoverable long-term from Worker version `7ab142c7-226f-4895-86b5-6407c98da597` and Git commit `0619e178175a378298b9011f00e48ee839dc3558`.
 
-If a long-term portable database archive is later required, it must be exported to a genuinely private storage destination rather than this public repository.
+The redesign did not introduce a migration beyond the already-authorized Preview 2 migration set, so bringing the prior interface back should normally require only a Worker/interface rollback, not a database rollback.
+
+A genuinely complete long-term portable database archive still requires a private storage destination outside this public repository. Until such a destination is configured, do not describe the D1 backup as permanent.
 
 ## Restore strategy
 
 ### Worker/interface rollback
 
-Prefer Cloudflare Workers version rollback using the recorded Worker version ID. This restores the prior Worker code, static assets, bindings, and compatibility settings without changing D1 data.
+Preferred operational rollback:
+
+1. Target only Worker `personal-growth-tracker-preview2`.
+2. Roll back to Worker version `7ab142c7-226f-4895-86b5-6407c98da597` (captured from deployment `4321faaf-2f52-4668-b5d6-46c72eec99c0`).
+3. Verify the canonical Preview 2 origin and isolated D1 health.
+4. Re-run Preview 2 remote smoke/isolation checks.
 
 Long-term code fallback: redeploy the Preview 2 Worker from Git commit `0619e178175a378298b9011f00e48ee839dc3558` using the same isolated Preview 2 bindings and guarded Preview 2 release procedure. Do not deploy that commit to Preview 1 or Production.
 
@@ -65,7 +79,7 @@ Long-term code fallback: redeploy the Preview 2 Worker from Git commit `0619e178
 
 Do not restore D1 merely to undo an interface redesign. Worker rollback and D1 rollback are separate operations.
 
-Only if the Preview 2 database itself must return to the exact pre-redesign state, restore the isolated Preview 2 D1 using the recorded Time Travel bookmark or the recorded capture timestamp while it remains inside Cloudflare's Time Travel retention window. This overwrites the current Preview 2 database and is intentionally a separate, explicit recovery action.
+Only if the Preview 2 database itself must return to the exact pre-redesign state, restore isolated D1 `personal-growth-tracker-preview2` using bookmark `000000c2-00000000-000050d0-74299128587f62078ac71b082a536e00` (or capture timestamp `2026-08-23T03:39:58.304Z`) while it remains inside Cloudflare's Time Travel retention window. This overwrites the current Preview 2 database and is intentionally a separate, explicit recovery action.
 
 ## Recovery order
 
