@@ -1,5 +1,5 @@
 /* Small companion layer for period maps and desktop density. */
-:root{--day-strength:0;--period-strength:0}
+:root{--day-strength:0;--period-strength:0;--intensity:0}
 @media(min-width:901px){
   .app-shell{grid-template-columns:208px minmax(0,1fr)}
   .desktop-rail{padding-left:13px;padding-right:13px}
