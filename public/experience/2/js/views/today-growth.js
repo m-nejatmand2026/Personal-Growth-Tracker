@@ -76,6 +76,8 @@ export async function enhanceToday({root=document,model}={}){
   let day=null;try{day=await wellbeingCapability.day(model.date);}catch{}
   if(!view.isConnected)return;
   const section=document.createElement('div');section.innerHTML=checkinMarkup(day?.energy||null);const checkin=section.firstElementChild;
-  const grid=view.querySelector('.today-grid');if(grid)grid.after(checkin);else view.append(checkin);
+  const mainColumn=view.querySelector('.today-main-column');
+  const grid=view.querySelector('.today-grid');
+  if(mainColumn)mainColumn.append(checkin);else if(grid)grid.after(checkin);else view.append(checkin);
   bindCheckin(checkin,model.date,day?.energy||null);
 }
