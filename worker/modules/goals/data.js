@@ -150,6 +150,19 @@ export async function updateGoal(
   );
 }
 
+export async function deleteGoal(
+  DB,
+  profileId,
+  id
+) {
+  const result = await DB.prepare(`
+    DELETE FROM goals
+    WHERE id=? AND profile_id=?
+  `).bind(id, profileId).run();
+
+  return Number(result.meta?.changes || 0) > 0;
+}
+
 export async function exportGoalsData(
   DB,
   profileId
