@@ -2,8 +2,9 @@ import { goalsCapability } from '../capabilities/goals.js';
 import { loadGoals as loadDirection, renderGoals as renderDirection, bindGoals as bindDirection } from './direction.js';
 
 const DIRECTION_STYLESHEET='/experience/2/css/direction.css';
+const LIFECYCLE_STYLESHEET='/experience/2/css/lifecycle.css';
 if(typeof document!=='undefined'){
-  if(!document.querySelector(`link[href="${DIRECTION_STYLESHEET}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=DIRECTION_STYLESHEET;link.dataset.experience2Direction='true';document.head.append(link);}
+  for(const href of [DIRECTION_STYLESHEET,LIFECYCLE_STYLESHEET]){if(!document.querySelector(`link[href="${href}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.experience2Direction='true';document.head.append(link);}}
   document.querySelectorAll('[data-view="goals"] span').forEach(node=>node.textContent='Direction');
 }
 
