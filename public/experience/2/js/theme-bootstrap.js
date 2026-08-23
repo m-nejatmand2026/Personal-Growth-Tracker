@@ -15,4 +15,11 @@
     root.dataset.theme='dark';
     delete root.dataset.palette;
   }
+  if(!document.querySelector('script[data-experience2-tutorial]')){
+    const tutorial=document.createElement('script');
+    tutorial.type='module';
+    tutorial.src='/experience/2/js/tutorial.js';
+    tutorial.dataset.experience2Tutorial='true';
+    document.head.append(tutorial);
+  }
 })();
