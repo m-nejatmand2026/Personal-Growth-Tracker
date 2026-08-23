@@ -15,8 +15,8 @@
     root.dataset.theme='dark';
     delete root.dataset.palette;
   }
-  for(const [name,src] of [['onboarding-control','/experience/2/js/onboarding-control.js'],['tutorial','/experience/2/js/tutorial.js']]){
+  for(const [name,src] of [['onboarding-control','/experience/2/js/onboarding-control.js'],['tutorial','/experience/2/js/tutorial.js'],['routine-lifecycle','/experience/2/js/routine-lifecycle.js']]){
     if(document.querySelector(`script[data-experience2-${name}]`))continue;
-    const script=document.createElement('script');script.type='module';script.src=src;script.dataset[`experience2${name.split('-').map(part=>part[0].toUpperCase()+part.slice(1)).join('')}`]='true';document.head.append(script);
+    const script=document.createElement('script');script.type='module';script.src=src;script.setAttribute(`data-experience2-${name}`,'true');document.head.append(script);
   }
 })();
