@@ -31,7 +31,7 @@ function render(){if(!active)return;clearTarget();const step=steps[index];if(!la
 export function startTutorial({force=false}={}){if(active)return;if(!force&&readPreference(TUTORIAL_KEY,null))return;active=true;index=0;document.documentElement.classList.add('gc-tutorial-active');render();}
 export function tutorialState(){return readPreference(TUTORIAL_KEY,'not-started');}
 
-function eligibleForAutomaticStart(){if(readPreference(TUTORIAL_KEY,null)||active)return false;if(!window.__gcExperience2Navigate)return false;if(document.documentElement.classList.contains('auth-checking')||document.documentElement.classList.contains('auth-gated'))return false;const host=document.querySelector('#viewHost');if(!host?.childElementCount)return false;if(host.querySelector('.today-first-run,.first-run,.today-welcome,.today-guided,[data-first-run]'))return false;return true;}
+function eligibleForAutomaticStart(){if(readPreference(TUTORIAL_KEY,null)||active)return false;if(readPreference('onboarding-skipped-v1',null)!=='skipped')return false;if(!window.__gcExperience2Navigate)return false;if(document.documentElement.classList.contains('auth-checking')||document.documentElement.classList.contains('auth-gated'))return false;const host=document.querySelector('#viewHost');if(!host?.childElementCount)return false;if(host.querySelector('.today-first-run,.first-run,.today-welcome,.today-guided,[data-first-run]'))return false;return true;}
 function maybeStart(){if(!eligibleForAutomaticStart())return;window.setTimeout(()=>{if(eligibleForAutomaticStart())startTutorial();},700);}
 
 document.addEventListener('gc:start-tutorial',()=>startTutorial({force:true}));
