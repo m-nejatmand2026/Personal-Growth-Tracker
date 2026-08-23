@@ -58,6 +58,7 @@ function glanceMarkup(model,existing=null){
   const minutes=progress.reduce((sum,row)=>sum+Math.max(0,Number(row.minutes)||0),0);
   const title=active?active.title:planned?planned.title:'Open space';
   const nowLabel=active?'In progress':planned?'Next':'Today';
+  const openAction=attention?'':`<button type="button" class="today-glance-action" data-today-go-plan>Plan today <span aria-hidden="true">→</span></button>`;
   return `<section class="today-glance" aria-labelledby="todayGlanceTitle">
     <div class="today-glance-main">
       <div><p class="eyebrow">${escapeHtml(nowLabel)}</p><h2 class="today-glance-title" id="todayGlanceTitle">${escapeHtml(title)}</h2></div>
@@ -66,6 +67,7 @@ function glanceMarkup(model,existing=null){
         <i class="today-route-line" aria-hidden="true"></i>
         <span class="today-route-node is-now"><small>${escapeHtml(nowLabel)}</small><strong>${escapeHtml(attention?.title||'Keep the day open')}</strong></span>
       </div>
+      ${openAction}
     </div>
     <dl class="today-signal-cluster" aria-label="Today at a glance">
       <div class="today-signal"><span class="today-signal-mark" aria-hidden="true">${escapeHtml(String(progress.length))}</span><div class="today-signal-copy"><dt>Evidence</dt><dd>${escapeHtml(minutesLabel(minutes))}</dd><span>${progress.length} ${progress.length===1?'record':'records'}</span></div></div>
@@ -115,7 +117,7 @@ export async function enhanceToday({root=document,model}={}){
   let day=null;try{day=await wellbeingCapability.day(model.date);}catch{}
   if(!view.isConnected)return;
   if(!view.querySelector('.today-glance')){
-    const holder=document.createElement('div');holder.innerHTML=glanceMarkup(model,day?.energy||null);const glance=holder.firstElementChild;const grid=view.querySelector('.today-grid');if(grid)grid.before(glance);else view.prepend(glance);
+    const holder=document.createElement('div');holder.innerHTML=glanceMarkup(model,day?.energy||null);const glance=holder.firstElementChild;const grid=view.querySelector('.today-grid');if(grid)grid.before(glance);else view.prepend(glance);repairNavigation(root);
   }
   if(view.querySelector('.today-checkin'))return;
   const section=document.createElement('div');section.innerHTML=checkinMarkup(day?.energy||null);const checkin=section.firstElementChild;
