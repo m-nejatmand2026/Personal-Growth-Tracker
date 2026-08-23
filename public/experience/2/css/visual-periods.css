@@ -1,0 +1,10 @@
+/* Small companion layer for period maps and desktop density. */
+@media(min-width:901px){
+  .app-shell{grid-template-columns:208px minmax(0,1fr)}
+  .desktop-rail{padding-left:13px;padding-right:13px}
+}
+.patterns-view .evidence-stage{display:none}
+.reflect-month-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:12px 0 18px}
+.reflect-month-day{display:block;aspect-ratio:1;border:1px solid var(--gc-border);border-radius:4px;background:color-mix(in srgb,var(--gc-primary) var(--period-strength,0%),transparent)}
+.reflect-month-day.has-record{border-color:color-mix(in srgb,var(--gc-primary) 42%,var(--gc-border))}
+@media(max-width:640px){.reflect-month-grid{gap:4px}.reflect-month-day{border-radius:3px}}
