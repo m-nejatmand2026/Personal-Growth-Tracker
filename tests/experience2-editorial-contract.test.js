@@ -41,6 +41,12 @@ test('Experience 2 PWA identity no longer advertises the retired Ambient Luxury 
   assert.match(manifest,/Connect what matters with what you do/i);
 });
 
+test('Today keeps the energy and mood observation in the primary day column',async()=>{
+  const todayGrowth=await text('public/experience/2/js/views/today-growth.js');
+  assert.match(todayGrowth,/const mainColumn=view\.querySelector\('\.today-main-column'\)/);
+  assert.match(todayGrowth,/if\(mainColumn\)mainColumn\.append\(checkin\)/);
+});
+
 test('Preview 2 guarded deploy captures rollback identity and D1 Time Travel before deployment',async()=>{
   const workflow=await text('.github/workflows/quality.yml');
   const backup=workflow.indexOf('Capture current Preview 2 rollback identity and D1 bookmark');
