@@ -178,6 +178,14 @@ export async function updateCapacityCommitment(DB, profileId, id, input) {
   return getCapacityCommitment(DB, profileId, id);
 }
 
+export async function deleteCapacityCommitment(DB, profileId, id) {
+  const result = await DB.prepare(`
+    DELETE FROM capacity_commitments
+    WHERE id=? AND profile_id=?
+  `).bind(id, profileId).run();
+  return Number(result.meta?.changes || 0) > 0;
+}
+
 export async function versionCapacityCommitment(DB, profileId, existing, input, versionFrom, previousDate) {
   const seriesId = existing.series_id || `capacity-${existing.id}`;
   const values = commitmentBindings(profileId, { ...input, effective_from: versionFrom }, seriesId);
