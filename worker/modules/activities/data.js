@@ -22,10 +22,7 @@ export async function listActivities(
   const conditions = ['profile_id=?'];
   const bindings = [profileId];
 
-  if (!includeArchived) {
-    conditions.push('active=1');
-  }
-
+  if (!includeArchived) conditions.push('active=1');
   if (goalId != null) {
     conditions.push('goal_id=?');
     bindings.push(goalId);
@@ -34,7 +31,7 @@ export async function listActivities(
   const { results } = await DB.prepare(`
     ${ACTIVITY_SELECT}
     WHERE ${conditions.join(' AND ')}
-    ORDER BY sort_order, name, id
+    ORDER BY active DESC, sort_order, name, id
   `).bind(...bindings).all();
 
   return results;
@@ -63,15 +60,8 @@ export async function getActivityByKey(DB, profileId, key) {
 export async function createActivity(DB, profileId, input) {
   await DB.prepare(`
     INSERT INTO goal_activities(
-      profile_id,
-      goal_id,
-      key,
-      name,
-      description,
-      sort_order,
-      active
-    )
-    VALUES(?,?,?,?,?,?,1)
+      profile_id, goal_id, key, name, description, sort_order, active
+    ) VALUES(?,?,?,?,?,?,1)
   `).bind(
     profileId,
     input.goal_id,
@@ -87,11 +77,7 @@ export async function createActivity(DB, profileId, input) {
 export async function updateActivity(DB, profileId, id, input) {
   await DB.prepare(`
     UPDATE goal_activities
-    SET goal_id=?,
-        name=?,
-        description=?,
-        sort_order=?,
-        updated_at=CURRENT_TIMESTAMP
+    SET goal_id=?, name=?, description=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
     WHERE id=? AND profile_id=?
   `).bind(
     input.goal_id,
@@ -117,19 +103,30 @@ export async function archiveActivity(DB, profileId, id) {
   return getActivity(DB, profileId, id);
 }
 
-export async function exportActivitiesData(
-  DB,
-  profileId
-) {
-  const { results } =
-    await DB.prepare(`
-      SELECT *
-      FROM goal_activities
-      WHERE profile_id=?
-      ORDER BY sort_order,id
-    `)
-      .bind(profileId)
-      .all();
+export async function restoreActivity(DB, profileId, id) {
+  await DB.prepare(`
+    UPDATE goal_activities
+    SET active=1, archived_at=NULL, updated_at=CURRENT_TIMESTAMP
+    WHERE id=? AND profile_id=?
+  `).bind(id, profileId).run();
 
+  return getActivity(DB, profileId, id);
+}
+
+export async function deleteActivity(DB, profileId, id) {
+  const result = await DB.prepare(`
+    DELETE FROM goal_activities
+    WHERE id=? AND profile_id=?
+  `).bind(id, profileId).run();
+
+  return Number(result.meta?.changes || 0) > 0;
+}
+
+export async function exportActivitiesData(DB, profileId) {
+  const { results } = await DB.prepare(`
+    SELECT * FROM goal_activities
+    WHERE profile_id=?
+    ORDER BY sort_order,id
+  `).bind(profileId).all();
   return results;
 }
