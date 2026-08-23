@@ -15,11 +15,8 @@
     root.dataset.theme='dark';
     delete root.dataset.palette;
   }
-  if(!document.querySelector('script[data-experience2-tutorial]')){
-    const tutorial=document.createElement('script');
-    tutorial.type='module';
-    tutorial.src='/experience/2/js/tutorial.js';
-    tutorial.dataset.experience2Tutorial='true';
-    document.head.append(tutorial);
+  for(const [name,src] of [['onboarding-control','/experience/2/js/onboarding-control.js'],['tutorial','/experience/2/js/tutorial.js']]){
+    if(document.querySelector(`script[data-experience2-${name}]`))continue;
+    const script=document.createElement('script');script.type='module';script.src=src;script.dataset[`experience2${name.split('-').map(part=>part[0].toUpperCase()+part.slice(1)).join('')}`]='true';document.head.append(script);
   }
 })();
