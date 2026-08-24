@@ -8,7 +8,14 @@ const integration = await readFile(new URL('./integration/worker-d1.integration.
 
 test('Quality keeps real Worker and D1 integration evidence release-blocking', () => {
   assert.equal(packageJson.devDependencies.wrangler, '4.123.0');
-  assert.equal(packageJson.scripts['test:integration'], 'node --test tests/integration/worker-d1.integration.js');
+  const command = packageJson.scripts['test:integration'];
+  assert.match(command, /^node --test /);
+  assert.match(command, /tests\/integration\/worker-d1\.integration\.js/);
+  assert.match(command, /Direction archive restore/);
+  assert.match(command, /Activity archive restore/);
+  assert.equal((command.match(/node --test/g) || []).length, 3);
+  assert.equal((command.match(/tests\/integration\/worker-d1\.integration\.js/g) || []).length, 3);
+  assert.match(command, /&&/);
   assert.match(quality, /npm test/);
   assert.match(quality, /wrangler@4\.123\.0/);
   assert.match(quality, /npm run test:integration/);
