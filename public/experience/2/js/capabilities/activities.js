@@ -17,6 +17,6 @@ export const activitiesCapability=Object.freeze({
   async create(input){return (await api.post('/v1/activities',input)).item;},
   async update(id,input){return (await api.put(activityPath(id),input)).item;},
   async archive(id){return (await api.delete(activityPath(id))).item;},
-  async restore(id){return (await api.post(`${activityPath(id)}/restore`,{})).item;},
+  async restore(id){return (await api.post(`${activityPath(id)}/restore`)).item;},
   async remove(id){return api.delete(`${activityPath(id)}/permanent`);}
 });
