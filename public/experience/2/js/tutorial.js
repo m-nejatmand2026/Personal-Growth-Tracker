@@ -9,7 +9,7 @@ const steps=[
   {key:'compass',title:'Compass',copy:'Use Compass when you need to choose or adjust direction. Planning details and routine stay underneath it.',target:'[data-primary-nav][data-view="compass"]',view:'compass',button:'Open Compass'},
   {key:'add',title:'Add',copy:'Add starts with meaning: do something now, plan it, record what happened, check in, or write privately.',target:'[data-open-add]',action:'add',button:'Open Add'},
   {key:'patterns',title:'Patterns',copy:'Patterns stays quiet until there is enough evidence, then shows repeated signals without pretending association is causation.',target:'[data-primary-nav][data-view="patterns"]',view:'patterns',button:'Open Patterns'},
-  {key3§reflect',title:'Reflect',copy:'Look back at a real period, notice what mattered, and choose one adjustment.',target:'[data-primary-nav][data-view="reflect"]',view:'reflect',button:'Open Reflect'},
+  {key:'reflect',title:'Reflect',copy:'Look back at a real period, notice what mattered, and choose one adjustment.',target:'[data-primary-nav][data-view="reflect"]',view:'reflect',button:'Open Reflect'},
   {key:'done',title:'That is the product',copy:'Today to act. Compass to choose. Patterns to notice. Reflect to adjust. Everything else is supporting detail.',button:'Finish'}
 ];
 let active=false,index=0,layer=null,target=null,targetClick=null;
