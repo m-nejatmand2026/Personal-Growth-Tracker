@@ -3,7 +3,7 @@ import{goalsCapability}from'../capabilities/goals.js';
 const LIFECYCLE_STYLESHEET='/experience/2/css/lifecycle.css';if(typeof document!=='undefined'&&!document.querySelector(`link[href="${LIFECYCLE_STYLESHEET}"]`)){const link=document.createElement('link');link.rel='stylesheet';link.href=LIFECYCLE_STYLESHEET;link.dataset.experience2Lifecycle='true';document.head.append(link)}
 function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]))}
 function goalName(model,goalId){return model.goals.find(goal=>Number(goal.id)===Number(goalId))?.name||'Direction unavailable'}
-export async function loadActivities(){const[items,goalModel]=await Promise.all([activitiesCapability.list({includeArchived:true}),goalsCapability.load({includeArchived:true})]);return Object.freeze({items,goals:goalModel.goals||[]})}
+export async function loadActivities(){const items=await activitiesCapability.list({includeArchived:true});const goals=await goalsCapability.references({includeArchived:true});return Object.freeze({items,goals})}
 function activeGoals(model){return model.goals.filter(goal=>goal.status!=='archived')}
 function activeItems(model){return model.items.filter(item=>Number(item.active??1)===1)}
 function archivedItems(model){return model.items.filter(item=>Number(item.active??1)!==1)}
