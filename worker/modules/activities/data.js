@@ -1,3 +1,5 @@
+import { runIdempotentD1Write } from '../../core/d1-retry.js';
+
 const ACTIVITY_SELECT = `
   SELECT
     id,
@@ -75,7 +77,7 @@ export async function createActivity(DB, profileId, input) {
 }
 
 export async function updateActivity(DB, profileId, id, input) {
-  await DB.prepare(`
+  await runIdempotentD1Write(() => DB.prepare(`
     UPDATE goal_activities
     SET goal_id=?, name=?, description=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
     WHERE id=? AND profile_id=?
@@ -86,38 +88,38 @@ export async function updateActivity(DB, profileId, id, input) {
     input.sort_order,
     id,
     profileId
-  ).run();
+  ).run());
 
   return getActivity(DB, profileId, id);
 }
 
 export async function archiveActivity(DB, profileId, id) {
-  await DB.prepare(`
+  await runIdempotentD1Write(() => DB.prepare(`
     UPDATE goal_activities
     SET active=0,
         archived_at=COALESCE(archived_at,CURRENT_TIMESTAMP),
         updated_at=CURRENT_TIMESTAMP
     WHERE id=? AND profile_id=?
-  `).bind(id, profileId).run();
+  `).bind(id, profileId).run());
 
   return getActivity(DB, profileId, id);
 }
 
 export async function restoreActivity(DB, profileId, id) {
-  await DB.prepare(`
+  await runIdempotentD1Write(() => DB.prepare(`
     UPDATE goal_activities
     SET active=1, archived_at=NULL, updated_at=CURRENT_TIMESTAMP
     WHERE id=? AND profile_id=?
-  `).bind(id, profileId).run();
+  `).bind(id, profileId).run());
 
   return getActivity(DB, profileId, id);
 }
 
 export async function deleteActivity(DB, profileId, id) {
-  const result = await DB.prepare(`
+  const result = await runIdempotentD1Write(() => DB.prepare(`
     DELETE FROM goal_activities
     WHERE id=? AND profile_id=?
-  `).bind(id, profileId).run();
+  `).bind(id, profileId).run());
 
   return Number(result.meta?.changes || 0) > 0;
 }
