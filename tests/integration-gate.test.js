@@ -7,13 +7,14 @@ const packageJson = JSON.parse(await readFile(new URL('../package.json', import.
 const coreIntegration = await readFile(new URL('./integration/worker-d1.integration.js', import.meta.url), 'utf8');
 const directionIntegration = await readFile(new URL('./integration/direction-lifecycle.integration.js', import.meta.url), 'utf8');
 const activityIntegration = await readFile(new URL('./integration/activity-lifecycle.integration.js', import.meta.url), 'utf8');
-const integrationFiles = [coreIntegration, directionIntegration, activityIntegration];
+const journalIntegration = await readFile(new URL('./integration/journal-lifecycle.integration.js', import.meta.url), 'utf8');
+const integrationFiles = [coreIntegration, directionIntegration, activityIntegration, journalIntegration];
 
 test('Quality keeps real Worker and D1 integration evidence release-blocking', () => {
   assert.equal(packageJson.devDependencies.wrangler, '4.123.0');
   assert.equal(
     packageJson.scripts['test:integration'],
-    'node --test tests/integration/worker-d1.integration.js && node --test tests/integration/direction-lifecycle.integration.js && node --test tests/integration/activity-lifecycle.integration.js'
+    'node --test tests/integration/worker-d1.integration.js && node --test tests/integration/direction-lifecycle.integration.js && node --test tests/integration/activity-lifecycle.integration.js && node --test tests/integration/journal-lifecycle.integration.js'
   );
   assert.match(quality, /npm test/);
   assert.match(quality, /wrangler@4\.123\.0/);
@@ -33,4 +34,6 @@ test('integration gates use separate Cloudflare harness processes with local iso
   assert.match(coreIntegration, /\/api\/v1\/areas/);
   assert.match(directionIntegration, /Direction archive restore and permanent removal keep factual Progress/);
   assert.match(activityIntegration, /Activity archive restore and permanent removal keep factual Progress and its Direction/);
+  assert.match(journalIntegration, /Journal archive restore and permanent removal stay private and reversible until explicit removal/);
+  assert.match(journalIntegration, /SELECT COUNT\(\*\) AS count FROM progress_records/);
 });
