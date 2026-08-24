@@ -5,11 +5,16 @@ STATE_DIR="${RUNNER_TEMP:-/tmp}/growth-compass-browser-d1-${GITHUB_RUN_ID:-local
 WORKER_LOG="${RUNNER_TEMP:-/tmp}/growth-compass-browser-worker-$$.log"
 WORKER_PID=""
 
-cleanup() {
+stop_worker() {
   if [[ -n "$WORKER_PID" ]]; then
     kill "$WORKER_PID" 2>/dev/null || true
     wait "$WORKER_PID" 2>/dev/null || true
+    WORKER_PID=""
   fi
+}
+
+cleanup() {
+  stop_worker
   rm -rf "$STATE_DIR"
 }
 trap cleanup EXIT
@@ -23,6 +28,35 @@ assert_contains() {
     printf '%s\n' "$body" | head -c 2400 >&2
     printf '\n' >&2
     cat "$WORKER_LOG" >&2 || true
+    exit 1
+  fi
+}
+
+start_worker() {
+  : >"$WORKER_LOG"
+  ./node_modules/.bin/wrangler dev \
+    --persist-to "$STATE_DIR" \
+    --port 8787 \
+    --log-level error \
+    >"$WORKER_LOG" 2>&1 &
+  WORKER_PID=$!
+
+  local ready=0
+  for _ in $(seq 1 45); do
+    if curl --fail --silent --show-error http://127.0.0.1:8787/api/health >/dev/null 2>&1; then
+      ready=1
+      break
+    fi
+    if ! kill -0 "$WORKER_PID" 2>/dev/null; then
+      cat "$WORKER_LOG"
+      exit 1
+    fi
+    sleep 1
+  done
+
+  if [[ "$ready" != "1" ]]; then
+    cat "$WORKER_LOG"
+    echo "Local Growth Compass Worker did not become ready for browser tests."
     exit 1
   fi
 }
@@ -44,6 +78,11 @@ assert_worker_alive() {
 run_e2_suite() {
   local file="$1"
   echo "Running isolated Experience 2 browser suite: $file"
+  # A fresh Worker process per suite prevents long browser runs from sharing
+  # workerd connection/resource state. The same isolated local D1 persists so
+  # migrations and factual lifecycle behavior remain real across the gate.
+  stop_worker
+  start_worker
   # Keep each browser suite in a fresh Node process so Playwright engines release resources between files.
   if ! GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test "$file"; then
     echo "Experience 2 browser suite failed: $file" >&2
@@ -59,31 +98,7 @@ rm -rf "$STATE_DIR"
   --local \
   --persist-to "$STATE_DIR"
 
-./node_modules/.bin/wrangler dev \
-  --persist-to "$STATE_DIR" \
-  --port 8787 \
-  --log-level error \
-  >"$WORKER_LOG" 2>&1 &
-WORKER_PID=$!
-
-ready=0
-for _ in $(seq 1 45); do
-  if curl --fail --silent --show-error http://127.0.0.1:8787/api/health >/dev/null 2>&1; then
-    ready=1
-    break
-  fi
-  if ! kill -0 "$WORKER_PID" 2>/dev/null; then
-    cat "$WORKER_LOG"
-    exit 1
-  fi
-  sleep 1
-done
-
-if [[ "$ready" != "1" ]]; then
-  cat "$WORKER_LOG"
-  echo "Local Growth Compass Worker did not become ready for browser tests."
-  exit 1
-fi
+start_worker
 
 base='http://127.0.0.1:8787'
 
