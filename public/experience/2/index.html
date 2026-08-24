@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#151714">
-  <meta name="description" content="Growth Compass — connect what matters with what you do, learn from what happens, and adjust deliberately.">
+  <meta name="description" content="Growth Compass — know what matters, choose what to do next, and learn from what actually happens.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Growth Compass">
   <link rel="manifest" href="/experience/2/manifest.webmanifest">
@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="/experience/2/css/visual-periods.css">
   <link rel="stylesheet" href="/experience/2/css/instrument-90.css">
   <link rel="stylesheet" href="/experience/2/css/instrument-90-fixes.css">
+  <link rel="stylesheet" href="/experience/2/css/product-simplification.css">
   <title>Today — Growth Compass</title>
 </head>
 <body>
@@ -42,33 +43,32 @@
     <aside class="desktop-rail" aria-label="Growth Compass navigation">
       <a class="brand" href="/experience/2/" aria-label="Growth Compass Today"><span class="brand-mark" aria-hidden="true"><svg class="brand-symbol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m15.2 8.8-1.7 4.7-4.7 1.7 1.7-4.7 4.7-1.7Z"/></svg></span><span>Growth Compass</span></a>
       <button type="button" class="rail-add" data-open-add aria-label="Add"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add</span></button>
-      <p class="rail-section-label">Your growth</p>
       <nav class="rail-links" aria-label="Primary">
         <button type="button" class="nav-item active" data-view="today" data-primary-nav aria-current="page"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10.5 9-7.5 9 7.5"/><path d="M5.5 9.5V21h13V9.5M9.5 21v-6h5v6"/></svg><span>Today</span></button>
         <button type="button" class="nav-item" data-view="compass" data-primary-nav><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m15.2 8.8-1.7 4.7-4.7 1.7 1.7-4.7 4.7-1.7Z"/></svg><span>Compass</span></button>
         <button type="button" class="nav-item" data-view="patterns" data-primary-nav><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 18V6M4 18h16"/><path d="m7 14 3-3 3 1.5 4-6"/></svg><span>Patterns</span></button>
         <button type="button" class="nav-item" data-view="reflect" data-primary-nav><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4.5h10.5A3.5 3.5 0 0 1 19 8v11.5H8.5A3.5 3.5 0 0 1 5 16V4.5Z"/><path d="M5 16c0-1.9 1.6-3.5 3.5-3.5H19M9 8h6"/></svg><span>Reflect</span></button>
       </nav>
-      <div class="rail-divider"></div>
-      <p class="rail-section-label">Library</p>
-      <nav class="rail-utility-links" aria-label="Library and tools">
-        <button type="button" class="nav-item" data-view="activities"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/><path d="M9 6h10M9 12h10M9 18h10"/></svg><span>Activities</span></button>
-        <button type="button" class="nav-item" data-view="wellness"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M7 12c1.4-2 2.8-2 4.2 0s2.8 2 5.8 0"/></svg><span>Wellness</span></button>
-      </nav>
-      <div class="rail-footer"><button type="button" class="nav-item" data-view="settings"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h8M16 6h4M4 12h3M11 12h9M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg><span>Settings</span></button><a class="compare-link" href="/">Experience selector</a></div>
+      <details class="rail-more">
+        <summary><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></summary>
+        <nav class="rail-utility-links" aria-label="More tools">
+          <button type="button" class="nav-item" data-view="activities"><span>Activities</span></button>
+          <button type="button" class="nav-item" data-view="wellness"><span>Wellness</span></button>
+        </nav>
+      </details>
+      <div class="rail-footer"><button type="button" class="nav-item" data-view="settings"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h8M16 6h4M4 12h3M11 12h9M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg><span>Settings</span></button></div>
     </aside>
     <main class="main-canvas" id="experience2Main" tabindex="-1">
       <header class="mobile-header">
         <div><p class="eyebrow">Growth Compass</p><h1 id="viewTitle">Today</h1></div>
         <div class="mobile-header-actions">
           <button type="button" class="mobile-explore-toggle" id="mobileExploreToggle" aria-expanded="false" aria-controls="mobileSecondary"><svg class="explore-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg><span>More</span></button>
-          <a class="compare-chip" href="/" aria-label="Open experience selector"><svg class="explore-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5 3 12l5 7M16 5l5 7-5 7"/></svg></a>
         </div>
       </header>
       <nav class="mobile-secondary" id="mobileSecondary" aria-label="More destinations" aria-hidden="true">
-        <button type="button" class="nav-item" data-view="activities"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/><path d="M9 6h10M9 12h10M9 18h10"/></svg><span>Activities</span></button>
-        <button type="button" class="nav-item" data-view="wellness"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M7 12c1.4-2 2.8-2 4.2 0s2.8 2 5.8 0"/></svg><span>Wellness</span></button>
-        <button type="button" class="nav-item" data-view="settings"><svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h8M16 6h4M4 12h3M11 12h9M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg><span>Settings</span></button>
+        <button type="button" class="nav-item" data-view="activities"><span>Activities</span></button>
+        <button type="button" class="nav-item" data-view="wellness"><span>Wellness</span></button>
+        <button type="button" class="nav-item" data-view="settings"><span>Settings</span></button>
       </nav>
       <section id="viewHost" class="view-host" aria-live="polite"></section>
       <div id="installAppHost" aria-live="polite"></div>
@@ -88,6 +88,10 @@
   <script src="/experience/2/js/palette-portal.js"></script>
   <link rel="modulepreload" href="/experience/2/js/app.js">
   <script type="module" src="/experience/2/js/navigation-history.js"></script>
+  <script type="module" src="/experience/2/js/onboarding-control.js"></script>
+  <script type="module" src="/experience/2/js/onboarding-v2.js"></script>
+  <script type="module" src="/experience/2/js/contextual-coaching.js"></script>
+  <script type="module" src="/experience/2/js/tutorial.js"></script>
   <script type="module" src="/experience/2/js/auth-bootstrap.js"></script>
 </body>
 </html>

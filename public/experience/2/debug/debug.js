@@ -1,0 +1,5 @@
+import { PREFERENCE_PREFIX } from '../js/core/preferences.js';
+const CACHE_PREFIX='growth-compass-preview2-e2-';
+const status=message=>{const node=document.querySelector('#localStatus');if(node)node.textContent=message;};
+document.querySelector('#resetPreferences')?.addEventListener('click',()=>{try{const keys=[];for(let i=0;i<localStorage.length;i+=1){const key=localStorage.key(i);if(key?.startsWith(PREFERENCE_PREFIX))keys.push(key);}keys.forEach(key=>localStorage.removeItem(key));status(`Cleared ${keys.length} local preference${keys.length===1?'':'s'}.`);}catch{status('Could not clear local preferences.');}});
+document.querySelector('#clearCache')?.addEventListener('click',async()=>{if(!('caches'in window))return status('Cache storage is unavailable.');try{const names=await caches.keys();const owned=names.filter(name=>name.startsWith(CACHE_PREFIX));await Promise.all(owned.map(name=>caches.delete(name)));status(`Cleared ${owned.length} Experience 2 cache${owned.length===1?'':'s'}.`);}catch{status('Could not clear the offline cache.');}});
