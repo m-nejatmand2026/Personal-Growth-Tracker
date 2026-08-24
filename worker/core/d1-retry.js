@@ -17,7 +17,7 @@ function sleep(ms){return ms>0?new Promise(resolve=>setTimeout(resolve,ms)):Prom
  * Retries only idempotent D1 operations after documented transient transport/storage resets.
  * Callers must not wrap non-idempotent inserts unless they provide their own deduplication key.
  */
-export async function runIdempotentD1Write(operation,{maxRetries=3,initialDelayMs=25,maxDelayMs=250,random=Math.random}={}){
+export async function runRetryableD1Operation(operation,{maxRetries=3,initialDelayMs=25,maxDelayMs=250,random=Math.random}={}){
   let attempt=0;
   let delay=Math.max(0,Number(initialDelayMs)||0);
   while(true){
@@ -31,3 +31,6 @@ export async function runIdempotentD1Write(operation,{maxRetries=3,initialDelayM
     }
   }
 }
+
+export const runIdempotentD1Write=runRetryableD1Operation;
+export const runIdempotentD1Read=runRetryableD1Operation;
