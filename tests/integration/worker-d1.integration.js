@@ -41,7 +41,7 @@ test('production Worker configuration boots locally with the complete D1 migrati
   const migrationCount = await env.DB.prepare(
     'SELECT COUNT(*) AS count FROM d1_migrations'
   ).first();
-  assert.equal(Number(migrationCount.count), 9);
+  assert.equal(Number(migrationCount.count), 10);
 
   for (const table of [
     'profiles',
@@ -71,6 +71,10 @@ test('production Worker configuration boots locally with the complete D1 migrati
   for (const column of ['start_time', 'end_time', 'flexibility']) {
     assert.equal(capacityColumnNames.has(column), true, `expected time-aware Capacity column ${column}`);
   }
+
+  const journalColumns = await env.DB.prepare('PRAGMA table_info(journal_entries)').all();
+  const journalColumnNames = new Set((journalColumns.results || []).map((column) => column.name));
+  assert.equal(journalColumnNames.has('archived_at'), true, 'expected Journal archive migration column archived_at');
 });
 
 test('Area CRUD executes through the real Worker router and isolated D1', async () => {
