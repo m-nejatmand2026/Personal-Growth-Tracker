@@ -1,4 +1,4 @@
-import { runIdempotentD1Write } from '../../core/d1-retry.js';
+import { runIdempotentD1Read, runIdempotentD1Write } from '../../core/d1-retry.js';
 
 const ACTIVITY_SELECT = `
   SELECT
@@ -30,27 +30,27 @@ export async function listActivities(
     bindings.push(goalId);
   }
 
-  const { results } = await DB.prepare(`
+  const { results } = await runIdempotentD1Read(() => DB.prepare(`
     ${ACTIVITY_SELECT}
     WHERE ${conditions.join(' AND ')}
     ORDER BY active DESC, sort_order, name, id
-  `).bind(...bindings).all();
+  `).bind(...bindings).all());
 
   return results;
 }
 
 export async function getActivity(DB, profileId, id) {
-  return DB.prepare(`
+  return runIdempotentD1Read(() => DB.prepare(`
     ${ACTIVITY_SELECT}
     WHERE id=? AND profile_id=?
-  `).bind(id, profileId).first();
+  `).bind(id, profileId).first());
 }
 
 export async function getActivityByKey(DB, profileId, key) {
-  return DB.prepare(`
+  return runIdempotentD1Read(() => DB.prepare(`
     ${ACTIVITY_SELECT}
     WHERE key=? AND profile_id=?
-  `).bind(key, profileId).first();
+  `).bind(key, profileId).first());
 }
 
 /**
@@ -125,10 +125,10 @@ export async function deleteActivity(DB, profileId, id) {
 }
 
 export async function exportActivitiesData(DB, profileId) {
-  const { results } = await DB.prepare(`
+  const { results } = await runIdempotentD1Read(() => DB.prepare(`
     SELECT * FROM goal_activities
     WHERE profile_id=?
     ORDER BY sort_order,id
-  `).bind(profileId).all();
+  `).bind(profileId).all());
   return results;
 }
