@@ -24,10 +24,12 @@ export async function listJournalRoute({ request, url, env }) {
   const q = (url.searchParams.get('q') || '').trim().slice(0, 120);
   const limit = Number(url.searchParams.get('limit') || 50);
   const includeArchived = url.searchParams.get('include_archived') === '1';
+  const archivedOnly = url.searchParams.get('archived_only') === '1';
+  if (includeArchived && archivedOnly) return bad('Choose either include_archived or archived_only, not both.');
   if (from && !isJournalDate(from)) return bad('Invalid journal from date.');
   if (to && !isJournalDate(to)) return bad('Invalid journal to date.');
   if (from && to && from > to) return bad('Journal from date cannot be after to date.');
-  return json({ items: await listJournalEntries(env.DB, profileId, { from: from || null, to: to || null, q: q || null, limit, includeArchived }) });
+  return json({ items: await listJournalEntries(env.DB, profileId, { from: from || null, to: to || null, q: q || null, limit, includeArchived, archivedOnly }) });
 }
 
 export async function createJournalRoute({ request, env }) {
