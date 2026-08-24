@@ -23,6 +23,9 @@ function toReference(entry) {
     entry_type:
       entry.entry_type,
 
+    archived_at:
+      entry.archived_at || null,
+
     tags:
       Object.freeze(
         [...(entry.tags || [])]
@@ -35,6 +38,8 @@ function toReference(entry) {
  *
  * Journal remains private reflection data. Nothing in this
  * contract implies eligibility for Progress, Insights or AI.
+ * Archived entries are excluded from list() unless a caller
+ * explicitly requests them through the Journal-owned filters.
  */
 export const journalContractV1 =
   Object.freeze({
