@@ -47,7 +47,7 @@ test('Activity archive restore and permanent removal keep factual Progress and i
   const archivedList = await jsonRequest('/api/v1/activities?include_archived=1');
   assert.equal(archivedList.body.items.some(item => Number(item.id) === Number(activity.id) && Number(item.active) === 0), true);
 
-  const restored = await jsonRequest(`/api/v1/activities/${activity.id}/restore`, { method: 'POST', body: JSON.stringify({}) });
+  const restored = await jsonRequest(`/api/v1/activities/${activity.id}/restore`, { method: 'POST' });
   assert.equal(restored.response.status, 200);
   assert.equal(Number(restored.body.item.active), 1);
 
