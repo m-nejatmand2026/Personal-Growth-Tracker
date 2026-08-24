@@ -1,11 +1,9 @@
-import test, { after, afterEach, before, beforeEach } from 'node:test';
+import test, { afterEach, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestHarness } from 'wrangler';
 
 const WORKER_NAME = 'personal-growth-tracker';
-const server = createTestHarness({
-  workers: [{ configPath: './wrangler.jsonc' }]
-});
+let server;
 
 function worker() {
   return server.getWorker(WORKER_NAME);
@@ -21,20 +19,17 @@ async function jsonRequest(path, init = {}) {
   return { response, body };
 }
 
-before(async () => {
-  await server.listen();
-});
-
 beforeEach(async () => {
+  server = createTestHarness({
+    workers: [{ configPath: './wrangler.jsonc' }]
+  });
+  await server.listen();
   await worker().applyD1Migrations('DB');
 });
 
 afterEach(async () => {
-  await server.reset();
-});
-
-after(async () => {
-  await server.close();
+  await server?.close();
+  server = undefined;
 });
 
 test('production Worker configuration boots locally with the complete D1 migration chain', async () => {
