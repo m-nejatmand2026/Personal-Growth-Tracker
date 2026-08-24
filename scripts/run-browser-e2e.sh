@@ -115,7 +115,7 @@ assert_contains 'Experience 1 /experience/1/' "$e1" '/experience/1/bootstrap.js'
 echo 'Preview 2 Experience 1 adapter route smoke passed.'
 
 e2="$(curl --fail --silent --show-error "$base/experience/2/")"
-assert_contains 'Experience 2 /experience/2/' "$e2" 'connect what matters with what you do, learn from what happens, and adjust deliberately.'
+assert_contains 'Experience 2 /experience/2/' "$e2" 'know what matters, choose what to do next, and learn from what actually happens.'
 assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/css/growth-experience.css'
 assert_contains 'Experience 2 /experience/2/' "$e2" '/experience/2/js/app.js'
 echo 'Preview 2 Experience 2 route smoke passed.'
