@@ -17,9 +17,11 @@ test('Quality keeps real Worker and D1 integration evidence release-blocking', (
 
 test('integration gate uses Cloudflare test harness with local isolated D1 and real migrations', () => {
   assert.match(integration, /createTestHarness/);
+  assert.match(integration, /beforeEach\(async \(\) => \{[\s\S]*server = createTestHarness/);
   assert.match(integration, /configPath: '\.\/wrangler\.jsonc'/);
   assert.match(integration, /applyD1Migrations\('DB'\)/);
-  assert.match(integration, /server\.reset\(\)/);
+  assert.match(integration, /afterEach\(async \(\) => \{[\s\S]*server\?\.close\(\)/);
+  assert.match(integration, /server = undefined/);
   assert.match(integration, /\/api\/health/);
   assert.match(integration, /\/api\/v1\/areas/);
   assert.match(integration, /\/api\/v1\/goals/);
