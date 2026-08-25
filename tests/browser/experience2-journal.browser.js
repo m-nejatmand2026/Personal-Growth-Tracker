@@ -4,6 +4,15 @@ import { chromium, webkit } from 'playwright';
 
 const BASE_URL = process.env.GC_E2E_BASE_URL || 'http://127.0.0.1:8787/experience/2/';
 const BROWSERS = [['Chromium', chromium], ['WebKit', webkit]];
+const CASE_FILTER = String(process.env.GC_E2E_CASE || '').trim().toLowerCase();
+
+function caseKey(browserName, viewport) {
+  return `${browserName.toLowerCase()}-${viewport === '375px' ? '375' : 'desktop'}`;
+}
+
+function shouldRun(browserName, viewport) {
+  return !CASE_FILTER || CASE_FILTER === caseKey(browserName, viewport);
+}
 
 function dateKey(offset = 0) {
   const date = new Date();
@@ -130,25 +139,29 @@ async function exercise(page, browserName, viewport) {
 }
 
 for (const [browserName, browserType] of BROWSERS) {
-  test(`${browserName} desktop accepts Experience 2 Journal full lifecycle under Reflect`, async () => {
-    const browser = await browserType.launch();
-    try {
-      const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-      await exercise(await context.newPage(), browserName, 'desktop');
-      await context.close();
-    } finally {
-      await browser.close();
-    }
-  });
+  if (shouldRun(browserName, 'desktop')) {
+    test(`${browserName} desktop accepts Experience 2 Journal full lifecycle under Reflect`, async () => {
+      const browser = await browserType.launch();
+      try {
+        const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+        await exercise(await context.newPage(), browserName, 'desktop');
+        await context.close();
+      } finally {
+        await browser.close();
+      }
+    });
+  }
 
-  test(`${browserName} 375px accepts Experience 2 Journal full lifecycle under Reflect`, async () => {
-    const browser = await browserType.launch();
-    try {
-      const context = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
-      await exercise(await context.newPage(), browserName, '375px');
-      await context.close();
-    } finally {
-      await browser.close();
-    }
-  });
+  if (shouldRun(browserName, '375px')) {
+    test(`${browserName} 375px accepts Experience 2 Journal full lifecycle under Reflect`, async () => {
+      const browser = await browserType.launch();
+      try {
+        const context = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+        await exercise(await context.newPage(), browserName, '375px');
+        await context.close();
+      } finally {
+        await browser.close();
+      }
+    });
+  }
 }
