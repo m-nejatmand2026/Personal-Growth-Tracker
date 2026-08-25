@@ -37,6 +37,10 @@ function clock(seconds) {
   return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}` : `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
 }
 
+function completionOpen() {
+  return document.body.classList.contains('gc-live-completion-open');
+}
+
 function stopClock() {
   if (timer) window.clearInterval(timer);
   timer = 0;
@@ -45,6 +49,13 @@ function stopClock() {
 function tick() {
   const node = host?.querySelector('[data-live-elapsed]');
   if (node && current) node.textContent = clock(elapsedSeconds(current));
+}
+
+function startClock() {
+  stopClock();
+  if (!current || completionOpen()) return;
+  tick();
+  timer = window.setInterval(tick, 1000);
 }
 
 function chooseSession(items = []) {
@@ -66,12 +77,11 @@ function render() {
   host.querySelector('[data-live-change]')?.addEventListener('click', plansChanged);
   host.querySelector('[data-live-done]')?.addEventListener('click', openCompletion);
   document.body.classList.add('gc-live-session-active');
-  tick();
-  timer = window.setInterval(tick, 1000);
+  startClock();
 }
 
 async function refresh() {
-  if (refreshInFlight || !host) return;
+  if (refreshInFlight || !host || completionOpen()) return;
   refreshInFlight = true;
   try {
     const response = await api.get(`/v1/daily-plan?date=${encodeURIComponent(todayKey())}`);
@@ -115,6 +125,8 @@ function closeCompletion(opener) {
   overlay.innerHTML = '';
   document.body.classList.remove('gc-live-completion-open');
   completing = false;
+  startClock();
+  scheduleRefresh(0);
   opener?.focus?.({ preventScroll: true });
 }
 
@@ -146,7 +158,6 @@ async function finishSession(item, minutes, note, statusNode, saveButton) {
       }
     }
     await api.put(`/v1/daily-plan/${Number(item.id)}`, { status: 'completed' });
-    document.dispatchEvent(new CustomEvent('gc:session-completed', { detail: { dailyPlanId: Number(item.id), progressId: progress?.id || null } }));
     const overlay = document.querySelector('#overlayHost');
     if (overlay) {
       overlay.onkeydown = null;
@@ -157,7 +168,7 @@ async function finishSession(item, minutes, note, statusNode, saveButton) {
     current = null;
     render();
     scheduleRefresh(0);
-    if (document.querySelector('#experience2App')?.dataset.currentView === 'today') window.location.reload();
+    document.dispatchEvent(new CustomEvent('gc:session-completed', { detail: { dailyPlanId: Number(item.id), progressId: progress?.id || null } }));
   } catch (error) {
     completing = false;
     saveButton.disabled = false;
@@ -172,6 +183,7 @@ function openCompletion() {
   if (!overlay) return;
   const opener = document.activeElement;
   const actual = elapsedMinutes(item);
+  stopClock();
   overlay.innerHTML = `<div class="gc-live-completion-backdrop" data-live-completion-close><section class="gc-live-completion" role="dialog" aria-modal="true" aria-labelledby="gcLiveCompletionTitle"><header><div><p class="eyebrow">Factual completion</p><h2 id="gcLiveCompletionTitle">What actually happened?</h2><p>${escapeHtml(item.title || item.activity_label || 'Current action')}</p></div><button type="button" data-live-completion-close aria-label="Close completion">×</button></header>${item.activity_key ? `<form data-live-completion-form><div class="gc-live-completion-fact"><span>Started</span><strong>${escapeHtml(new Date(item.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</strong><span>Elapsed now</span><strong>${escapeHtml(clock(elapsedSeconds(item)))}</strong></div><label><span>Actual duration</span><div><input type="number" min="1" max="1440" name="minutes" value="${actual}" required><b>min</b></div><small>Prefilled from the real session start. Change it only if the factual duration differs.</small></label><label><span>Note <small>optional</small></span><textarea name="note" maxlength="500" placeholder="Anything worth remembering?">${escapeHtml(item.note || '')}</textarea></label><p class="gc-live-boundary">Saving creates factual Progress once, then closes this in-progress Plan item.</p><button type="submit" class="primary-button" data-live-completion-save>Save factual Progress</button><p class="gc-live-completion-status" role="alert"></p></form>` : `<div class="gc-live-one-off"><p>This one-off Plan item has no reusable Activity, so finishing it closes the plan without inventing Progress.</p><button type="button" class="primary-button" data-live-one-off-finish>Mark complete</button><p class="gc-live-completion-status" role="alert"></p></div>`}</section></div>`;
   document.body.classList.add('gc-live-completion-open');
   const dialog = overlay.querySelector('.gc-live-completion');
