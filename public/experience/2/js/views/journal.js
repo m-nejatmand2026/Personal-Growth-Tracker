@@ -146,6 +146,20 @@ async function refreshJournal(filters) {
   bindJournal(model);
 }
 
+function removeArchivedEntryFromView(id) {
+  const entry = document.querySelector(`[data-journal-archived-entry="${Number(id)}"]`);
+  const archive = entry?.closest('.journal-archive');
+  entry?.remove();
+  if (!archive) return;
+  const remaining = archive.querySelectorAll('[data-journal-archived-entry]').length;
+  if (!remaining) {
+    archive.remove();
+    return;
+  }
+  const count = archive.querySelector('summary span');
+  if (count) count.textContent = String(remaining);
+}
+
 function openEditor(item, model) {
   const modal = mountModal(editorHtml(item), { initialFocus: 'textarea[name="body"]' });
   if (!modal) return;
@@ -183,9 +197,10 @@ function openRemove(item, model) {
     event.currentTarget.disabled = true;
     try {
       await journalCapability.remove(item.id);
+      removeArchivedEntryFromView(item.id);
       close();
       toast('Journal entry permanently removed');
-      await refreshJournal(model.filters);
+      void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
       event.currentTarget.disabled = false;
       toast(error.message || 'Could not remove journal entry');
