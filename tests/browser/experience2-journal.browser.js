@@ -47,6 +47,18 @@ async function applyFilters(page, query, date) {
   await page.locator('[data-journal-filter]').evaluate(form => form.requestSubmit());
 }
 
+async function assertJournalEntryRemovedFromServer(page, id, token, date, label) {
+  const result = await page.evaluate(async ({ id, token, date }) => {
+    const query = new URLSearchParams({ q: token, from: date, to: date, limit: '100', include_archived: '1' });
+    const response = await fetch(`/api/v1/journal?${query}`, { cache: 'no-store' });
+    let data = null;
+    try { data = await response.json(); } catch {}
+    return { ok: response.ok, status: response.status, items: data?.items || [] };
+  }, { id, token, date });
+  assert.equal(result.ok, true, `${label}: Journal server verification must succeed; HTTP ${result.status}`);
+  assert.equal(result.items.some(item => Number(item.id) === id), false, `${label}: permanently removed Journal entry must be absent from server state`);
+}
+
 async function exercise(page, browserName, viewport) {
   await page.addInitScript(() => localStorage.setItem('growth-compass:preview2:e2:tutorial-state-v1', 'complete'));
   const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15_000 });
@@ -116,6 +128,8 @@ async function exercise(page, browserName, viewport) {
   await entry.locator('[data-journal-archive]').click();
   await entry.waitFor({ state: 'detached' });
   archived = await archivedEntry(page, editedBody);
+  const removedId = Number(await archived.getAttribute('data-journal-archived-entry'));
+  assert.ok(Number.isInteger(removedId) && removedId > 0, `${browserName} ${viewport}: archived Journal entry must expose its server id`);
   const removeButton = archived.locator('[data-journal-remove]');
   await removeButton.focus();
   await removeButton.click();
@@ -135,6 +149,7 @@ async function exercise(page, browserName, viewport) {
   await page.locator('.journal-delete-dialog').waitFor({ state: 'detached' });
   assert.equal(await page.locator('body').evaluate(node => node.classList.contains('journal-modal-open')), false);
   await archived.waitFor({ state: 'detached' });
+  await assertJournalEntryRemovedFromServer(page, removedId, token, today, `${browserName} ${viewport}`);
   await noOverflow(page, `${browserName} ${viewport} remove`);
 }
 
