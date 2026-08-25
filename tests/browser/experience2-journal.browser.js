@@ -48,13 +48,23 @@ async function applyFilters(page, query, date) {
 }
 
 async function assertJournalEntryRemovedFromServer(page, id, token, date, label) {
-  const result = await page.evaluate(async ({ id, token, date }) => {
-    const query = new URLSearchParams({ q: token, from: date, to: date, limit: '100', include_archived: '1' });
-    const response = await fetch(`/api/v1/journal?${query}`, { cache: 'no-store' });
-    let data = null;
-    try { data = await response.json(); } catch {}
-    return { ok: response.ok, status: response.status, items: data?.items || [] };
-  }, { id, token, date });
+  let result = null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    result = await page.evaluate(async ({ id, token, date }) => {
+      try {
+        const query = new URLSearchParams({ q: token, from: date, to: date, limit: '100', include_archived: '1' });
+        const response = await fetch(`/api/v1/journal?${query}`, { cache: 'no-store' });
+        let data = null;
+        try { data = await response.json(); } catch {}
+        return { reachedServer: true, ok: response.ok, status: response.status, items: data?.items || [] };
+      } catch (error) {
+        return { reachedServer: false, message: String(error?.message || error), items: [] };
+      }
+    }, { id, token, date });
+    if (result.reachedServer) break;
+    await page.waitForTimeout(150 * (attempt + 1));
+  }
+  assert.equal(result?.reachedServer, true, `${label}: Journal server verification must reach the server; ${result?.message || 'transport failed'}`);
   assert.equal(result.ok, true, `${label}: Journal server verification must succeed; HTTP ${result.status}`);
   assert.equal(result.items.some(item => Number(item.id) === id), false, `${label}: permanently removed Journal entry must be absent from server state`);
 }
