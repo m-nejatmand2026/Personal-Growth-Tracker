@@ -78,12 +78,8 @@ assert_worker_alive() {
 run_e2_suite() {
   local file="$1"
   echo "Running isolated Experience 2 browser suite: $file"
-  # A fresh Worker process per suite prevents long browser runs from sharing
-  # workerd connection/resource state. The same isolated local D1 persists so
-  # migrations and factual lifecycle behavior remain real across the gate.
   stop_worker
   start_worker
-  # Keep each browser suite in a fresh Node process so Playwright engines release resources between files.
   if ! GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test "$file"; then
     echo "Experience 2 browser suite failed: $file" >&2
     cat "$WORKER_LOG" >&2 || true
@@ -132,6 +128,7 @@ for suite in \
   tests/browser/experience2-navigation-history.browser.js \
   tests/browser/experience2-journal.browser.js \
   tests/browser/experience2-logger.browser.js \
+  tests/browser/experience2-live-session.browser.js \
   tests/browser/experience2-progress.browser.js \
   tests/browser/experience2-schedule.browser.js \
   tests/browser/experience2-settings.browser.js \
