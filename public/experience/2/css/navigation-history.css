@@ -2,11 +2,11 @@
 @media(max-width:900px){
   .mobile-header{position:relative}
   .mobile-header.has-history-back{padding-left:72px}
-  .mobile-history-back{position:absolute;z-index:2;left:2px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:62px;min-height:40px;padding:0 9px 0 7px;border:1px solid var(--gc-border-strong);border-radius:12px;background:var(--gc-raised);color:var(--gc-text-muted);font:680 11px/1 var(--font-sans);cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.08);transition:background .18s ease,border-color .18s ease,color .18s ease,transform .14s ease}
+  .mobile-history-back{position:absolute;z-index:2;left:2px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:62px;min-height:44px;padding:0 9px 0 7px;border:1px solid var(--gc-border-strong);border-radius:12px;background:var(--gc-raised);color:var(--gc-text-muted);font:680 11px/1 var(--font-sans);cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.08);transition:background .18s ease,border-color .18s ease,color .18s ease,transform .14s ease}
   .mobile-history-back[hidden]{display:none}
   .mobile-history-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
   .mobile-history-back:active{transform:translateY(-50%) scale(.97)}
 }
 @media(hover:hover) and (max-width:900px){.mobile-history-back:hover{border-color:color-mix(in srgb,var(--gc-primary) 32%,var(--gc-border-strong));background:color-mix(in srgb,var(--gc-primary-subtle) 30%,var(--gc-raised));color:var(--gc-text)}}
-@media(max-width:380px){.mobile-header.has-history-back{padding-left:48px}.mobile-history-back{min-width:40px;width:40px;min-height:40px;padding:0}.mobile-history-back span{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}}
+@media(max-width:380px){.mobile-header.has-history-back{padding-left:48px}.mobile-history-back{min-width:40px;width:40px;min-height:44px;padding:0}.mobile-history-back span{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}}
 @media(prefers-reduced-motion:reduce){.mobile-history-back{transition:none}.mobile-history-back:active{transform:translateY(-50%)}}
