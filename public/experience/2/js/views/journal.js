@@ -134,16 +134,22 @@ function mountModal(content, { initialFocus } = {}) {
   return { host, close };
 }
 
-async function refreshJournal(filters) {
+function replaceJournalView(model) {
   const current = document.querySelector('.journal-view');
-  if (!current) return;
-  const model = await loadJournal(filters);
+  if (!current) return false;
   const template = document.createElement('template');
   template.innerHTML = renderJournal(model).trim();
   const next = template.content.firstElementChild;
-  if (!next || !current.isConnected) return;
+  if (!next || !current.isConnected) return false;
   current.replaceWith(next);
   bindJournal(model);
+  return true;
+}
+
+async function refreshJournal(filters) {
+  if (!document.querySelector('.journal-view')) return;
+  const model = await loadJournal(filters);
+  replaceJournalView(model);
 }
 
 function removeArchivedEntryFromView(id) {
@@ -235,10 +241,22 @@ export function bindJournal(model) {
   }));
   document.querySelectorAll('[data-journal-restore]').forEach(button => button.addEventListener('click', async () => {
     button.disabled = true;
+    const id = Number(button.dataset.journalRestore);
     try {
-      await journalCapability.restore(Number(button.dataset.journalRestore));
+      const response = await journalCapability.restore(id);
+      const restored = response?.item || model.archived.find(entry => entry.id === id);
+      if (restored) {
+        const nextModel = {
+          ...model,
+          items: [restored, ...model.items.filter(entry => entry.id !== id)],
+          archived: model.archived.filter(entry => entry.id !== id)
+        };
+        replaceJournalView(nextModel);
+      } else {
+        removeArchivedEntryFromView(id);
+      }
       toast('Journal entry restored');
-      await refreshJournal(model.filters);
+      void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
       button.disabled = false;
       toast(error.message || 'Could not restore journal entry');
