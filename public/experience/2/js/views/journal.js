@@ -166,6 +166,32 @@ function removeArchivedEntryFromView(id) {
   if (count) count.textContent = String(remaining);
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function isPermanentlyRemoved(item) {
+  const probe = String(item.title || item.body || '').slice(0, 120);
+  const response = await journalCapability.list({ archivedOnly: true, q: probe, limit: 100 });
+  return !(response.items || []).some(entry => Number(entry.id) === Number(item.id));
+}
+
+async function removePermanently(item) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await journalCapability.remove(item.id);
+    } catch (error) {
+      lastError = error;
+      try {
+        if (await isPermanentlyRemoved(item)) return { removed: true, reconciled: true };
+      } catch {}
+      if (attempt < 2) await sleep(120 * (attempt + 1));
+    }
+  }
+  throw lastError || new Error('Could not permanently remove journal entry');
+}
+
 function openEditor(item, model) {
   const modal = mountModal(editorHtml(item), { initialFocus: 'textarea[name="body"]' });
   if (!modal) return;
@@ -201,15 +227,17 @@ function openRemove(item, model) {
   host.querySelector('[data-journal-remove-cancel]')?.addEventListener('click', close);
   host.querySelector('[data-journal-remove-confirm]')?.addEventListener('click', async event => {
     event.currentTarget.disabled = true;
+    close();
+    removeArchivedEntryFromView(item.id);
+    toast('Removing journal entry…');
     try {
-      await journalCapability.remove(item.id);
-      removeArchivedEntryFromView(item.id);
-      close();
+      await removePermanently(item);
       toast('Journal entry permanently removed');
       void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
-      event.currentTarget.disabled = false;
+      replaceJournalView(model);
       toast(error.message || 'Could not remove journal entry');
+      void refreshJournal(model.filters).catch(() => {});
     }
   });
 }
