@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const source = await readFile(new URL('../public/experience/2/js/live-session.js', import.meta.url), 'utf8');
+const app = await readFile(new URL('../public/experience/2/js/app.js', import.meta.url), 'utf8');
 
 test('live-session completion freezes background timer and refresh until the factual dialog closes', () => {
   assert.match(source, /function completionOpen\(\)/);
@@ -13,7 +14,8 @@ test('live-session completion freezes background timer and refresh until the fac
   assert.match(closeCompletion, /classList\.remove\('gc-live-completion-open'\)[\s\S]*startClock\(\)[\s\S]*scheduleRefresh\(0\)/);
 });
 
-test('successful live-session completion updates in place instead of forcing a page reload', () => {
+test('successful live-session completion updates Today in place instead of forcing a page reload', () => {
   assert.doesNotMatch(source, /window\.location\.reload\(/);
   assert.match(source, /current = null;\s*render\(\);\s*scheduleRefresh\(0\);\s*document\.dispatchEvent\(new CustomEvent\('gc:session-completed'/);
+  assert.match(app, /document\.addEventListener\('gc:session-completed',\(\)=>\{if\(current==='today'\)void render\(\);\}\)/);
 });
