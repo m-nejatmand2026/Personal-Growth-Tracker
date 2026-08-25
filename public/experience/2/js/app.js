@@ -68,6 +68,7 @@ async function render(){
 logger=createLogger({onSaved:async()=>{if(['today','activities','progress','insights','patterns','compass'].includes(current)){await render();return;}if(current==='plan'){const version=++renderVersion;await renderPlanView('week',version);}}});
 function show(view){if(!views.has(view))return;setMobileExplore(false);if(view===current)return;if(current==='wellness'&&view!=='wellness')deactivateWellness();current=view;writePreference('last-view',view);navigationTransitions.add(renderVersion+1);void render();}
 window.__gcExperience2Navigate=show;document.addEventListener('gc:navigate-view',event=>show(event.detail?.view));
+document.addEventListener('gc:session-completed',()=>{if(current==='today')void render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>show(button.dataset.view)));
 
 function closeAddHub(){document.querySelector('#addHubBackdrop')?.remove();document.querySelector('#addHub')?.remove();document.body.classList.remove('add-hub-open');}
