@@ -4,13 +4,14 @@ import { readFile } from 'node:fs/promises';
 
 const app=await readFile(new URL('../public/experience/2/js/app.js',import.meta.url),'utf8');
 const today=await readFile(new URL('../public/experience/2/js/views/today.js',import.meta.url),'utf8');
+const todayGrowth=await readFile(new URL('../public/experience/2/js/views/today-growth.js',import.meta.url),'utf8');
 const api=await readFile(new URL('../public/experience/2/js/core/api.js',import.meta.url),'utf8');
 const index=await readFile(new URL('../public/experience/2/index.html',import.meta.url),'utf8');
 const css=await readFile(new URL('../public/experience/2/css/today.css',import.meta.url),'utf8');
 const browserRunner=await readFile(new URL('../scripts/run-browser-e2e.sh',import.meta.url),'utf8');
 const browserTest=await readFile(new URL('./browser/experience2-today.browser.js',import.meta.url),'utf8');
 
-const experience2=`${app}\n${today}\n${api}\n${index}\n${css}`;
+const experience2=`${app}\n${today}\n${todayGrowth}\n${api}\n${index}\n${css}`;
 
 test('Experience 2 Today replaces the placeholder with real isolated backend composition',()=>{
   assert.match(app,/loadToday/);
@@ -45,6 +46,22 @@ test('Experience 2 Today supports direct Start Done and Plans changed recovery w
   assert.match(today,/status:'in_progress'/);
   assert.match(today,/status:'dismissed'/);
   assert.doesNotMatch(today,/rollover|carry.?over/i);
+});
+
+test('Experience 2 Today has explicit zero planned running completed tomorrow check-in and changed-plan states',()=>{
+  assert.match(today,/Your day is open/,'zero active items must have a calm open-day state');
+  assert.match(today,/model\.today\.length===1\?'item':'items'/,'one and many active plan items must be distinguished');
+  assert.match(today,/const planned=\(model\.today\|\|\[\]\)\.filter\(item=>item\.status==='planned'\)/,'planned items must be explicit');
+  assert.match(today,/const activeItems=\(model\.today\|\|\[\]\)\.filter\(item=>item\.status==='in_progress'\)/,'running items must be explicit');
+  assert.match(today,/Everything planned is already in progress/,'running-only days must remain understandable');
+  assert.match(today,/summaryRows\(model,'progress'\)/,'completed factual work must return through Progress rather than closed Plan rows');
+  assert.match(today,/Factual progress today/,'completed facts must be visible on Today');
+  assert.match(today,/Tomorrow/);
+  assert.match(today,/model\.tomorrowItems\.length/);
+  assert.match(today,/future\?'Adjust':'Plans changed\?'/,'tomorrow and changed-plan actions must remain explicit');
+  assert.match(todayGrowth,/existing\?'<span class="checkin-recorded">Recorded<\/span>':''/,'completed check-in state must be visible');
+  assert.match(todayGrowth,/existing\?'Today’s observation is recorded\.':'Choose energy and mood\.'/,'missing and completed check-in states must have distinct guidance');
+  assert.match(todayGrowth,/Nothing needs your attention\./,'an operational zero-attention state must stay useful');
 });
 
 test('Experience 2 Today never hides legal additional in-progress intentions',()=>{
