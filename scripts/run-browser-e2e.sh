@@ -156,7 +156,7 @@ for suite in \
   tests/browser/experience2-visual.browser.js
 do
   case "$suite" in
-    tests/browser/experience2-journal.browser.js|tests/browser/experience2-live-session.browser.js)
+    tests/browser/experience2-goals.browser.js|tests/browser/experience2-journal.browser.js|tests/browser/experience2-live-session.browser.js)
       run_e2_state_matrix "$suite"
       ;;
     *)
