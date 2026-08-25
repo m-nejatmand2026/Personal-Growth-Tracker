@@ -89,6 +89,23 @@ run_e2_suite() {
   assert_worker_alive "$file"
 }
 
+run_e2_state_matrix() {
+  local file="$1"
+  local case_name
+  for case_name in chromium-desktop chromium-375 webkit-desktop webkit-375; do
+    echo "Running isolated Experience 2 browser case: $file [$case_name]"
+    stop_worker
+    start_worker
+    # State-heavy cases get a fresh Worker and Node process while retaining the same isolated local D1.
+    if ! GC_E2E_CASE="$case_name" GC_E2E_BASE_URL=http://127.0.0.1:8787/experience/2/ node --test "$file"; then
+      echo "Experience 2 browser case failed: $file [$case_name]" >&2
+      cat "$WORKER_LOG" >&2 || true
+      exit 1
+    fi
+    assert_worker_alive "$file [$case_name]"
+  done
+}
+
 rm -rf "$STATE_DIR"
 
 ./node_modules/.bin/wrangler d1 migrations apply DB \
@@ -138,5 +155,12 @@ for suite in \
   tests/browser/experience2-wellness.browser.js \
   tests/browser/experience2-visual.browser.js
 do
-  run_e2_suite "$suite"
+  case "$suite" in
+    tests/browser/experience2-journal.browser.js|tests/browser/experience2-live-session.browser.js)
+      run_e2_state_matrix "$suite"
+      ;;
+    *)
+      run_e2_suite "$suite"
+      ;;
+  esac
 done
