@@ -146,9 +146,12 @@ function replaceJournalView(model) {
   return true;
 }
 
+let journalRefreshVersion = 0;
 async function refreshJournal(filters) {
   if (!document.querySelector('.journal-view')) return;
+  const version = ++journalRefreshVersion;
   const model = await loadJournal(filters);
+  if (version !== journalRefreshVersion || !document.querySelector('.journal-view')) return;
   replaceJournalView(model);
 }
 
