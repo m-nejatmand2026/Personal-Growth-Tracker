@@ -42,9 +42,15 @@ async function noOverflow(page, label) {
 }
 
 async function applyFilters(page, query, date) {
+  const previousView = await page.locator('.journal-view').elementHandle();
+  assert.ok(previousView, 'Journal filter must begin from a rendered Journal view');
   await page.locator('#journalSearch').fill(query);
   await page.locator('#journalDateFilter').fill(date);
   await page.locator('[data-journal-filter]').evaluate(form => form.requestSubmit());
+  await page.waitForFunction(node => !node?.isConnected, previousView, { timeout: 10_000 });
+  await page.locator('.journal-view').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#journalSearch').inputValue(), query);
+  assert.equal(await page.locator('#journalDateFilter').inputValue(), date);
 }
 
 async function assertJournalEntryRemovedFromServer(page, id, token, date, label) {
@@ -114,8 +120,6 @@ async function exercise(page, browserName, viewport) {
   await applyFilters(page, token, today);
   entry = page.locator('.journal-entry', { hasText: editedBody }).filter({ has: page.locator('[data-journal-archive]') });
   await entry.waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#journalSearch').inputValue(), token);
-  assert.equal(await page.locator('#journalDateFilter').inputValue(), today);
 
   await applyFilters(page, token, yesterday);
   await page.locator('.journal-empty').waitFor({ state: 'visible' });
