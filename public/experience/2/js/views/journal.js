@@ -178,17 +178,36 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function withRequestTimeout(operation, timeoutMs, timeoutMessage) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await operation(controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error(timeoutMessage);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function isPermanentlyRemoved(item) {
   const probe = String(item.title || item.body || '').slice(0, 120);
-  const response = await journalCapability.list({ archivedOnly: true, q: probe, limit: 100 });
-  return !(response.items || []).some(entry => Number(entry.id) === Number(item.id));
+  return withRequestTimeout(async signal => {
+    const response = await journalCapability.list({ archivedOnly: true, q: probe, limit: 100 }, { signal });
+    return !(response.items || []).some(entry => Number(entry.id) === Number(item.id));
+  }, 2000, 'Could not verify whether the journal entry was removed');
 }
 
 async function removePermanently(item) {
   let lastError = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      return await journalCapability.remove(item.id);
+      return await withRequestTimeout(
+        signal => journalCapability.remove(item.id, { signal }),
+        5000,
+        'Journal removal request timed out'
+      );
     } catch (error) {
       lastError = error;
       try {
@@ -236,7 +255,7 @@ function openRemove(item, model) {
   host.querySelector('[data-journal-remove-confirm]')?.addEventListener('click', async event => {
     const confirm = event.currentTarget;
     const cancel = host.querySelector('[data-journal-remove-cancel]');
-    const dismiss = host.querySelector('[data-journal-close]');
+    const dismiss = host.querySelector('.journal-editor-close');
     const errorNode = host.querySelector('#journalRemoveError');
     confirm.disabled = true;
     if (cancel) cancel.disabled = true;
@@ -249,7 +268,6 @@ function openRemove(item, model) {
       journalRefreshVersion += 1;
       removeArchivedEntryFromView(item.id);
       toast('Journal entry permanently removed');
-      void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
       confirm.disabled = false;
       if (cancel) cancel.disabled = false;
@@ -291,7 +309,6 @@ export function bindJournal(model) {
         await refreshJournal(model.filters);
       }
       toast('Journal entry archived');
-      void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
       button.disabled = false;
       toast(error.message || 'Could not archive journal entry');
@@ -315,7 +332,6 @@ export function bindJournal(model) {
         removeArchivedEntryFromView(id);
       }
       toast('Journal entry restored');
-      void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
       button.disabled = false;
       toast(error.message || 'Could not restore journal entry');
