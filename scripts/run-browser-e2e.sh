@@ -5,6 +5,7 @@ STATE_DIR="${RUNNER_TEMP:-/tmp}/growth-compass-browser-d1-${GITHUB_RUN_ID:-local
 WORKER_LOG="${RUNNER_TEMP:-/tmp}/growth-compass-browser-worker-$$.log"
 WORKER_PID=""
 STATE_HEAVY_CASE_ATTEMPTS=2
+readonly STATE_HEAVY_CASE_ATTEMPTS
 
 stop_worker() {
   if [[ -n "$WORKER_PID" ]]; then
