@@ -214,7 +214,13 @@ function openCompletion() {
     const status = overlay.querySelector('.gc-live-completion-status');
     void finishSession(item, actual, '', status, event.currentTarget);
   });
-  requestAnimationFrame(() => overlay.querySelector('input[name="minutes"], [data-live-one-off-finish]')?.focus());
+  requestAnimationFrame(() => {
+    const touchLike = window.matchMedia?.('(pointer: coarse)')?.matches || navigator.maxTouchPoints > 0;
+    const target = touchLike
+      ? overlay.querySelector('[data-live-completion-close][aria-label]')
+      : overlay.querySelector('input[name="minutes"], [data-live-one-off-finish]');
+    target?.focus?.({ preventScroll: true });
+  });
 }
 
 if (host) {
