@@ -83,7 +83,7 @@ function editorHtml(item = {}) {
 }
 
 function removeHtml(item) {
-  return `<div class="journal-editor-backdrop" data-journal-close><section class="journal-editor journal-delete-dialog static-surface" role="dialog" aria-modal="true" aria-labelledby="journalDeleteTitle" data-journal-dialog><header><div><p class="eyebrow">Permanent removal</p><h2 id="journalDeleteTitle">Remove this journal entry permanently?</h2></div><button type="button" class="journal-editor-close" data-journal-close aria-label="Close removal dialog">×</button></header><div class="journal-delete-body"><p>“${escapeHtml(item.title || 'Untitled reflection')}” is already archived. Permanent removal cannot be undone. It does not create or change Progress, Insights, or Wellbeing evidence.</p><div class="journal-form-actions"><button type="button" class="secondary-button" data-journal-remove-cancel>Keep archived</button><button type="button" class="danger-button" data-journal-remove-confirm>Remove permanently</button></div></div></section></div>`;
+  return `<div class="journal-editor-backdrop" data-journal-close><section class="journal-editor journal-delete-dialog static-surface" role="dialog" aria-modal="true" aria-labelledby="journalDeleteTitle" data-journal-dialog><header><div><p class="eyebrow">Permanent removal</p><h2 id="journalDeleteTitle">Remove this journal entry permanently?</h2></div><button type="button" class="journal-editor-close" data-journal-close aria-label="Close removal dialog">×</button></header><div class="journal-delete-body"><p>“${escapeHtml(item.title || 'Untitled reflection')}” is already archived. Permanent removal cannot be undone. It does not create or change Progress, Insights, or Wellbeing evidence.</p><div class="journal-form-actions"><button type="button" class="secondary-button" data-journal-remove-cancel>Keep archived</button><button type="button" class="danger-button" data-journal-remove-confirm>Remove permanently</button></div><p class="journal-form-error" id="journalRemoveError" role="alert"></p></div></section></div>`;
 }
 
 function toast(message) {
@@ -226,18 +226,27 @@ function openRemove(item, model) {
   const { host, close } = modal;
   host.querySelector('[data-journal-remove-cancel]')?.addEventListener('click', close);
   host.querySelector('[data-journal-remove-confirm]')?.addEventListener('click', async event => {
-    event.currentTarget.disabled = true;
-    close();
-    removeArchivedEntryFromView(item.id);
-    toast('Removing journal entry…');
+    const confirm = event.currentTarget;
+    const cancel = host.querySelector('[data-journal-remove-cancel]');
+    const dismiss = host.querySelector('[data-journal-close]');
+    const errorNode = host.querySelector('#journalRemoveError');
+    confirm.disabled = true;
+    if (cancel) cancel.disabled = true;
+    if (dismiss) dismiss.disabled = true;
+    confirm.textContent = 'Removing…';
+    if (errorNode) errorNode.textContent = '';
     try {
       await removePermanently(item);
+      close();
+      removeArchivedEntryFromView(item.id);
       toast('Journal entry permanently removed');
       void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
-      replaceJournalView(model);
-      toast(error.message || 'Could not remove journal entry');
-      void refreshJournal(model.filters).catch(() => {});
+      confirm.disabled = false;
+      if (cancel) cancel.disabled = false;
+      if (dismiss) dismiss.disabled = false;
+      confirm.textContent = 'Remove permanently';
+      if (errorNode) errorNode.textContent = error.message || 'Could not remove journal entry';
     }
   });
 }
