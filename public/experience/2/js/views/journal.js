@@ -147,6 +147,11 @@ function replaceJournalView(model) {
 }
 
 let journalRefreshVersion = 0;
+function replaceJournalViewAfterMutation(model) {
+  journalRefreshVersion += 1;
+  return replaceJournalView(model);
+}
+
 async function refreshJournal(filters) {
   if (!document.querySelector('.journal-view')) return;
   const version = ++journalRefreshVersion;
@@ -241,6 +246,7 @@ function openRemove(item, model) {
     try {
       await removePermanently(item);
       close();
+      journalRefreshVersion += 1;
       removeArchivedEntryFromView(item.id);
       toast('Journal entry permanently removed');
       void refreshJournal(model.filters).catch(() => {});
@@ -270,10 +276,22 @@ export function bindJournal(model) {
   }));
   document.querySelectorAll('[data-journal-archive]').forEach(button => button.addEventListener('click', async () => {
     button.disabled = true;
+    const id = Number(button.dataset.journalArchive);
     try {
-      await journalCapability.archive(Number(button.dataset.journalArchive));
+      const response = await journalCapability.archive(id);
+      const archived = response?.item || model.items.find(entry => entry.id === id);
+      if (archived) {
+        const nextModel = {
+          ...model,
+          items: model.items.filter(entry => entry.id !== id),
+          archived: [archived, ...model.archived.filter(entry => entry.id !== id)]
+        };
+        replaceJournalViewAfterMutation(nextModel);
+      } else {
+        await refreshJournal(model.filters);
+      }
       toast('Journal entry archived');
-      await refreshJournal(model.filters);
+      void refreshJournal(model.filters).catch(() => {});
     } catch (error) {
       button.disabled = false;
       toast(error.message || 'Could not archive journal entry');
@@ -291,8 +309,9 @@ export function bindJournal(model) {
           items: [restored, ...model.items.filter(entry => entry.id !== id)],
           archived: model.archived.filter(entry => entry.id !== id)
         };
-        replaceJournalView(nextModel);
+        replaceJournalViewAfterMutation(nextModel);
       } else {
+        journalRefreshVersion += 1;
         removeArchivedEntryFromView(id);
       }
       toast('Journal entry restored');
