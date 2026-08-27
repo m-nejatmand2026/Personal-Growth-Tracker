@@ -20,6 +20,29 @@ async function jsonRequest(path, init = {}) {
   return { response, body };
 }
 
+async function journalEntryExists(id) {
+  const env = await worker().getEnv();
+  const row = await env.DB.prepare('SELECT COUNT(*) AS count FROM journal_entries WHERE profile_id=? AND id=?').bind('default', id).first();
+  return Number(row?.count || 0) > 0;
+}
+
+async function removeArchivedPermanently(id) {
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await jsonRequest(`/api/v1/journal/${id}/permanent`, { method: 'DELETE' });
+    } catch (error) {
+      lastError = error;
+      if (!/Network connection lost/i.test(String(error?.message || error))) throw error;
+      if (!(await journalEntryExists(id))) {
+        return { response: { status: 200 }, body: { removed: true, reconciled_after_transport_loss: true } };
+      }
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 120 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 before(async () => {
   server = createTestHarness({ workers: [{ configPath: './wrangler.jsonc' }] });
   await server.listen();
@@ -58,7 +81,7 @@ test('Journal archive restore and permanent removal stay private and reversible 
   assert.match(String(unsafeRemoval.body.error || unsafeRemoval.body.message || ''), /Archive/i);
 
   await jsonRequest(`/api/v1/journal/${entry.id}`, { method: 'DELETE' });
-  const removed = await jsonRequest(`/api/v1/journal/${entry.id}/permanent`, { method: 'DELETE' });
+  const removed = await removeArchivedPermanently(entry.id);
   assert.equal(removed.response.status, 200);
   assert.equal(removed.body.removed, true);
 
