@@ -20,13 +20,12 @@ async function jsonRequest(path, init = {}) {
   return { response, body };
 }
 
-async function journalEntryExists(id) {
+async function journalEntryState(id) {
   const env = await worker().getEnv();
-  const row = await env.DB.prepare('SELECT COUNT(*) AS count FROM journal_entries WHERE profile_id=? AND id=?').bind('default', id).first();
-  return Number(row?.count || 0) > 0;
+  return env.DB.prepare('SELECT id, archived_at FROM journal_entries WHERE profile_id=? AND id=?').bind('default', id).first();
 }
 
-async function removeArchivedPermanently(id) {
+async function permanentDelete(id, { reconcileRemoved = false } = {}) {
   let lastError;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
@@ -34,8 +33,13 @@ async function removeArchivedPermanently(id) {
     } catch (error) {
       lastError = error;
       if (!/Network connection lost/i.test(String(error?.message || error))) throw error;
-      if (!(await journalEntryExists(id))) {
+      const state = await journalEntryState(id);
+      if (reconcileRemoved && !state) {
         return { response: { status: 200 }, body: { removed: true, reconciled_after_transport_loss: true } };
+      }
+      if (!reconcileRemoved) {
+        assert.ok(state, 'active Journal entry must still exist after ambiguous rejected permanent DELETE');
+        assert.equal(state.archived_at, null, 'active Journal entry must stay active after rejected permanent DELETE');
       }
       if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 120 * (attempt + 1)));
     }
@@ -76,12 +80,15 @@ test('Journal archive restore and permanent removal stay private and reversible 
   assert.equal(removeWhileActive.response.status, 200);
   assert.equal(removeWhileActive.body.item.archived_at, null);
 
-  const unsafeRemoval = await jsonRequest(`/api/v1/journal/${entry.id}/permanent`, { method: 'DELETE' });
+  const unsafeRemoval = await permanentDelete(entry.id);
   assert.equal(unsafeRemoval.response.status, 409);
   assert.match(String(unsafeRemoval.body.error || unsafeRemoval.body.message || ''), /Archive/i);
+  const activeState = await journalEntryState(entry.id);
+  assert.ok(activeState);
+  assert.equal(activeState.archived_at, null);
 
   await jsonRequest(`/api/v1/journal/${entry.id}`, { method: 'DELETE' });
-  const removed = await removeArchivedPermanently(entry.id);
+  const removed = await permanentDelete(entry.id, { reconcileRemoved: true });
   assert.equal(removed.response.status, 200);
   assert.equal(removed.body.removed, true);
 
