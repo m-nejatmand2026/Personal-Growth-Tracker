@@ -1,0 +1,35 @@
+name: Preview 2 Branch Safety Gate
+
+on:
+  push:
+    branches: [feature/experience-v2]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: growth-compass-preview2-branch
+  cancel-in-progress: true
+
+jobs:
+  preview2-branch-safety:
+    name: Keep branch pushes non-deploying
+    if: github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' && github.ref == 'refs/heads/feature/experience-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact Preview 2 commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Enforce single guarded deployment authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/feature/experience-v2'
+          test "$GITHUB_REPOSITORY" = 'm-nejatmand2026/Personal-Growth-Tracker'
+          echo 'Branch push accepted. Deployment is intentionally delegated to the Quality PR workflow.'
+          echo 'Quality deploys only the exact tested PR head after tests pass, captures the named Worker/D1 rollback snapshot first, and then verifies isolated Preview 2.'
+          echo 'This workflow performs no Cloudflare write and cannot race the guarded deployment.'

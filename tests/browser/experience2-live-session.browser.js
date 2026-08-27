@@ -1,0 +1,205 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { chromium, webkit } from 'playwright';
+
+const BASE_URL = process.env.GC_E2E_BASE_URL || 'http://127.0.0.1:8787/experience/2/';
+const API_BASE = new URL('/api/', BASE_URL);
+const BROWSERS = [['Chromium', chromium], ['WebKit', webkit]];
+const CASE_FILTER = String(process.env.GC_E2E_CASE || '').trim().toLowerCase();
+const CASE_TIMEOUT_MS = 60_000;
+
+function caseKey(browserName, viewport) {
+  return `${browserName.toLowerCase()}-${viewport === '375px' ? '375' : 'desktop'}`;
+}
+
+function shouldRun(browserName, viewport) {
+  return !CASE_FILTER || CASE_FILTER === caseKey(browserName, viewport);
+}
+
+function todayKey() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}
+
+async function request(path, options = {}) {
+  const response = await fetch(new URL(path.replace(/^\//, ''), API_BASE), {
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+  return body;
+}
+
+async function seed(label) {
+  const date = todayKey();
+  const goal = (await request('/v1/goals', {
+    method: 'POST',
+    body: JSON.stringify({ name: `Live session goal ${label}` })
+  })).item;
+  const activity = (await request('/v1/activities', {
+    method: 'POST',
+    body: JSON.stringify({ name: `Live session activity ${label}`, goal_id: goal.id })
+  })).item;
+  const plan = (await request('/v1/daily-plan', {
+    method: 'POST',
+    body: JSON.stringify({
+      planned_for: date,
+      planned_time: null,
+      title: `Focus session ${label}`,
+      activity_key: activity.key,
+      activity_label: activity.name,
+      subtype: null,
+      planned_minutes: 30,
+      note: 'Live-session acceptance',
+      status: 'in_progress',
+      source: 'manual'
+    })
+  })).item;
+  assert.ok(plan.started_at, 'in-progress Daily Plan item must have a real started_at');
+  return { date, goal, activity, plan };
+}
+
+async function progressFor(seedData) {
+  const response = await request(`/v1/progress?from=${seedData.date}&to=${seedData.date}&limit=100`);
+  return (response.items || []).filter(item =>
+    String(item.activity_key) === String(seedData.activity.key) &&
+    String(item.started_at || '') === String(seedData.plan.started_at || '')
+  );
+}
+
+async function navigate(page, view, viewport) {
+  const root = viewport === '375px' ? '.mobile-dock' : '.desktop-rail';
+  await page.locator(`${root} [data-view="${view}"]`).click();
+  await page.waitForFunction(
+    expected => document.querySelector('#experience2App')?.dataset.currentView === expected,
+    view
+  ).catch(() => page.waitForTimeout(120));
+}
+
+async function noOverflow(page, label) {
+  const size = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth
+  }));
+  assert.ok(
+    size.document <= size.viewport + 1,
+    `${label}: live session must not cause horizontal overflow; ${JSON.stringify(size)}`
+  );
+}
+
+async function activateControl(locator, page, browserName, viewport, label) {
+  await locator.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await locator.isEnabled(), true, `${browserName} ${viewport}: ${label} must be enabled`);
+
+  if (browserName === 'WebKit') {
+    // Playwright/WebKit can hang in its own actionability auto-scroll for fixed and overflow controls.
+    // Scroll with the browser DOM first, then prove reachability before bypassing only that automation layer.
+    await locator.evaluate(node => node.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+    await page.waitForTimeout(60);
+  }
+
+  const box = await locator.boundingBox();
+  const viewportSize = page.viewportSize();
+  assert.ok(box && box.width > 0 && box.height > 0, `${browserName} ${viewport}: ${label} must have a visible hit box`);
+  assert.ok(
+    viewportSize &&
+      box.x < viewportSize.width &&
+      box.y < viewportSize.height &&
+      box.x + box.width > 0 &&
+      box.y + box.height > 0,
+    `${browserName} ${viewport}: ${label} must be inside the viewport; ${JSON.stringify({ box, viewportSize })}`
+  );
+
+  if (browserName === 'WebKit') await locator.evaluate(node => node.click());
+  else await locator.click();
+}
+
+async function exercise(page, browserName, viewport) {
+  const token = `${browserName}-${viewport}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const seeded = await seed(token);
+  await page.addInitScript(() => localStorage.setItem('growth-compass:preview2:e2:tutorial-state-v1', 'complete'));
+
+  const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+  assert.ok(response?.ok());
+
+  const surface = page.locator('.gc-live-session');
+  await surface.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await page.locator('.gc-live-session').count(), 1, `${browserName} ${viewport}: only one persistent timer may be shown`);
+  assert.match(await surface.innerText(), new RegExp(`Focus session ${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  assert.match(await surface.innerText(), /Plans changed\?/);
+  assert.match(await surface.innerText(), /Done/);
+
+  const firstElapsed = await surface.locator('[data-live-elapsed]').innerText();
+  await page.waitForTimeout(1100);
+  const secondElapsed = await surface.locator('[data-live-elapsed]').innerText();
+  assert.notEqual(secondElapsed, firstElapsed, `${browserName} ${viewport}: elapsed time must advance from started_at`);
+
+  for (const view of ['compass', 'patterns', 'reflect', 'today']) {
+    await navigate(page, view, viewport);
+    await surface.waitFor({ state: 'visible' });
+    assert.equal(await page.locator('.gc-live-session').count(), 1, `${browserName} ${viewport}: live session must persist through ${view}`);
+  }
+
+  if (viewport === '375px') {
+    const boxes = await page.evaluate(() => {
+      const session = document.querySelector('.gc-live-session')?.getBoundingClientRect();
+      const dock = document.querySelector('.mobile-dock')?.getBoundingClientRect();
+      return session && dock ? { sessionBottom: session.bottom, dockTop: dock.top } : null;
+    });
+    assert.ok(boxes && boxes.sessionBottom <= boxes.dockTop + 1, `${browserName} mobile: live session must sit above the mobile dock; ${JSON.stringify(boxes)}`);
+  }
+
+  assert.equal((await progressFor(seeded)).length, 0, `${browserName} ${viewport}: elapsed time must not create Progress automatically`);
+
+  await activateControl(surface.locator('[data-live-done]'), page, browserName, viewport, 'Done');
+  const dialog = page.getByRole('dialog', { name: 'What actually happened?' });
+  await dialog.waitFor({ state: 'visible' });
+  const minutes = Number(await dialog.locator('input[name="minutes"]').inputValue());
+  assert.ok(Number.isInteger(minutes) && minutes >= 1, `${browserName} ${viewport}: Done must prefill actual elapsed duration`);
+  assert.match(await dialog.innerText(), /Prefilled from the real session start/);
+
+  await activateControl(dialog.locator('[data-live-completion-save]'), page, browserName, viewport, 'Save factual Progress');
+  await dialog.waitFor({ state: 'detached', timeout: 10_000 });
+  await page.locator('.gc-live-session').waitFor({ state: 'detached', timeout: 10_000 });
+
+  const matches = await progressFor(seeded);
+  assert.equal(matches.length, 1, `${browserName} ${viewport}: live-session Done must create factual Progress exactly once`);
+  assert.equal(Number(matches[0].minutes), minutes);
+
+  const plan = await request(`/v1/daily-plan?date=${seeded.date}`);
+  const completed = (plan.items || []).find(item => Number(item.id) === Number(seeded.plan.id));
+  assert.equal(completed, undefined, `${browserName} ${viewport}: completed session must leave the active Daily Plan list`);
+  const allPlan = await request(`/v1/daily-plan?date=${seeded.date}&include_closed=1`);
+  assert.equal((allPlan.items || []).find(item => Number(item.id) === Number(seeded.plan.id))?.status, 'completed');
+  await noOverflow(page, `${browserName} ${viewport}`);
+}
+
+for (const [browserName, browserType] of BROWSERS) {
+  if (shouldRun(browserName, 'desktop')) {
+    test(`${browserName} desktop accepts persistent Experience 2 live session`, { timeout: CASE_TIMEOUT_MS }, async () => {
+      const browser = await browserType.launch();
+      try {
+        const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+        await exercise(await context.newPage(), browserName, 'desktop');
+        await context.close();
+      } finally {
+        await browser.close();
+      }
+    });
+  }
+
+  if (shouldRun(browserName, '375px')) {
+    test(`${browserName} 375px accepts persistent Experience 2 live session`, { timeout: CASE_TIMEOUT_MS }, async () => {
+      const browser = await browserType.launch();
+      try {
+        const context = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+        await exercise(await context.newPage(), browserName, '375px');
+        await context.close();
+      } finally {
+        await browser.close();
+      }
+    });
+  }
+}

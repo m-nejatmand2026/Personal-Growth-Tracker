@@ -1,0 +1,143 @@
+name: Preview 2 Remote Smoke
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-preview2:
+    name: Verify private Preview 2 boundary and isolated resources
+    if: >-
+      github.repository == 'm-nejatmand2026/Personal-Growth-Tracker' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'feature/experience-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Verify Cloudflare credentials exist
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+
+      - name: Verify staged auth boundary, exact Worker deployment and isolated D1 directly
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GC_PREVIEW2_INTERNAL_AUTH_ENABLED: ${{ vars.GC_PREVIEW2_INTERNAL_AUTH_ENABLED }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const expectedSha = process.env.EXPECTED_SHA;
+          const worker = 'personal-growth-tracker-preview2';
+          const base = `https://${worker}.m-nejatmand.workers.dev`;
+          const api = `https://api.cloudflare.com/client/v4/accounts/${account}`;
+          const internalAuth = String(process.env.GC_PREVIEW2_INTERNAL_AUTH_ENABLED || '').toLowerCase() === 'true';
+
+          if (!expectedSha) throw new Error('Missing expected Preview 2 head SHA.');
+
+          async function cf(path, options = {}) {
+            const response = await fetch(api + path, {
+              ...options,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+              }
+            });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok || body.success === false) {
+              const message = (body.errors || []).map((error) => `${error.code ?? 'error'}:${error.message ?? 'Cloudflare API error'}`).join('; ');
+              throw new Error(`Cloudflare API ${response.status} for ${path}: ${message || 'request failed'}`);
+            }
+            return body.result;
+          }
+
+          async function waitForExactDeployment() {
+            const expectedMessage = `git:${expectedSha}`;
+            const deadline = Date.now() + 12 * 60 * 1000;
+            let lastMessage = '';
+            let lastCreatedOn = '';
+
+            while (Date.now() < deadline) {
+              const result = await cf(`/workers/scripts/${worker}/deployments`);
+              const deployments = Array.isArray(result?.deployments)
+                ? result.deployments
+                : (Array.isArray(result) ? result : []);
+              const latest = [...deployments].sort((a, b) => String(b?.created_on || '').localeCompare(String(a?.created_on || '')))[0];
+              lastMessage = latest?.annotations?.['workers/message'] || '';
+              lastCreatedOn = latest?.created_on || '';
+
+              if (lastMessage === expectedMessage) {
+                console.log(`Canonical Preview 2 Worker is serving exact head ${expectedSha}.`);
+                return;
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, 15_000));
+            }
+
+            throw new Error(`Canonical Preview 2 Worker did not reach expected deployment ${expectedMessage}. Latest deployment message=${JSON.stringify(lastMessage)} created_on=${JSON.stringify(lastCreatedOn)}.`);
+          }
+
+          await waitForExactDeployment();
+
+          if (internalAuth) {
+            const status = await fetch(`${base}/api/account/status`, { redirect: 'manual' });
+            if (status.status !== 200) throw new Error(`Growth Compass account status must be public after Access removal (HTTP ${status.status}).`);
+            const statusBody = await status.json();
+            if (statusBody.mode !== 'enforced' || statusBody.configured !== true) {
+              throw new Error(`Internal auth is flagged active but account status is not enforced/configured: ${JSON.stringify(statusBody)}`);
+            }
+            const privateApi = await fetch(`${base}/api/v1/areas`, { redirect: 'manual' });
+            if (privateApi.status !== 401) throw new Error(`Anonymous private API must be 401 after internal auth activation (HTTP ${privateApi.status}).`);
+            console.log('Growth Compass internal authentication is enforcing the public/private boundary.');
+          } else {
+            const anonymous = await fetch(`${base}/api/health`, { redirect: 'manual' });
+            if (anonymous.status >= 200 && anonymous.status < 300) {
+              throw new Error(`Preview 2 is publicly reachable (HTTP ${anonymous.status}) before internal auth activation; Access boundary is missing.`);
+            }
+            console.log(`Anonymous Preview 2 is blocked by Cloudflare Access as expected (HTTP ${anonymous.status}).`);
+          }
+
+          const subdomain = await cf(`/workers/scripts/${worker}/subdomain`);
+          if (!subdomain?.enabled) throw new Error('Preview 2 workers.dev route is not enabled.');
+
+          const databases = await cf('/d1/database?per_page=1000');
+          const list = Array.isArray(databases) ? databases : [];
+          const exact = (name) => list.filter((database) => database?.name === name);
+          const preview2 = exact('personal-growth-tracker-preview2');
+          const preview1 = exact('personal-growth-tracker-preview');
+          const production = exact('personal-growth-tracker');
+          if (preview2.length !== 1 || !preview2[0]?.uuid) {
+            throw new Error(`Expected exactly one Preview 2 D1 database; found ${preview2.length}.`);
+          }
+          if (preview1.length !== 1 || production.length !== 1) {
+            throw new Error('Preview 1 and Production D1 identities must remain explicit for isolation verification.');
+          }
+          if (preview2[0].uuid === preview1[0].uuid || preview2[0].uuid === production[0].uuid) {
+            throw new Error('Preview 2 D1 overlaps Preview 1 or Production; refusing acceptance.');
+          }
+
+          const query = await cf(`/d1/database/${preview2[0].uuid}/query`, {
+            method: 'POST',
+            body: JSON.stringify({ sql: "PRAGMA quick_check; SELECT 'ok' AS status;" })
+          });
+          const serialized = JSON.stringify(query);
+          if (!serialized.includes('"quick_check":"ok"') || !serialized.includes('"status":"ok"')) {
+            throw new Error('Preview 2 D1 direct health verification failed.');
+          }
+
+          console.log(`Preview 2 boundary, exact Worker deployment and isolated D1 passed: ${base}`);
+          NODE

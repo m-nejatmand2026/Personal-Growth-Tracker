@@ -1,0 +1,75 @@
+/* Experience 2 content-density pass: preserve meaning, reduce visible prose weight. */
+:root{--gc-support-opacity:.64}
+.eyebrow{opacity:.64}
+
+/* Repeated hero explanations should read as support, not as a second headline. */
+.goals-hero p:last-child,.activities-hero p:last-child,.schedule-hero p:last-child,.progress-hero p:last-child,.insights-hero p:last-child,.journal-hero p:last-child,.wellness-hero p:last-child{max-width:58ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:color-mix(in srgb,var(--gc-text-muted) 82%,transparent);font-size:.76rem!important;line-height:1.45!important}
+.goals-hero h2,.activities-hero h2,.schedule-hero h2,.progress-hero h2,.insights-hero h2,.journal-hero h2,.wellness-hero h2{letter-spacing:-.04em}
+
+/* Today: lead with state and actions; keep philosophy quieter. */
+.today-now-empty p{max-width:46ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:color-mix(in srgb,var(--gc-text-muted) 78%,transparent)}
+.today-empty span,.today-plan-copy span,.today-tomorrow small,.direction-row span{color:color-mix(in srgb,var(--gc-text-muted) 76%,transparent)}
+.today-principle p{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
+.today-principle{gap:4px}.today-principle strong{font-size:.92rem}
+.today-metric p{font-size:.7rem!important;opacity:.72}
+
+/* Plan: values and capacity visualization carry the page. */
+.plan-fit p{max-width:54ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;opacity:.72}
+.plan-metrics small,.progress-stats small{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
+.plan-metrics>div,.progress-stats article,.insights-evidence article{gap:3px}
+.plan-rule p{margin-top:8px!important;max-width:80ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;opacity:.7}
+
+/* Goals: name, area and measurement dominate; rationale becomes secondary. */
+.goal-direction{margin-top:6px!important;color:var(--gc-text-muted)!important}
+.goal-minimum{display:inline-flex!important;width:max-content;max-width:100%;padding:4px 8px;border-radius:999px;background:color-mix(in srgb,var(--gc-primary-subtle) 44%,transparent);font-size:.68rem!important}
+.goal-why{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;max-width:68ch;opacity:.68}
+.goal-card footer>span{opacity:.66}
+.goals-empty p{max-width:42ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+
+/* Activities and Schedule: one identity line + one useful secondary line. */
+.activity-row-copy>p:last-child,.schedule-row p:not(.eyebrow){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;opacity:.72}
+.schedule-row small{display:block;margin-top:3px;opacity:.58;font-size:.66rem}
+.activities-rule p:last-child,.schedule-rule p:last-child{max-width:76ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;opacity:.68}
+.activities-empty p:last-child,.schedule-empty p{max-width:48ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+
+/* Progress: factual values first; explanatory boundary recedes. */
+.progress-boundary{margin-top:10px!important;padding-top:9px!important;border-top:1px solid var(--gc-border);max-width:78ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.58}
+.progress-fact-copy span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.progress-empty span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;opacity:.66}
+
+/* Insights: editorial hierarchy, less methodology on the surface. */
+.insights-readiness>div>p,.insights-next{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;opacity:.7}
+.insights-evidence small{font-size:.68rem!important;line-height:1.35;opacity:.62}
+.insights-pattern p{max-width:70ch;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;opacity:.72}
+.insights-method summary small{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
+
+/* Journal: entries scan like notes, not article cards. */
+.journal-entry p{-webkit-line-clamp:2!important;max-width:68ch!important;opacity:.78}
+.journal-empty span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;opacity:.68}
+.journal-entry-meta{opacity:.62}
+
+/* Settings and Wellness: supporting prose is tertiary. */
+.settings-option span,.settings-card>p:not(.eyebrow):not(.settings-status),.wellness-tile small,.wellness-tile em,.wellness-boundary{opacity:.66}
+.settings-card>p:not(.eyebrow):not(.settings-status){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.wellness-hero p:last-child{max-width:54ch}
+
+/* Stronger visual anchors compensate for less prose. */
+.today-section-head h2,.today-direction h2,.plan-section-head h3,.progress-week h3,.progress-history h3,.insights-pattern h3{font-weight:700}
+.metric-value,.plan-fit strong,.progress-stats strong,.insights-evidence strong{letter-spacing:-.035em}
+
+@media(max-width:700px){
+  /* Mobile should communicate destination + action first. Keep helper copy accessible but visually out of the way. */
+  .goals-hero p:last-child,.activities-hero p:last-child,.schedule-hero p:last-child,.progress-hero p:last-child,.insights-hero p:last-child,.journal-hero p:last-child,.wellness-hero p:last-child{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
+  .today-now-empty p{-webkit-line-clamp:2;font-size:.74rem!important}
+  .today-empty span{font-size:.7rem!important}
+  .goal-why{display:none}
+  .progress-boundary{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1}
+  .insights-pattern p{-webkit-line-clamp:1}
+  .journal-entry p{-webkit-line-clamp:2!important}
+}
+
+@media(max-width:430px){
+  .eyebrow{opacity:.56}
+  .plan-rule p,.activities-rule p:last-child,.schedule-rule p:last-child{display:none}
+  .insights-evidence small{font-size:.64rem!important}
+}

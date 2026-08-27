@@ -1,0 +1,506 @@
+/* Growth Compass Revision C — interaction simplification layer.
+   Presentation only: no domain, persistence, API, or module-boundary changes. */
+
+:root {
+  --gc-content-max: 980px;
+}
+
+.workspace {
+  min-width: 0;
+}
+
+.topbar {
+  max-width: var(--gc-content-max);
+  margin-inline: auto;
+}
+
+.topbar-title .eyebrow,
+.rail-brand small {
+  display: none;
+}
+
+.topbar-title h1 {
+  letter-spacing: -0.025em;
+}
+
+.view.active {
+  width: min(100%, var(--gc-content-max));
+  margin-inline: auto;
+}
+
+/* Today: action first, explanation on demand. */
+.today-layout {
+  gap: 12px;
+}
+
+.today-command {
+  min-height: 54px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 4px 2px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.today-command .eyebrow {
+  margin: 0;
+  color: var(--gc-text-muted);
+  font-size: var(--gc-text-md);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.command-log-btn {
+  min-width: 0;
+  min-height: var(--gc-target-min);
+  padding-inline: 16px;
+  border-radius: var(--gc-radius-pill);
+  box-shadow: none;
+}
+
+#todayView .os-section,
+#todayView .time-reality-card,
+#todayView .energy-drawer,
+#todayView .journal-preview {
+  margin: 0;
+  border-color: color-mix(in srgb, var(--gc-border) 72%, transparent);
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+#todayView .os-section-head {
+  align-items: center;
+  gap: 10px;
+}
+
+#todayView .os-section-head .section-kicker,
+#todayView .time-reality-head .section-kicker,
+#todayView .daily-plan-head .section-kicker,
+#todayView .journal-preview .section-kicker {
+  display: none;
+}
+
+#todayView .os-section-head h2,
+#todayView .time-reality-head h2 {
+  margin-top: 0;
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
+}
+
+#todayView .today-state-section .os-section-head > small,
+#todayView .state-card small,
+#todayView .daily-plan-empty span {
+  display: none;
+}
+
+#todayView .daily-state-grid,
+#todayView .time-reality-stats,
+#todayView .today-goal-grid {
+  gap: 8px;
+}
+
+#todayView .state-card,
+#todayView .today-goal-card,
+#todayView .time-reality-stats > *,
+#todayView .activity-feed-row,
+#todayView .daily-plan-item {
+  box-shadow: none;
+}
+
+#todayView .state-card {
+  min-height: 78px;
+}
+
+#todayView .state-card strong {
+  font-size: 0.98rem;
+}
+
+#todayView .daily-plan-section {
+  border-color: color-mix(in srgb, var(--gc-brand) 20%, var(--gc-border));
+}
+
+#todayView .daily-plan-tabs {
+  margin-top: 4px;
+}
+
+#todayView .daily-plan-item {
+  border-radius: 16px;
+}
+
+#todayView .daily-plan-actions button,
+#todayView .today-period-switch button {
+  min-height: var(--gc-target-min);
+}
+
+#todayView .daily-plan-actions button {
+  padding-inline: 9px;
+}
+
+#todayView .today-period-switch {
+  padding: 2px;
+}
+
+#todayView .today-period-switch button {
+  padding: 5px 9px;
+}
+
+#todayView .energy-drawer > summary {
+  min-height: 52px;
+}
+
+#todayView .energy-help {
+  font-size: var(--gc-text-xs);
+}
+
+/* Plan: overview first, details progressively disclosed. */
+#planView.active {
+  gap: 12px;
+}
+
+.plan-overview {
+  gap: 14px;
+  padding: 4px 2px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.plan-overview-copy h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 4vw, 1.65rem);
+  letter-spacing: -0.025em;
+}
+
+.plan-overview-grid {
+  gap: 8px;
+}
+
+.plan-overview-grid > div {
+  padding: 12px 13px;
+  border: 1px solid color-mix(in srgb, var(--gc-border) 78%, transparent);
+  border-radius: 16px;
+  background: var(--gc-surface);
+}
+
+.plan-overview-grid span {
+  font-size: 0.67rem;
+  letter-spacing: 0.035em;
+}
+
+.plan-overview-grid strong {
+  margin-top: 3px;
+  font-size: 1.05rem;
+}
+
+.plan-overview-grid small {
+  margin-top: 2px;
+  line-height: 1.25;
+}
+
+.plan-section-nav {
+  top: 70px;
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-color: color-mix(in srgb, var(--gc-border) 76%, transparent);
+  border-radius: var(--gc-radius-pill);
+  background: color-mix(in srgb, var(--gc-surface) 94%, transparent);
+  box-shadow: none;
+  scrollbar-width: none;
+}
+
+.plan-section-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.plan-section-nav button {
+  flex: 1 0 auto;
+  min-width: max-content;
+  min-height: var(--gc-target-min);
+  display: block;
+  padding: 8px 13px;
+  border-radius: var(--gc-radius-pill);
+  text-align: center;
+}
+
+.plan-section-nav button span,
+.plan-section-nav button small {
+  display: none;
+}
+
+.plan-section-nav button b {
+  font-size: 0.76rem;
+}
+
+.plan-module-stack {
+  gap: 9px;
+}
+
+.plan-module-disclosure {
+  scroll-margin-top: 132px;
+  overflow: clip;
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--gc-border) 78%, transparent);
+  border-radius: 19px;
+  background: var(--gc-surface);
+  box-shadow: none;
+}
+
+.plan-module-summary {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.plan-module-summary::-webkit-details-marker {
+  display: none;
+}
+
+.plan-module-summary strong {
+  font-size: 0.96rem;
+  letter-spacing: -0.01em;
+}
+
+.plan-module-summary > span {
+  color: var(--gc-text-muted);
+  font-size: 1rem;
+  transition: transform var(--gc-motion-fast) ease;
+}
+
+.plan-module-disclosure[open] > .plan-module-summary > span {
+  transform: rotate(180deg);
+}
+
+.plan-module-disclosure[open] > .plan-module-summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--gc-border) 70%, transparent);
+}
+
+.plan-module-content {
+  min-width: 0;
+  padding: 14px;
+}
+
+.plan-module-content > .card,
+.plan-module-content > .os-section,
+.plan-module-content > section {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#planView .plan-module-content .section-kicker {
+  display: none;
+}
+
+#compassSection {
+  padding: 0;
+}
+
+/* Logger: one focused capture task, secondary guidance visually quiet. */
+.logger-backdrop {
+  background: rgba(6, 24, 31, 0.34);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.logger-panel {
+  border-radius: 28px 28px 0 0;
+}
+
+.logger-head .eyebrow,
+.logger-head p:not(.eyebrow),
+.logger-mode-fieldset legend,
+.logger-mode-hint,
+.logger-field-help,
+.logger-section-head > span,
+.logger-advanced-copy small {
+  display: none;
+}
+
+.logger-head {
+  align-items: center;
+}
+
+.logger-head h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.025em;
+}
+
+.logger-form {
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.logger-mode-grid {
+  gap: 3px;
+  padding: 3px;
+  border: 0;
+  border-radius: var(--gc-radius-pill);
+  background: var(--gc-surface-subtle);
+}
+
+.logger-mode-choice span {
+  border-radius: var(--gc-radius-pill);
+  font-size: 0.76rem;
+}
+
+.logger-mode-choice input:checked + span {
+  box-shadow: 0 2px 8px rgba(15, 49, 52, 0.08);
+}
+
+.logger-primary-grid {
+  gap: 10px;
+}
+
+.logger-field input,
+.logger-field select,
+.logger-field textarea,
+.duration-input-wrap {
+  border-color: color-mix(in srgb, var(--gc-border) 82%, transparent);
+  border-radius: 14px;
+}
+
+.logger-activity-field > label > span,
+.duration-field > span {
+  font-size: 0.72rem;
+}
+
+#loggerActivityQuery {
+  min-height: 52px;
+  padding-inline: 14px;
+  font-size: 1rem;
+}
+
+.duration-presets {
+  gap: 5px;
+}
+
+.duration-presets button,
+.repeat-chip {
+  min-height: var(--gc-target-min);
+  border-color: transparent;
+  background: var(--gc-surface-subtle);
+}
+
+.logger-repeats {
+  padding-top: 2px;
+  border-top: 0;
+}
+
+.logger-section-head h3 {
+  font-size: 0.78rem;
+}
+
+.repeat-chip {
+  border-radius: 14px;
+}
+
+.logger-advanced {
+  border-color: color-mix(in srgb, var(--gc-border) 80%, transparent);
+  border-radius: 14px;
+}
+
+.logger-advanced > summary {
+  min-height: var(--gc-target-min);
+  padding-inline: 13px;
+}
+
+.logger-advanced-copy strong {
+  font-size: 0.78rem;
+}
+
+.logger-save {
+  min-height: 50px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.rail-log-btn,
+.top-log-btn,
+.nav-add {
+  letter-spacing: 0;
+}
+
+@media (max-width: 680px) {
+  .today-layout {
+    gap: 10px;
+  }
+
+  .today-command {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 2px 1px 6px;
+  }
+
+  .command-log-btn {
+    width: auto;
+    min-width: 0;
+    padding-inline: 14px;
+  }
+
+  #todayView .os-section,
+  #todayView .time-reality-card,
+  #todayView .energy-drawer,
+  #todayView .journal-preview {
+    border-radius: 18px;
+  }
+
+  .plan-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .plan-overview-grid > div {
+    padding: 10px 11px;
+  }
+
+  .plan-overview-grid small {
+    display: none;
+  }
+
+  .plan-section-nav {
+    margin-inline: 0;
+  }
+
+  .plan-module-content {
+    padding: 11px;
+  }
+
+  .logger-panel {
+    padding-top: 16px;
+  }
+}
+
+@media (min-width: 640px) {
+  .logger-panel {
+    width: min(590px, calc(100% - 32px));
+    border-radius: 26px;
+    padding: 20px;
+  }
+}
+
+@media (min-width: 760px) {
+  .plan-overview {
+    grid-template-columns: minmax(0, 0.7fr) minmax(480px, 1.3fr);
+    padding: 8px 2px 12px;
+  }
+
+  .plan-section-nav {
+    top: 18px;
+    width: max-content;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+}

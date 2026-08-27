@@ -1,0 +1,14 @@
+{
+  "name": "Growth Compass",
+  "short_name": "Growth Compass",
+  "description": "Connect what matters with what you do, learn from what happens, and adjust deliberately.",
+  "start_url": "/experience/2/",
+  "scope": "/experience/2/",
+  "display": "standalone",
+  "background_color": "#151714",
+  "theme_color": "#151714",
+  "icons": [
+    {"src":"/icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png"}
+  ]
+}

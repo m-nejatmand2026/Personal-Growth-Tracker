@@ -1,0 +1,146 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import { chromium, webkit } from 'playwright';
+
+const BASE_URL = process.env.GC_E2E_BASE_URL || 'http://127.0.0.1:8787';
+const SCREENSHOT_DIR = process.env.GC_E2E_SCREENSHOT_DIR || '';
+const BROWSERS = [['Chromium', chromium], ['WebKit', webkit]];
+
+async function capture(page, browserName, viewport, state) {
+  if (!SCREENSHOT_DIR) return;
+  await mkdir(SCREENSHOT_DIR, { recursive: true });
+  await page.screenshot({ path: `${SCREENSHOT_DIR}/${browserName.toLowerCase()}-${viewport}-${state}-product-rebuild.png`, fullPage: false, animations: 'disabled' });
+}
+
+async function assertNoHorizontalOverflow(page, browserName, viewport, state) {
+  const result = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const documentWidth = document.documentElement.scrollWidth;
+    const offenders = [...document.querySelectorAll('body *')].filter((element) => { const style=getComputedStyle(element);if(style.display==='none'||style.visibility==='hidden')return false;const rect=element.getBoundingClientRect();return rect.right>viewportWidth+1||rect.left<-1; }).slice(0,12).map((element)=>{const rect=element.getBoundingClientRect();return{tag:element.tagName.toLowerCase(),id:element.id||'',className:typeof element.className==='string'?element.className:'',left:Math.round(rect.left*10)/10,right:Math.round(rect.right*10)/10,width:Math.round(rect.width*10)/10};});
+    return { viewportWidth, documentWidth, offenders };
+  });
+  assert.ok(result.documentWidth <= result.viewportWidth + 1, `${browserName} ${viewport} ${state}: Product Rebuild must not overflow horizontally; viewport=${result.viewportWidth}, document=${result.documentWidth}, offenders=${JSON.stringify(result.offenders)}`);
+}
+
+async function assertLoggerCloseIsTopmost(page, browserName, viewport) {
+  const hit = await page.locator('#loggerHost .logger-close').evaluate((button) => {
+    const rect = button.getBoundingClientRect();
+    const target = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return target === button || button.contains(target);
+  });
+  assert.equal(hit, true, `${browserName} ${viewport}: Add Activity close control must remain above global navigation controls`);
+}
+
+async function assertMobileHeaderPolish(page, browserName, state, headingSelector) {
+  const metrics = await page.evaluate((selector) => {
+    const heading = document.querySelector(selector);
+    const more = document.querySelector('#topMore > summary');
+    const label = more?.querySelector('.top-more-label');
+    if (!heading || !more) return null;
+    const h = heading.getBoundingClientRect();
+    const m = more.getBoundingClientRect();
+    return {
+      headingTop: Math.round(h.top * 10) / 10,
+      moreTop: Math.round(m.top * 10) / 10,
+      moreWidth: Math.round(m.width * 10) / 10,
+      moreHeight: Math.round(m.height * 10) / 10,
+      labelDisplay: label ? getComputedStyle(label).display : null,
+      text: more.innerText.trim()
+    };
+  }, headingSelector);
+  assert.ok(metrics, `${browserName} mobile ${state}: expected a visible page heading and Explore control`);
+  assert.ok(Math.abs(metrics.headingTop - metrics.moreTop) <= 3, `${browserName} mobile ${state}: Explore control must align with the page heading; ${JSON.stringify(metrics)}`);
+  assert.ok(metrics.moreWidth >= 78 && metrics.moreWidth <= 100, `${browserName} mobile ${state}: Explore control must stay compact but labeled; ${JSON.stringify(metrics)}`);
+  assert.equal(metrics.moreHeight, 44, `${browserName} mobile ${state}: Explore control must stay 44px high`);
+  assert.notEqual(metrics.labelDisplay, 'none', `${browserName} mobile ${state}: Explore label must remain visible`);
+  assert.match(metrics.text, /Explore/i, `${browserName} mobile ${state}: secondary navigation must explain itself`);
+}
+
+async function armPlanTransitionGuard(page) {
+  await page.evaluate(() => {
+    const view = document.querySelector('#planView');
+    const guard = { failed: false, snapshots: [] };
+    const inspect = () => {
+      if (!view) return;
+      const visible = !view.hidden && getComputedStyle(view).display !== 'none';
+      const ready = Boolean(view.querySelector('.gc-plan-rebuild'));
+      const legacyLoading = Boolean(view.querySelector('.plan-loading'));
+      if (visible && (!ready || legacyLoading)) {
+        guard.failed = true;
+        guard.snapshots.push({ visible, ready, legacyLoading, html: view.innerHTML.slice(0, 180) });
+      }
+    };
+    const observer = new MutationObserver(inspect);
+    observer.observe(view, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+    guard.observer = observer;
+    window.__gcPlanTransitionGuard = guard;
+    inspect();
+  });
+}
+
+async function assertPlanTransitionWasAtomic(page, browserName, viewport) {
+  const result = await page.evaluate(() => {
+    const guard = window.__gcPlanTransitionGuard;
+    guard?.observer?.disconnect();
+    return { failed: Boolean(guard?.failed), snapshots: guard?.snapshots || [] };
+  });
+  assert.equal(result.failed, false, `${browserName} ${viewport}: Plan must never become visible before Product Rebuild content is ready; ${JSON.stringify(result.snapshots)}`);
+  assert.equal(await page.locator('#planView .plan-loading').count(), 0, `${browserName} ${viewport}: legacy Plan loading placeholder must not be rendered`);
+}
+
+async function loadProductUi(page, browserName, viewport) {
+  const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+  assert.ok(response?.ok(), `expected ${BASE_URL} to return a successful document`);
+  for (const href of ['/css/product-rebuild.css','/css/product-rebuild-pages.css','/css/product-polish.css','/css/functional-recovery.css','/css/screenshot-recovery.css']) await page.locator(`link[href="${href}"]`).waitFor({ state: 'attached' });
+  await page.locator('#todayView .gc-today-rebuild').waitFor({ state: 'visible', timeout: 15_000 });
+  const state = await page.evaluate(() => ({ bodyDisplay:getComputedStyle(document.body).display, background:getComputedStyle(document.documentElement).backgroundColor, interactiveCount:[...document.querySelectorAll('a,button,input,select,textarea,summary,[role="button"],[tabindex]')].filter((element)=>element.getClientRects().length>0).length, title:document.title }));
+  assert.notEqual(state.bodyDisplay,'none',`${browserName} ${viewport}: application body must render`);
+  assert.equal(state.background,'rgb(5, 20, 36)',`${browserName} ${viewport}: Growth Compass canvas must render`);
+  assert.ok(state.interactiveCount>4,`${browserName} ${viewport}: UI must expose interactive controls`);
+  assert.match(state.title,/^Today — Growth Compass$/);
+  await assertNoHorizontalOverflow(page,browserName,viewport,'today');
+}
+
+async function assertPlanHelperCopyWraps(page, browserName, viewport) {
+  const result = await page.locator('#planView .gc-plan-stat').last().locator('small').evaluate((node) => ({ whiteSpace:getComputedStyle(node).whiteSpace,textOverflow:getComputedStyle(node).textOverflow }));
+  assert.equal(result.whiteSpace, 'normal', `${browserName} ${viewport}: Plan helper copy must wrap`);
+  assert.notEqual(result.textOverflow, 'ellipsis', `${browserName} ${viewport}: Plan helper copy must not be ellipsized`);
+}
+
+async function assertDesktop(page,browserName) {
+  await loadProductUi(page,browserName,'desktop');
+  await page.locator('.app-rail').waitFor({state:'visible'});assert.equal(await page.locator('.bottom-nav').isVisible(),false);
+  assert.equal(await page.locator('.rail-brand').innerText(),'Growth Compass');
+  await page.locator('#todayView .gc-now-card').waitFor({state:'visible'});await page.locator('#todayView .gc-add-activity').waitFor({state:'visible'});await capture(page,browserName,'desktop','today');
+  await page.locator('.rail-log-btn').click();await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({state:'visible'});assert.equal(await page.locator('input[name="loggerEntryMode"]').count(),3);await assertLoggerCloseIsTopmost(page,browserName,'desktop');await capture(page,browserName,'desktop','add');await page.keyboard.press('Escape');
+  await armPlanTransitionGuard(page);await page.locator('.rail-nav-btn[data-view="plan"]').click();await page.locator('#planView .gc-plan-rebuild').waitFor({state:'visible'});await assertPlanTransitionWasAtomic(page,browserName,'desktop');await assertPlanHelperCopyWraps(page,browserName,'desktop');await assertNoHorizontalOverflow(page,browserName,'desktop','plan');await capture(page,browserName,'desktop','plan');
+  await page.locator('.rail-nav-btn[data-view="progress"]').click();await page.locator('#progressView .gc-progress-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'desktop','progress');await capture(page,browserName,'desktop','progress');
+  await page.locator('.rail-nav-btn[data-view="wellness-boost"]').click();await page.locator('#wellness-boostView .wellness-boost-library-view').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'desktop','wellness');await capture(page,browserName,'desktop','wellness');
+  await page.locator('.rail-nav-btn[data-view="insights"]').click();await page.locator('#insightsView .gc-insights-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'desktop','insights');await capture(page,browserName,'desktop','insights');
+  await page.locator('#journalRailBtn').click();await page.locator('#journalView .gc-journal-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'desktop','journal');await capture(page,browserName,'desktop','journal');
+  await page.locator('#settingsRailBtn').click();await page.locator('#settingsView .gc-settings-rebuild').waitFor({state:'visible'});await assertNoHorizontalOverflow(page,browserName,'desktop','settings');await capture(page,browserName,'desktop','settings');
+}
+
+async function openMobileSecondary(page, buttonId) {
+  const more = page.locator('#topMore');
+  if (!(await more.evaluate((node) => node.open))) await page.locator('#topMore > summary').click();
+  await page.locator(buttonId).click();
+}
+
+async function assertMobile(page,browserName) {
+  await loadProductUi(page,browserName,'mobile');
+  assert.equal(await page.locator('.app-rail').isVisible(),false);await page.locator('.bottom-nav').waitFor({state:'visible'});assert.equal(await page.locator('.bottom-nav .nav-btn').count(),5);assert.equal((await page.locator('#quickAddBtn').innerText()).trim().includes('Add'),true);await assertMobileHeaderPolish(page,browserName,'today','#todayView .gc-today-header h2');await capture(page,browserName,'mobile','today');
+  await page.locator('#quickAddBtn').click();await page.locator('#loggerHost .gc-add-activity-sheet').waitFor({state:'visible'});await page.locator('#loggerActivityQuery').waitFor({state:'visible'});assert.equal(await page.locator('input[name="loggerEntryMode"]').count(),3);await assertLoggerCloseIsTopmost(page,browserName,'mobile');await assertNoHorizontalOverflow(page,browserName,'mobile','add');await capture(page,browserName,'mobile','add');await page.keyboard.press('Escape');
+  await armPlanTransitionGuard(page);await page.locator('.nav-btn[data-view="plan"]').click();await page.locator('#planView .gc-plan-rebuild').waitFor({state:'visible'});await assertPlanTransitionWasAtomic(page,browserName,'mobile');await assertMobileHeaderPolish(page,browserName,'plan','#planView .gc-plan-header h2');await assertPlanHelperCopyWraps(page,browserName,'mobile');await assertNoHorizontalOverflow(page,browserName,'mobile','plan');await capture(page,browserName,'mobile','plan');
+  await page.locator('.nav-btn[data-view="progress"]').click();await page.locator('#progressView .gc-progress-rebuild').waitFor({state:'visible'});await assertMobileHeaderPolish(page,browserName,'progress','#progressView .gc-product-page-header h2');await assertNoHorizontalOverflow(page,browserName,'mobile','progress');await capture(page,browserName,'mobile','progress');
+  await page.locator('.nav-btn[data-view="wellness-boost"]').click();await page.locator('#wellness-boostView .wellness-boost-library-view').waitFor({state:'visible'});await assertMobileHeaderPolish(page,browserName,'wellness','#wellness-boostView .wellness-current-header h2');await assertNoHorizontalOverflow(page,browserName,'mobile','wellness');await capture(page,browserName,'mobile','wellness');
+  await openMobileSecondary(page,'#insightsBtn');await page.locator('#insightsView .gc-insights-rebuild').waitFor({state:'visible'});await assertMobileHeaderPolish(page,browserName,'insights','#insightsView .gc-product-page-header h2');await assertNoHorizontalOverflow(page,browserName,'mobile','insights');await capture(page,browserName,'mobile','insights');
+  await openMobileSecondary(page,'#journalBtn');await page.locator('#journalView .gc-journal-rebuild').waitFor({state:'visible'});await assertMobileHeaderPolish(page,browserName,'journal','#journalView .gc-product-page-header h2');await assertNoHorizontalOverflow(page,browserName,'mobile','journal');await capture(page,browserName,'mobile','journal');
+  await openMobileSecondary(page,'#settingsBtn');await page.locator('#settingsView .gc-settings-rebuild').waitFor({state:'visible'});await assertMobileHeaderPolish(page,browserName,'settings','#settingsView .gc-product-page-header h2');await assertNoHorizontalOverflow(page,browserName,'mobile','settings');await capture(page,browserName,'mobile','settings');
+}
+
+for (const [browserName,browserType] of BROWSERS) {
+  test(`${browserName} desktop accepts Growth Compass Product Rebuild`,async()=>{const browser=await browserType.launch();try{const context=await browser.newContext({viewport:{width:1280,height:900}});const page=await context.newPage();await assertDesktop(page,browserName);await context.close();}finally{await browser.close();}});
+  test(`${browserName} 375px accepts Growth Compass Product Rebuild`,async()=>{const browser=await browserType.launch();try{const context=await browser.newContext({viewport:{width:375,height:812},isMobile:true,hasTouch:true});const page=await context.newPage();await assertMobile(page,browserName);await context.close();}finally{await browser.close();}});
+}

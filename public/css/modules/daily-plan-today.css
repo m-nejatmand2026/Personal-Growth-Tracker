@@ -1,0 +1,48 @@
+/* Exact Daily Plan treatment from Stitch Today Sanctuary. */
+#todayView .daily-plan-sanctuary{font-family:Inter,Arial,sans-serif}
+#todayView .sanctuary-focus-card{position:relative;min-height:360px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:24px;overflow:hidden;padding:32px;border:0;border-radius:8px;background:#fff;box-shadow:0 10px 40px rgba(15,23,42,.04)}
+#todayView .sanctuary-focus-card::after{content:"";position:absolute;right:-64px;top:-64px;width:192px;height:192px;border-radius:50%;background:#eff4ff;opacity:.5;pointer-events:none;transition:transform .7s ease}
+#todayView .sanctuary-focus-card:hover::after{transform:scale(1.1)}
+#todayView .sanctuary-focus-copy{position:relative;z-index:1;max-width:672px}
+#todayView .sanctuary-focus-copy>p{display:flex;align-items:center;gap:8px;margin:0 0 12px;color:var(--today-copy);font-size:12px;font-weight:600;line-height:16px;letter-spacing:.1em;text-transform:uppercase}
+#todayView .sanctuary-focus-copy>p span{color:var(--today-violet);font-size:14px}
+#todayView .sanctuary-focus-copy h3{margin:0;color:#000;font:600 24px/32px "Playfair Display",Georgia,serif;letter-spacing:0}
+#todayView .sanctuary-focus-copy>div{margin-top:8px;color:var(--today-copy);font-size:16px;font-weight:400;line-height:24px}
+#todayView .sanctuary-focus-action{position:relative;z-index:1;min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:0 24px;border:0;border-radius:12px;background:#000;color:#fff;font:500 14px/20px Inter,Arial,sans-serif;cursor:pointer}
+#todayView .sanctuary-focus-action:hover{background:#213145}
+#todayView .sanctuary-focus-action:disabled{opacity:.72;cursor:default}
+
+#todayView .sanctuary-agenda-head{display:flex;align-items:center;gap:16px;margin:128px 0 0;padding:0 0 16px;border-bottom:1px solid var(--today-line)}
+#todayView .sanctuary-agenda-head h3{margin:0;color:#000;font:600 24px/32px "Playfair Display",Georgia,serif}
+#todayView .sanctuary-agenda-head>span{padding:4px 12px;border-radius:12px;background:var(--today-chip);color:var(--today-copy);font-size:12px;font-weight:600;line-height:16px;letter-spacing:.1em}
+#todayView .sanctuary-agenda-list{position:relative;padding:32px 0 0 8px}
+#todayView .sanctuary-agenda-item{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr);gap:24px;margin:0 0 40px;padding:0}
+#todayView .sanctuary-agenda-item:not(:last-child)::after{content:"";position:absolute;z-index:0;left:11px;top:24px;bottom:-24px;width:1px;background:#e2e8f0}
+#todayView .sanctuary-agenda-check{position:relative;z-index:1;width:24px;height:24px;min-height:24px;margin:4px 0 0;padding:0;border:1px solid var(--today-line);border-radius:50%;background:#fff;color:var(--today-outline);font-size:14px;box-shadow:none}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-check{display:grid;place-items:center;border:0;background:var(--today-violet);box-shadow:0 0 15px rgba(148,102,255,.4)}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-check::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-check span{display:none}
+#todayView .sanctuary-agenda-copy{min-width:0}
+#todayView .sanctuary-agenda-title{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:baseline;margin:0 0 4px}
+#todayView .sanctuary-agenda-title strong{color:#000;font-size:18px;font-weight:400;line-height:28px}
+#todayView .sanctuary-agenda-title time{color:var(--today-copy);font-size:14px;font-weight:500;line-height:20px;white-space:nowrap}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-title strong{color:var(--today-violet);font-weight:600}
+#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-title time{color:var(--today-violet)}
+#todayView .sanctuary-agenda-copy>p{margin:0;color:var(--today-copy);font-size:16px;font-weight:400;line-height:24px}
+#todayView .sanctuary-agenda-actions{display:flex;gap:12px;margin-top:16px;opacity:0;transition:opacity .15s ease}
+#todayView .sanctuary-agenda-item:hover .sanctuary-agenda-actions,#todayView .sanctuary-agenda-item:focus-within .sanctuary-agenda-actions,#todayView .sanctuary-agenda-item.is-active .sanctuary-agenda-actions{opacity:1}
+#todayView .sanctuary-agenda-actions button{min-height:36px;padding:0 16px;border:1px solid var(--today-violet);border-radius:12px;background:transparent;color:var(--today-violet);font:500 14px/20px Inter,Arial,sans-serif}
+#todayView .sanctuary-agenda-actions button:not([data-plan-start]){border-color:var(--today-line);color:var(--today-copy)}
+#todayView .sanctuary-agenda-add{width:100%;min-height:44px;margin:0;border:1px dashed var(--today-line);border-radius:8px;background:transparent;color:var(--today-copy);font:500 14px/20px Inter,Arial,sans-serif}
+#todayView .sanctuary-agenda-empty{min-height:128px;padding:8px 0 24px}
+
+@media(max-width:600px){
+  #todayView .sanctuary-focus-card{min-height:360px}
+  #todayView .sanctuary-agenda-actions{flex-wrap:wrap}
+  #todayView .sanctuary-agenda-actions button{min-height:44px}
+  #todayView .sanctuary-agenda-title{gap:8px}
+}
+
+@media(min-width:768px){
+  #todayView .sanctuary-focus-card{min-height:220px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+}

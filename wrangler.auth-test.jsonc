@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "personal-growth-tracker-auth-test",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-08-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "personal-growth-tracker-auth-test",
+      "database_id": "00000000-0000-0000-0000-0000000000a2",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "GC_AUTH_MODE": "enforced",
+    "GC_AUTH_TEST_MODE": "1",
+    "GC_OWNER_EMAIL": "owner@example.test",
+    "GC_DEFAULT_TIMEZONE": "UTC",
+    "BETTER_AUTH_SECRET": "test-only-better-auth-secret-6eb750ea2f554247a6e2"
+  }
+}
